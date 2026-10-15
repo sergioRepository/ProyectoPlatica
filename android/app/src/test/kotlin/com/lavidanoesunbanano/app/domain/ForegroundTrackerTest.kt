@@ -79,14 +79,34 @@ class ForegroundTrackerTest {
     @Test
     fun `leaving through the launcher or another app makes the next one a new attempt`() {
         val tracker = tracker()
+        val later = at(21, 0, 15)
 
         tracker.onWindow(instagram.packageName, now, rules)
         tracker.onWindow(own, now, rules)
-        tracker.onWindow(launcher, now, rules)
-        assertEquals(show(instagram, newAttempt = true), tracker.onWindow(instagram.packageName, now, rules))
+        tracker.onWindow(launcher, later, rules)
+        assertEquals(show(instagram, newAttempt = true, at = later), tracker.onWindow(instagram.packageName, later, rules))
 
-        assertEquals(show(tiktok, newAttempt = true), tracker.onWindow(tiktok.packageName, now, rules))
-        assertEquals(show(instagram, newAttempt = true), tracker.onWindow(instagram.packageName, now, rules))
+        assertEquals(show(tiktok, newAttempt = true, at = later), tracker.onWindow(tiktok.packageName, later, rules))
+        assertEquals(show(instagram, newAttempt = true, at = later), tracker.onWindow(instagram.packageName, later, rules))
+    }
+
+    @Test
+    fun `a window that sneaks in right after the block does not add an attempt`() {
+        val tracker = tracker()
+
+        tracker.onWindow(instagram.packageName, now, rules)
+        // La animación del launcher llega tarde y la app vuelve a pedir el frente.
+        assertEquals(TrackerAction.Idle, tracker.onWindow(launcher, at(21, 0, 1), rules))
+        assertEquals(
+            show(instagram, newAttempt = false, at = at(21, 0, 3)),
+            tracker.onWindow(instagram.packageName, at(21, 0, 3), rules),
+        )
+        // Pasados los 10 s, volver a abrirla sí es otro intento.
+        tracker.onWindow(launcher, at(21, 0, 20), rules)
+        assertEquals(
+            show(instagram, newAttempt = true, at = at(21, 0, 20)),
+            tracker.onWindow(instagram.packageName, at(21, 0, 20), rules),
+        )
     }
 
     @Test

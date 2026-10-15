@@ -3,10 +3,12 @@ package com.lavidanoesunbanano.app.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lavidanoesunbanano.app.data.apps.InstalledAppsSource
+import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.BlockRange
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,21 +20,22 @@ import kotlinx.coroutines.launch
 class OnboardingViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val installedAppsSource: InstalledAppsSource,
+    private val settings: SettingsStore,
+    private val clock: Clock,
 ) : ViewModel(), OnboardingActions {
 
     private val _state = MutableStateFlow(OnboardingUiState())
     val state: StateFlow<OnboardingUiState> = _state.asStateFlow()
 
     init {
-        // Si ya hay respuestas guardadas (por ejemplo, al volver desde la generación), se precargan.
+        // Si ya hay respuestas guardadas (al volver desde la generación o al editar desde
+        // Ajustes), se precargan.
         viewModelScope.launch {
-            val profile = profileRepository.getProfile() ?: return@launch
-            val draft = OnboardingRules.fromSaved(
-                profile,
-                profileRepository.getBlockedApps(),
-                profileRepository.getRanges(),
-            )
-            _state.update { it.copy(draft = draft) }
+            val profile = profileRepository.getProfile()
+            val draft = profile?.let {
+                OnboardingRules.fromSaved(it, profileRepository.getBlockedApps(), profileRepository.getRanges())
+            }
+            _state.update { it.copy(draft = draft ?: it.draft, profileLoaded = true) }
         }
         viewModelScope.launch {
             val apps = installedAppsSource.launchableApps()
@@ -106,11 +109,28 @@ class OnboardingViewModel @Inject constructor(
 
     override fun onForbiddenChange(value: String) = updateDraft { it.copy(forbiddenTopics = value) }
 
+    /** Desde Ajustes: muestra solo ese paso, con las respuestas guardadas. */
+    fun editStep(step: OnboardingStep) {
+        _state.update { it.copy(stepIndex = step.ordinal, editing = true) }
+    }
+
+    /** Guarda el paso editado. Si cambió el perfil, la plantilla queda marcada como vieja. */
+    fun saveEdit() {
+        val current = _state.value
+        if (!current.editing || !current.profileLoaded || !current.canContinue) return
+        finish()
+    }
+
     private fun finish() {
         val draft = _state.value.draft
         _state.update { it.copy(saving = true) }
         viewModelScope.launch {
-            profileRepository.saveOnboarding(OnboardingRules.toProfile(draft), draft.selectedApps, draft.ranges)
+            val changed = profileRepository.saveOnboarding(
+                OnboardingRules.toProfile(draft),
+                draft.selectedApps,
+                draft.ranges,
+            )
+            if (changed) settings.markProfileChanged(clock.millis())
             _state.update { it.copy(saving = false, finished = true) }
         }
     }

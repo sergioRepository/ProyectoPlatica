@@ -192,16 +192,12 @@ private fun ColumnScope.DecidedStep(state: BlockUiState, step: BlockStep.Decided
     ) {
         Column(Modifier.verticalScroll(rememberScrollState())) {
             Text(
-                text = verdict.message ?: offlineMessage(verdict),
+                text = verdictMessage(verdict),
                 style = LaVidaTheme.type.display,
                 color = LaVidaTheme.colors.textPrimary,
             )
             Spacer(Modifier.height(16.dp))
-            Text(
-                text = verdictLabel(verdict),
-                style = LaVidaTheme.type.mono,
-                color = if (verdict.valid) LaVidaTheme.colors.approved else LaVidaTheme.colors.rejected,
-            )
+            Text(text = verdictLabel(verdict), style = LaVidaTheme.type.mono, color = verdictColor(verdict))
         }
     }
     Spacer(Modifier.height(24.dp))
@@ -243,33 +239,6 @@ private fun ColumnScope.CenteredText(text: String) {
             color = LaVidaTheme.colors.textPrimary,
         )
     }
-}
-
-@Composable
-private fun offlineMessage(verdict: Verdict): String =
-    if (verdict.valid) {
-        stringResource(R.string.verdict_offline_emergency, verdict.grantedMinutes)
-    } else {
-        stringResource(R.string.verdict_offline_rejected)
-    }
-
-/** `APROBADO · 10 min` o `RECHAZADO · excusa repetida`. */
-@Composable
-private fun verdictLabel(verdict: Verdict): String = when {
-    verdict.valid && verdict.offline -> stringResource(R.string.verdict_approved_offline, verdict.grantedMinutes)
-    verdict.valid -> stringResource(R.string.verdict_approved, verdict.grantedMinutes)
-    else -> stringResource(
-        R.string.verdict_rejected,
-        stringResource(
-            when (verdict.reason) {
-                VerdictReason.REPEATED -> R.string.verdict_reason_repeated
-                VerdictReason.OVER_QUOTA -> R.string.verdict_reason_over_quota
-                VerdictReason.TOO_SHORT -> R.string.verdict_reason_too_short
-                VerdictReason.OFFLINE -> R.string.verdict_reason_offline
-                else -> R.string.verdict_reason_boredom
-            },
-        ),
-    )
 }
 
 private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {})

@@ -118,9 +118,6 @@
     <string name="generation_edit_answers">Revisar respuestas</string>
 
     <!-- Inicio -->
-    <string name="home_subtitle">plantilla lista</string>
-    <string name="home_apps_label">apps</string>
-    <string name="home_schedule_label">horario</string>
     <string name="home_messages_label">mensajes</string>
     <string name="home_backend_label">servidor</string>
     <string name="home_preview_label">vista previa</string>
@@ -130,11 +127,95 @@
     <string name="home_blocker_enable">Abrir Accesibilidad</string>
     <string name="home_judge_code_title">Conecta el juez</string>
     <string name="home_judge_code_hint">El servidor ya no reconoce este teléfono. Sin el código, las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
-    <plurals name="home_apps_count">
-        <item quantity="one">%1$d bloqueada</item>
-        <item quantity="many">%1$d bloqueadas</item>
-        <item quantity="other">%1$d bloqueadas</item>
+
+    <string name="home_today">hoy</string>
+    <string name="home_attempts_label">intentos</string>
+    <string name="home_recovered_label">recuperados</string>
+    <string name="home_excuses_label">excusas</string>
+    <string name="home_unlocked_label">desbloqueo</string>
+    <string name="home_unlocked_value">%1$s hasta %2$s</string>
+    <string name="home_stats">Estadísticas</string>
+    <string name="home_stats_desc">Intentos, minutos y excusas.</string>
+    <string name="home_history">Historial</string>
+    <string name="home_history_desc">Cada intento y cada excusa.</string>
+    <string name="home_settings">Ajustes</string>
+    <string name="home_settings_desc">Reglas, cupos, tono y plantilla.</string>
+    <string name="minutes_approx">≈ %1$d min</string>
+    <string name="excuses_tally">aprobadas %1$d · rechazadas %2$d</string>
+
+    <!-- Estadísticas -->
+    <string name="stats_title">Estadísticas</string>
+    <string name="stats_period_7">7 días</string>
+    <string name="stats_period_30">30 días</string>
+    <string name="stats_attempts">intentos</string>
+    <string name="stats_recovered">min recuperados</string>
+    <string name="stats_recovered_value">≈ %1$d</string>
+    <string name="stats_granted">min concedidos</string>
+    <string name="stats_recovered_note">Estimado: %1$d minutos por cada intento que no terminó en desbloqueo.</string>
+    <string name="stats_per_day">intentos por día</string>
+    <string name="stats_per_app">intentos por app</string>
+    <string name="stats_excuses">excusas</string>
+    <string name="stats_emergency">emergencia</string>
+    <string name="stats_extra_time">10 minutos</string>
+    <string name="stats_approved_count">aprobadas %1$d</string>
+    <string name="stats_rejected_count">rechazadas %1$d</string>
+    <plurals name="stats_day_readout">
+        <item quantity="one">%1$s · %2$d intento</item>
+        <item quantity="many">%1$s · %2$d intentos</item>
+        <item quantity="other">%1$s · %2$d intentos</item>
     </plurals>
+    <plurals name="stats_pending_review">
+        <item quantity="one">%1$d emergencia sin conexión por revisar en el historial.</item>
+        <item quantity="many">%1$d emergencias sin conexión por revisar en el historial.</item>
+        <item quantity="other">%1$d emergencias sin conexión por revisar en el historial.</item>
+    </plurals>
+    <string name="stats_empty">Sin intentos en este periodo.</string>
+
+    <!-- Historial -->
+    <string name="history_title">Historial</string>
+    <string name="history_today">hoy</string>
+    <string name="history_yesterday">ayer</string>
+    <string name="history_empty">Nada en los últimos 30 días. O no lo intentaste, o el bloqueo está apagado.</string>
+    <string name="outcome_exit">salió</string>
+    <string name="outcome_left">se fue</string>
+    <string name="outcome_emergency">emergencia</string>
+    <string name="outcome_extra_time">10 min</string>
+    <string name="history_review">REVISAR</string>
+    <string name="history_mark_reviewed">Marcar revisada</string>
+
+    <!-- Ajustes -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_label">ajustes</string>
+    <string name="settings_section_rules">reglas</string>
+    <string name="settings_section_quotas">cupos por día</string>
+    <string name="settings_section_tone">tono</string>
+    <string name="settings_section_profile">perfil</string>
+    <string name="settings_section_theme">apariencia</string>
+    <string name="settings_section_template">plantilla</string>
+    <string name="settings_apps">Apps bloqueadas</string>
+    <string name="settings_schedule">Horario</string>
+    <string name="settings_extra_time">10 minutos más</string>
+    <string name="settings_emergency">Emergencias</string>
+    <string name="settings_quota_value">%1$d al día</string>
+    <string name="settings_quotas_hint">Lo máximo que el juez aprueba en un día, sumando todas las apps.</string>
+    <string name="settings_sarcasm">Sarcasmo</string>
+    <string name="settings_profanity">Groserías</string>
+    <string name="settings_country">Jerga</string>
+    <string name="settings_forbidden">Temas vetados</string>
+    <string name="settings_none">ninguno</string>
+    <string name="settings_name">Nombre</string>
+    <string name="settings_goal">Meta</string>
+    <string name="settings_secondary">Metas secundarias</string>
+    <string name="settings_reason">Por qué importa</string>
+    <string name="settings_excuses">Excusas típicas</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_system">Según el sistema</string>
+    <string name="settings_template_generated">generada</string>
+    <string name="settings_template_stale">Cambiaste tu perfil o el tono después de generarla. Regenera para que los mensajes lo usen.</string>
+    <string name="settings_regenerate">Regenerar mensajes</string>
+    <string name="settings_regenerate_hint">Reemplaza todos los mensajes. Tarda cerca de un minuto y necesita conexión.</string>
+    <string name="generation_done_back">Volver a ajustes</string>
 
     <!-- Estado del servidor -->
     <string name="status_checking">verificando...</string>

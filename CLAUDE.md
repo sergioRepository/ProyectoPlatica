@@ -11,10 +11,10 @@ Bloqueador de apps para Android con una IA sarcástica. El producto, las reglas 
 ## Estructura
 - `android/`: Gradle 9.5.1, AGP 9.1.1 y Kotlin 2.4.20 (el Kotlin integrado de AGP 9, sin plugin `kotlin-android`). Un solo módulo, `:app`, paquete `com.lavidanoesunbanano.app`. Dentro de `app/src/main/kotlin/com/lavidanoesunbanano/app/`:
   - `core/designsystem`: colores y formas (`Theme.kt`), tipografía (`Type.kt`) y componentes (`Components.kt`).
-  - `domain`: Kotlin puro y probado en JVM: horarios (`BlockRange`), formato de horarios, placeholders, orden de apps, selección del mensaje por contexto (`MessagePicker`), la decisión de bloqueo (`blocking`: `BlockPolicy` y `ForegroundTracker`) y la regla sin conexión del juez (`excuse/OfflineVerdict`).
-  - `data`: Room (`local`, esquemas en `app/schemas`), DataStore (`prefs`: id y token del dispositivo), Retrofit (`remote`), conversiones (`mapper`), repositorios y apps instaladas. `BlockSessionRepository` guarda cada intento en `attempts` y elige su mensaje. `ExcuseRepository` pide el veredicto con un límite de 8 s, aplica la regla sin conexión si no llega y guarda cada excusa en `excuses`; de ahí salen los desbloqueos temporales (`unlocked_until`) y los cupos del día. Los cupos y el límite viven en `JudgeConfig`.
+  - `domain`: Kotlin puro y probado en JVM: horarios (`BlockRange`), formato de horarios, placeholders, orden de apps, selección del mensaje por contexto (`MessagePicker`), la decisión de bloqueo (`blocking`: `BlockPolicy` y `ForegroundTracker`) la regla sin conexión del juez (`excuse/OfflineVerdict`) y las estadísticas e historial (`stats`: `StatsCalculator` y `HistoryBuilder`).
+  - `data`: Room (`local`, esquemas en `app/schemas`), DataStore (`prefs`: id y token del dispositivo en `DeviceStore`; cupos, tema y fecha del último cambio de perfil en `SettingsStore`), Retrofit (`remote`), conversiones (`mapper`), repositorios y apps instaladas. `BlockSessionRepository` guarda cada intento en `attempts` y elige su mensaje. `ExcuseRepository` pide el veredicto con un límite de 8 s, aplica la regla sin conexión si no llega y guarda cada excusa en `excuses`; de ahí salen los desbloqueos temporales (`unlocked_until`) y los cupos del día. El límite de 8 s vive en `JudgeConfig` y los cupos en `SettingsStore`. `HistoryRepository` entrega los últimos 30 días de intentos y excusas.
   - `service/blocker`: `BlockerService` (accesibilidad, solo `typeWindowStateChanged`, sin leer la pantalla) y `BlockerBridge` (estado del servicio y Salir con `GLOBAL_ACTION_HOME`).
-  - `feature`: `onboarding` (11 pasos), `generation` (registro con código y generación de la plantilla), `home` (también pide el código otra vez si el backend rechazó el token) y `block` (pantalla de bloqueo, una `Activity` en su propia tarea: mensaje, pregunta de la excusa y veredicto). Las rutas están en `navigation`.
+  - `feature`: `onboarding` (11 pasos; `EditAnswerScreen` abre uno solo desde Ajustes), `generation` (registro con código y generación o regeneración de la plantilla), `home` (estado, cifras de hoy y desbloqueos activos; pide el código otra vez si el backend rechazó el token), `stats`, `history`, `settings` y `block` (pantalla de bloqueo, una `Activity` en su propia tarea: mensaje, pregunta de la excusa y veredicto). Las rutas están en `navigation`.
 - `backend/`: servicio `lavidanoesunbanano-api`, paquete Python `banano`, dependencias con uv. Vercel lo carga desde `[tool.vercel] entrypoint` en `pyproject.toml`.
 - `docker-compose.yml`: backend local en `http://localhost:8000`.
 
@@ -29,7 +29,7 @@ android\gradlew.bat -p android :app:testDebugUnitTest   # tests JVM
 android\gradlew.bat -p android :app:installDebug        # instala en el teléfono conectado
 adb reverse tcp:8000 tcp:8000                           # el teléfono ve el backend local en 127.0.0.1:8000
 adb logcat --pid=$(adb shell pidof com.lavidanoesunbanano.app)
-adb logcat -s LaVidaBlock                               # debug: ms del evento al primer cuadro de la pantalla de bloqueo
+adb logcat -s LaVidaBlock                               # debug: cada ventana que ve el servicio y ms hasta el primer cuadro del bloqueo
 ```
 Activar el servicio de bloqueo sin pasar por Ajustes (reemplaza la lista de servicios activos; sirve en el emulador):
 ```powershell
@@ -42,7 +42,7 @@ Emulador para revisar la interfaz sin teléfono. El AVD `LaVida_API37` se creó 
 ```powershell
 & "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd LaVida_API37 -no-window -no-snapshot -gpu swiftshader_indirect
 adb -s emulator-5554 shell screencap -p /sdcard/s.png; adb -s emulator-5554 pull /sdcard/s.png
-adb -s emulator-5554 emu kill
+adb shell sync; adb -s emulator-5554 emu kill            # sin sync se pueden perder las últimas escrituras de Room
 ```
 
 ### Backend (desde la raíz)
@@ -84,6 +84,8 @@ Para probar otro modelo sin tocar el `.env`: `$env:GROK_MODEL_JUDGE = "..."` ant
 - **Secretos:** `XAI_API_KEY` vive solo en `backend/.env` (ignorado por git) o en las variables de Vercel. Nunca en Android, en git ni en logs. La URL del gateway y los nombres de modelo también llegan solo por entorno; no se escriben en el código.
 - **Idioma:** los textos de la app van en español colombiano neutro, con frases cortas y voz activa, y siempre en `res/values/strings.xml`. Los identificadores de código van en inglés. Los nodos de LangGraph, los placeholders (`{nombre}`, `{meta}`...) y los campos JSON de la API usan los nombres del spec.
 - **Android:** MVVM con repositorios y Hilt. La lógica de dominio va en Kotlin puro bajo `domain/`, con tests JVM. Las versiones solo se declaran en `android/gradle/libs.versions.toml`, y Gradle y AGP no se suben sin una razón concreta. Room tiene migración destructiva de respaldo (ver `di/DatabaseModule.kt`), pero si un cambio solo agrega tablas o columnas va con `AutoMigration`, para no borrar el perfil y la plantilla del teléfono.
+- **Tema:** oscuro por defecto; claro o según el sistema desde Ajustes. Cada `Activity` lee el tema antes del primer cuadro (`applyWindowTheme`) para que no haya destello.
+- **Estadísticas:** los "minutos recuperados" son un estimado: 10 por cada intento que no terminó en desbloqueo (`StatsCalculator.MINUTES_PER_BLOCKED_ATTEMPT`). Los colores de estado del spec no se distinguen con daltonismo, así que aprobado y rechazado siempre llevan su palabra al lado.
 - **Diseño:** los tokens están en `core/designsystem/Theme.kt`. Sin degradados ni sombras, bordes de 1 dp, radios de 4 a 8 dp y fundidos de 150 a 200 ms (`FadeIn` y `FadeOut`). Cinco tamaños de letra: 30, 22, 16, 14 y 12. Geist y Geist Mono van empaquetadas en `res/font` como fuentes variables, con la licencia OFL en `assets/licenses`; no se descargan. El ícono es un vector adaptativo (`drawable-v24/ic_launcher_foreground.xml`) con capa monocroma para los íconos temáticos.
 - **Backend:** el LLM se inyecta y los tests nunca llaman a Grok real; eso lo hace el script de prueba de la Fase 1. El cliente es `ChatXAI` con `base_url` explícita, porque por su cuenta lee `XAI_API_BASE` y no `XAI_BASE_URL`. El límite de peticiones por dispositivo vive en memoria: en Vercel es aproximado porque cada instancia cuenta por separado, y el usuario lo aceptó así (sin Redis).
 - **Git:** un commit al cerrar cada fase, en la rama `desarrollo`. Fuera de eso, solo cuando el usuario lo pida.

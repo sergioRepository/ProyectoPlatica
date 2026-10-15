@@ -1,5 +1,6 @@
 package com.lavidanoesunbanano.app.feature.generation
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -48,6 +49,8 @@ private val STATUS_TEXTS = listOf(
 fun GenerationScreen(
     onDone: () -> Unit,
     onEditAnswers: () -> Unit,
+    @StringRes doneLabel: Int = R.string.generation_done_action,
+    @StringRes editAnswersLabel: Int = R.string.generation_edit_answers,
     viewModel: GenerationViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -58,6 +61,8 @@ fun GenerationScreen(
         onRetry = viewModel::generate,
         onDone = onDone,
         onEditAnswers = onEditAnswers,
+        doneLabel = doneLabel,
+        editAnswersLabel = editAnswersLabel,
     )
 }
 
@@ -69,6 +74,8 @@ private fun GenerationContent(
     onRetry: () -> Unit,
     onDone: () -> Unit,
     onEditAnswers: () -> Unit,
+    @StringRes doneLabel: Int = R.string.generation_done_action,
+    @StringRes editAnswersLabel: Int = R.string.generation_edit_answers,
 ) {
     Column(
         modifier = Modifier
@@ -89,8 +96,8 @@ private fun GenerationContent(
                 when (current) {
                     is GenerationUiState.NeedsCode -> CodeForm(current, onCodeChange, onSubmitCode)
                     is GenerationUiState.Working -> Working(current)
-                    is GenerationUiState.Done -> Done(current, onDone)
-                    is GenerationUiState.Failed -> Failed(current, onRetry, onEditAnswers)
+                    is GenerationUiState.Done -> Done(current, onDone, doneLabel)
+                    is GenerationUiState.Failed -> Failed(current, onRetry, onEditAnswers, editAnswersLabel)
                 }
             }
         }
@@ -158,7 +165,7 @@ private fun Working(state: GenerationUiState.Working) {
 }
 
 @Composable
-private fun Done(state: GenerationUiState.Done, onDone: () -> Unit) {
+private fun Done(state: GenerationUiState.Done, onDone: () -> Unit, @StringRes doneLabel: Int) {
     Title(stringResource(R.string.generation_done_title))
     Spacer(Modifier.height(8.dp))
     Hint(pluralStringResource(R.plurals.generation_done_count, state.count, state.count))
@@ -170,11 +177,16 @@ private fun Done(state: GenerationUiState.Done, onDone: () -> Unit) {
         }
     }
     Spacer(Modifier.height(32.dp))
-    PrimaryButton(text = stringResource(R.string.generation_done_action), onClick = onDone)
+    PrimaryButton(text = stringResource(doneLabel), onClick = onDone)
 }
 
 @Composable
-private fun Failed(state: GenerationUiState.Failed, onRetry: () -> Unit, onEditAnswers: () -> Unit) {
+private fun Failed(
+    state: GenerationUiState.Failed,
+    onRetry: () -> Unit,
+    onEditAnswers: () -> Unit,
+    @StringRes editAnswersLabel: Int,
+) {
     Title(stringResource(R.string.generation_failed_title))
     Spacer(Modifier.height(8.dp))
     Hint(
@@ -192,7 +204,7 @@ private fun Failed(state: GenerationUiState.Failed, onRetry: () -> Unit, onEditA
         PrimaryButton(text = stringResource(R.string.action_retry), onClick = onRetry)
         Spacer(Modifier.height(8.dp))
     }
-    GhostButton(text = stringResource(R.string.generation_edit_answers), onClick = onEditAnswers)
+    GhostButton(text = stringResource(editAnswersLabel), onClick = onEditAnswers)
 }
 
 @Preview

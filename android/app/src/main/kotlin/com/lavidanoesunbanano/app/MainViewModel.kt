@@ -32,7 +32,7 @@ class MainViewModel @Inject constructor(
         emit(
             when {
                 templateRepository.messageCount() > 0 -> HomeRoute
-                profileRepository.getProfile() != null -> GenerationRoute
+                profileRepository.getProfile() != null -> GenerationRoute()
                 else -> OnboardingRoute
             },
         )

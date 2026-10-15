@@ -10,6 +10,8 @@ import java.time.DayOfWeek.SUNDAY
 import java.time.DayOfWeek.THURSDAY
 import java.time.DayOfWeek.TUESDAY
 import java.time.DayOfWeek.WEDNESDAY
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.test.assertEquals
 import org.junit.Test
@@ -38,5 +40,12 @@ class ScheduleFormatterTest {
             "lun a vie 08:00-18:00; todos los días 22:00-06:00",
             ScheduleFormatter.summary(listOf(work, nights)),
         )
+    }
+
+    @Test
+    fun `describes dates in short spanish`() {
+        assertEquals("jue 15 oct", ScheduleFormatter.date(LocalDate.of(2026, 10, 15)))
+        assertEquals("1 ene", ScheduleFormatter.shortDate(LocalDate.of(2027, 1, 1)))
+        assertEquals("15 oct 08:05", ScheduleFormatter.dateTime(LocalDateTime.of(2026, 10, 15, 8, 5)))
     }
 }

@@ -62,6 +62,13 @@ data class LaVidaType(
         fontSize = 14.sp,
         lineHeight = 20.sp,
     ),
+    /** Cifras de las estadísticas: en mono, como pide el spec, y del tamaño de un título. */
+    val figure: TextStyle = TextStyle(
+        fontFamily = GeistMonoFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+    ),
     /** Valores técnicos legibles: horas, paquetes, códigos. */
     val monoBody: TextStyle = TextStyle(
         fontFamily = GeistMonoFamily,

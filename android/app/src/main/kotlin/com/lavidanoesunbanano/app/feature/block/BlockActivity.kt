@@ -2,23 +2,27 @@ package com.lavidanoesunbanano.app.feature.block
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lavidanoesunbanano.app.BuildConfig
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
+import com.lavidanoesunbanano.app.core.designsystem.applyWindowTheme
+import com.lavidanoesunbanano.app.core.designsystem.isSystemDark
+import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.service.blocker.BlockerBridge
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 /**
  * Pantalla de bloqueo a pantalla completa. La lanza el servicio de accesibilidad en su propia
@@ -29,6 +33,8 @@ class BlockActivity : ComponentActivity() {
 
     @Inject lateinit var bridge: BlockerBridge
 
+    @Inject lateinit var settings: SettingsStore
+
     private val viewModel: BlockViewModel by viewModels()
 
     /** Salir se pidió: la pantalla se cierra cuando el inicio ya la tapó. */
@@ -38,11 +44,11 @@ class BlockActivity : ComponentActivity() {
     private var triggerUptime = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
-        )
         super.onCreate(savedInstanceState)
+        // Una lectura corta antes del primer cuadro (DataStore deja el archivo en memoria tras
+        // la primera): evita que la pantalla aparezca con el tema equivocado.
+        val initialTheme = runBlocking { settings.theme.first() }
+        applyWindowTheme(initialTheme.isDark(isSystemDark))
         // Atrás no salta el bloqueo: solo los botones sacan de aquí.
         onBackPressedDispatcher.addCallback(this) {}
         // Si Android la recreó, el evento original ya no sirve para medir.
@@ -57,7 +63,10 @@ class BlockActivity : ComponentActivity() {
             onOpenApp = ::openApp,
         )
         setContent {
-            LaVidaTheme {
+            val mode by settings.theme.collectAsStateWithLifecycle(initialTheme)
+            val dark = mode.isDark(isSystemInDarkTheme())
+            LaunchedEffect(dark) { applyWindowTheme(dark) }
+            LaVidaTheme(darkTheme = dark) {
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 BlockScreen(state = state, actions = actions, onShown = ::logLatency)
             }

@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.lavidanoesunbanano.app.data.local.entity.AttemptEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AttemptDao {
@@ -33,4 +34,7 @@ interface AttemptDao {
 
     @Query("SELECT * FROM attempts WHERE id = :id")
     suspend fun get(id: Long): AttemptEntity?
+
+    @Query("SELECT * FROM attempts WHERE started_at >= :since ORDER BY started_at DESC")
+    fun observeSince(since: Long): Flow<List<AttemptEntity>>
 }

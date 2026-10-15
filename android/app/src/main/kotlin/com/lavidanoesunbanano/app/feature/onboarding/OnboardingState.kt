@@ -116,6 +116,10 @@ data class OnboardingUiState(
     val appQuery: String = "",
     val saving: Boolean = false,
     val finished: Boolean = false,
+    /** Ya se intentó cargar el perfil guardado; antes de eso no se puede editar ni guardar un paso. */
+    val profileLoaded: Boolean = false,
+    /** Se edita un solo paso desde Ajustes, no el onboarding completo. */
+    val editing: Boolean = false,
 ) {
     val step: OnboardingStep get() = OnboardingStep.entries[stepIndex]
     val totalSteps: Int get() = OnboardingStep.entries.size

@@ -20,6 +20,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
@@ -86,6 +87,17 @@ class DatabaseFlowTest {
         assertEquals("Sam", profiles.getProfile()?.name)
         assertEquals(emptyList(), profiles.getBlockedApps())
         assertEquals(listOf(SchedulePresets.MORNINGS), profiles.getRanges())
+    }
+
+    @Test
+    fun `saving tells whether the profile changed, not the rules`() = runTest {
+        val profiles = profiles()
+
+        // La primera vez no hay perfil anterior: la plantilla se genera justo después.
+        assertFalse(profiles.saveOnboarding(profile, listOf(instagram), listOf(SchedulePresets.WORK)))
+        // Otras apps u horarios no cambian lo que dicen los mensajes.
+        assertFalse(profiles.saveOnboarding(profile, emptyList(), listOf(SchedulePresets.NIGHTS)))
+        assertTrue(profiles.saveOnboarding(profile.copy(sarcasmLevel = 5), emptyList(), listOf(SchedulePresets.NIGHTS)))
     }
 
     @Test

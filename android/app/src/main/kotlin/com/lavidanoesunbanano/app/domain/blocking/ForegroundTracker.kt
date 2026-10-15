@@ -1,6 +1,7 @@
 package com.lavidanoesunbanano.app.domain.blocking
 
 import com.lavidanoesunbanano.app.domain.model.AppInfo
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
@@ -43,6 +44,12 @@ class ForegroundTracker(
     /** App que tapa la pantalla de bloqueo ahora; volver a ella no es un intento nuevo. */
     private var covered: String? = null
 
+    /**
+     * Última app bloqueada y cuándo. Una ventana de otra app que se cuela unos segundos (la
+     * animación del launcher, una hoja de Google) no debe convertir la siguiente en otro intento.
+     */
+    private var lastShown: Pair<String, Instant>? = null
+
     fun onWindow(
         packageName: String,
         now: Instant,
@@ -72,6 +79,7 @@ class ForegroundTracker(
     /** El usuario salió con el botón Salir: volver a la app es un intento nuevo. */
     fun onExit() {
         covered = null
+        lastShown = null
     }
 
     private fun evaluate(
@@ -88,8 +96,13 @@ class ForegroundTracker(
             verdict.until?.let { TrackerAction.RecheckAt(it) } ?: TrackerAction.Idle
         }
         is BlockVerdict.Blocked -> {
-            val newAttempt = covered != packageName
+            val previous = lastShown
+            val justShown = previous != null &&
+                previous.first == packageName &&
+                Duration.between(previous.second, now) < SAME_ATTEMPT_WINDOW
+            val newAttempt = covered != packageName && !justShown
             covered = packageName
+            lastShown = packageName to now
             TrackerAction.ShowBlock(verdict.app, newAttempt, now)
         }
     }
@@ -97,5 +110,8 @@ class ForegroundTracker(
     companion object {
         /** Barra de estado, notificaciones y diálogos del sistema. */
         val SYSTEM_PACKAGES = setOf("com.android.systemui", "android")
+
+        /** Volver a la misma app bloqueada antes de esto, sin pasar por Salir, es el mismo intento. */
+        val SAME_ATTEMPT_WINDOW: Duration = Duration.ofSeconds(10)
     }
 }

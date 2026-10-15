@@ -103,7 +103,7 @@ private fun OnboardingContent(state: OnboardingUiState, actions: OnboardingActio
 }
 
 @get:StringRes
-private val OnboardingStep.titleRes: Int
+internal val OnboardingStep.titleRes: Int
     get() = when (this) {
         OnboardingStep.NAME -> R.string.onboarding_name_title
         OnboardingStep.MAIN_GOAL -> R.string.onboarding_goal_title
@@ -119,7 +119,7 @@ private val OnboardingStep.titleRes: Int
     }
 
 @get:StringRes
-private val OnboardingStep.hintRes: Int
+internal val OnboardingStep.hintRes: Int
     get() = when (this) {
         OnboardingStep.NAME -> R.string.onboarding_name_hint
         OnboardingStep.MAIN_GOAL -> R.string.onboarding_goal_hint

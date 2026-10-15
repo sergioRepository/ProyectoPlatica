@@ -8,6 +8,7 @@ import com.lavidanoesunbanano.app.data.local.dao.ProfileDao
 import com.lavidanoesunbanano.app.data.local.dao.TemplateDao
 import com.lavidanoesunbanano.app.data.local.entity.ExcuseEntity
 import com.lavidanoesunbanano.app.data.local.entity.VerdictLineEntity
+import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.data.remote.BackendConfig
 import com.lavidanoesunbanano.app.data.remote.LaVidaApi
 import com.lavidanoesunbanano.app.data.remote.dto.JudgeRequestDto
@@ -25,15 +26,15 @@ import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
 
-/** Cuánto se espera al juez antes de aplicar la regla sin conexión, y los cupos del día. */
+/** Cuánto se espera al juez antes de aplicar la regla sin conexión. Los cupos están en Ajustes. */
 data class JudgeConfig(
     val timeoutMillis: Long = 8_000,
-    val limits: UnlockLimits = UnlockLimits(),
 )
 
 data class ExcuseResult(
@@ -54,6 +55,7 @@ class ExcuseRepository @Inject constructor(
     private val api: LaVidaApi,
     private val backend: BackendConfig,
     private val config: JudgeConfig,
+    private val settings: SettingsStore,
     private val clock: Clock,
 ) {
     /** Último desbloqueo de cada app. Los vencidos los descarta `BlockPolicy`. */
@@ -63,10 +65,11 @@ class ExcuseRepository @Inject constructor(
 
     suspend fun judge(session: BlockSession, type: ExcuseType, reason: String): ExcuseResult {
         val text = reason.trim().take(MAX_REASON_CHARS)
-        val verdict = askJudge(request(session, type, text))
+        val limits = settings.limits.first()
+        val verdict = askJudge(request(session, type, text, limits), limits)
             ?: OfflineVerdict.decide(
                 type,
-                config.limits,
+                limits,
                 templateDao.getVerdictLines(VerdictLineEntity.REJECTED).map { it.text },
             )
         // El tiempo corre desde el veredicto.
@@ -100,11 +103,15 @@ class ExcuseRepository @Inject constructor(
         return ExcuseResult(verdict, unlockedUntil)
     }
 
-    private suspend fun request(session: BlockSession, type: ExcuseType, reason: String): JudgeRequestDto {
+    private suspend fun request(
+        session: BlockSession,
+        type: ExcuseType,
+        reason: String,
+        limits: UnlockLimits,
+    ): JudgeRequestDto {
         val now = clock.instant().atZone(clock.zone)
         val dayStart = now.toLocalDate().atStartOfDay(clock.zone).toInstant().toEpochMilli()
         val profile = profileDao.get()
-        val limits = config.limits
         return JudgeRequestDto(
             type = type.wire,
             reason = reason,
@@ -125,12 +132,12 @@ class ExcuseRepository @Inject constructor(
     }
 
     /** `null` si el juez no contestó a tiempo o falló: se aplica la regla sin conexión. */
-    private suspend fun askJudge(request: JudgeRequestDto): Verdict? {
+    private suspend fun askJudge(request: JudgeRequestDto, limits: UnlockLimits): Verdict? {
         if (!backend.isConfigured) return null
         val authorization = deviceRepository.authorization() ?: return null
         return try {
             withTimeoutOrNull(config.timeoutMillis) { api.judgeExcuse(authorization, request) }
-                ?.toVerdict(ExcuseType.fromWire(request.type))
+                ?.toVerdict(ExcuseType.fromWire(request.type), limits)
         } catch (e: HttpException) {
             if (e.code() == 401) deviceRepository.forgetToken()
             null
@@ -141,12 +148,12 @@ class ExcuseRepository @Inject constructor(
         }
     }
 
-    private fun JudgeResponseDto.toVerdict(type: ExcuseType) = Verdict(
+    private fun JudgeResponseDto.toVerdict(type: ExcuseType, limits: UnlockLimits) = Verdict(
         valid = valid,
         grantedMinutes = when {
             !valid -> 0
             grantedMinutes > 0 -> grantedMinutes
-            else -> config.limits.minutesFor(type)
+            else -> limits.minutesFor(type)
         },
         message = message.ifBlank { null },
         reason = VerdictReason.fromWire(reasonCode),

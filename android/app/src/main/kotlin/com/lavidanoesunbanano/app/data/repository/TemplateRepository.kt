@@ -7,9 +7,11 @@ import com.lavidanoesunbanano.app.data.remote.BackendConfig
 import com.lavidanoesunbanano.app.data.remote.LaVidaApi
 import java.io.IOException
 import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
 
@@ -33,6 +35,10 @@ class TemplateRepository @Inject constructor(
     private val clock: Clock,
 ) {
     fun observeMessageCount(): Flow<Int> = templateDao.observeMessageCount()
+
+    /** Cuándo se generó la plantilla actual; `null` si no hay. */
+    fun observeGeneratedAt(): Flow<Instant?> =
+        templateDao.observeMeta().map { meta -> meta?.let { Instant.ofEpochMilli(it.generatedAt) } }
 
     suspend fun messageCount(): Int = templateDao.messageCount()
 

@@ -50,4 +50,10 @@ data class UnlockLimits(
         ExcuseType.EMERGENCY -> emergencyMinutes
         ExcuseType.EXTRA_TIME -> extraTimeMinutes
     }
+
+    companion object {
+        /** Topes de los cupos que se pueden elegir en Ajustes. */
+        const val MAX_EXTRA_TIME_DAILY = 10
+        const val MAX_EMERGENCY_DAILY = 5
+    }
 }

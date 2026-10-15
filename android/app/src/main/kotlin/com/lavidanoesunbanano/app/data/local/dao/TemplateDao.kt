@@ -27,6 +27,9 @@ abstract class TemplateDao {
     @Query("SELECT * FROM template_meta WHERE id = 0")
     abstract suspend fun getMeta(): TemplateMetaEntity?
 
+    @Query("SELECT * FROM template_meta WHERE id = 0")
+    abstract fun observeMeta(): Flow<TemplateMetaEntity?>
+
     /** Cambia la plantilla completa de una vez: nunca quedan mensajes viejos mezclados. */
     @Transaction
     open suspend fun replaceTemplate(

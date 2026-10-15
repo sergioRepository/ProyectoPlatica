@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +47,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 // Animaciones mínimas: fundidos de 150 a 200 ms, nada que rebote.
@@ -274,6 +276,94 @@ private fun SelectionMark(selected: Boolean) {
     }
 }
 
+/** Fila con borde fino que abre otra pantalla: título y, debajo, el valor actual en gris. */
+@Composable
+fun LinkRow(
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    value: String? = null,
+    monoValue: Boolean = false,
+) {
+    val colors = LaVidaTheme.colors
+    val shape = MaterialTheme.shapes.medium
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(colors.surface)
+            .border(1.dp, colors.border, shape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(text = title, style = LaVidaTheme.type.body, color = colors.textPrimary)
+        if (!value.isNullOrBlank()) {
+            Text(
+                text = value,
+                style = if (monoValue) LaVidaTheme.type.mono else LaVidaTheme.type.small,
+                color = colors.textSecondary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/** Número que se ajusta con − y +, en mono. */
+@Composable
+fun StepperRow(
+    title: String,
+    value: String,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+    modifier: Modifier = Modifier,
+    canDecrease: Boolean = true,
+    canIncrease: Boolean = true,
+) {
+    val colors = LaVidaTheme.colors
+    val shape = MaterialTheme.shapes.medium
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(colors.surface, shape)
+            .border(1.dp, colors.border, shape)
+            .padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = title, modifier = Modifier.weight(1f), style = LaVidaTheme.type.body, color = colors.textPrimary)
+        StepperButton(text = "−", enabled = canDecrease, onClick = onDecrease)
+        Text(
+            text = value,
+            modifier = Modifier.width(88.dp),
+            style = LaVidaTheme.type.monoBody,
+            color = colors.textPrimary,
+            textAlign = TextAlign.Center,
+        )
+        StepperButton(text = "+", enabled = canIncrease, onClick = onIncrease)
+    }
+}
+
+@Composable
+private fun StepperButton(text: String, enabled: Boolean, onClick: () -> Unit) {
+    val colors = LaVidaTheme.colors
+    val shape = MaterialTheme.shapes.extraSmall
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(shape)
+            .border(1.dp, colors.border, shape)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            style = LaVidaTheme.type.monoBody,
+            color = if (enabled) colors.textPrimary else colors.border,
+        )
+    }
+}
+
 /** Superficie con borde fino para agrupar datos. */
 @Composable
 fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -294,9 +384,10 @@ fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> 
 fun InfoRow(label: String, value: String, modifier: Modifier = Modifier) {
     val colors = LaVidaTheme.colors
     Row(modifier = modifier.fillMaxWidth()) {
+        // 112 dp: caben etiquetas de 11 letras en mono ("recuperados") sin tocar el valor.
         Text(
             text = label,
-            modifier = Modifier.width(96.dp),
+            modifier = Modifier.width(112.dp),
             style = LaVidaTheme.type.monoBody,
             color = colors.textSecondary,
         )

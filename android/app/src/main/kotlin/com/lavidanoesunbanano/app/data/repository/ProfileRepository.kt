@@ -34,10 +34,15 @@ class ProfileRepository @Inject constructor(
 
     suspend fun getRanges(): List<BlockRange> = rulesDao.getRanges().map { it.toDomain() }
 
-    suspend fun saveOnboarding(profile: Profile, apps: List<AppInfo>, ranges: List<BlockRange>) {
+    /**
+     * Guarda perfil y reglas de una vez. Devuelve si cambió un perfil que ya existía: las
+     * reglas no cuentan, porque los mensajes usan `{app}` y no dependen del horario.
+     */
+    suspend fun saveOnboarding(profile: Profile, apps: List<AppInfo>, ranges: List<BlockRange>): Boolean =
         database.withTransaction {
+            val before = profileDao.get()?.toDomain()
             profileDao.upsert(profile.toEntity())
             rulesDao.replaceRules(apps.map { it.toEntity() }, ranges.map { it.toEntity() })
+            before != null && before != profile
         }
-    }
 }

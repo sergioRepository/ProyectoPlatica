@@ -2,6 +2,8 @@ package com.lavidanoesunbanano.app.domain.schedule
 
 import com.lavidanoesunbanano.app.domain.model.BlockRange
 import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -21,6 +23,7 @@ object ScheduleFormatter {
         DayOfWeek.SATURDAY to "sáb",
         DayOfWeek.SUNDAY to "dom",
     )
+    private val MONTHS = listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
     private val WEEKDAYS = DayOfWeek.entries.take(5).toSet()
     private val WEEKEND = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
     private val TIME = DateTimeFormatter.ofPattern("HH:mm")
@@ -38,6 +41,19 @@ object ScheduleFormatter {
     }
 
     fun time(time: LocalTime): String = time.format(TIME)
+
+    /** "lun", "mar"... */
+    fun day(day: DayOfWeek): String = ABBREVIATIONS.getValue(day)
+
+    /** "15 oct". */
+    fun shortDate(date: LocalDate): String = "${date.dayOfMonth} ${MONTHS[date.monthValue - 1]}"
+
+    /** "jue 15 oct": para encabezados del historial y fechas cortas. */
+    fun date(date: LocalDate): String =
+        "${ABBREVIATIONS.getValue(date.dayOfWeek)} ${date.dayOfMonth} ${MONTHS[date.monthValue - 1]}"
+
+    /** "15 oct 08:00". */
+    fun dateTime(at: LocalDateTime): String = "${at.dayOfMonth} ${MONTHS[at.monthValue - 1]} ${time(at.toLocalTime())}"
 
     fun range(range: BlockRange): String {
         val hours = if (range.isAllDay) "todo el día" else "${time(range.start)}-${time(range.end)}"

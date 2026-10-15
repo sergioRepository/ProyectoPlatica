@@ -6,9 +6,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.SystemClock
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
+import com.lavidanoesunbanano.app.BuildConfig
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.domain.blocking.BlockRules
@@ -99,7 +101,9 @@ class BlockerService : AccessibilityService() {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val tracker = tracker ?: return
         val packageName = event.packageName?.toString() ?: return
-        perform(tracker.onWindow(packageName, clock.instant(), rules, unlocks), triggerUptime = event.eventTime)
+        val action = tracker.onWindow(packageName, clock.instant(), rules, unlocks)
+        if (BuildConfig.DEBUG) Log.d(TAG, "ventana $packageName ${event.className} -> $action")
+        perform(action, triggerUptime = event.eventTime)
     }
 
     override fun onInterrupt() = Unit
@@ -164,5 +168,10 @@ class BlockerService : AccessibilityService() {
             ?.map { it.packageName }
             .orEmpty()
         return ForegroundTracker.SYSTEM_PACKAGES + keyboards
+    }
+
+    private companion object {
+        /** El mismo que la medición de latencia: `adb logcat -s LaVidaBlock`. */
+        const val TAG = "LaVidaBlock"
     }
 }

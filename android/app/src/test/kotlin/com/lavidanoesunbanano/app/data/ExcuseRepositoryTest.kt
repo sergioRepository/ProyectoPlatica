@@ -54,6 +54,7 @@ class ExcuseRepositoryTest {
     private lateinit var excuses: ExcuseRepository
     private val server = MockWebServer()
     private val store = FakeDeviceStore(id = "0123456789abcdef0123456789abcdef", token = "v1.token.firma")
+    private val settings = FakeSettingsStore()
 
     private val now = Instant.parse("2026-10-12T21:40:00Z")
     private val clock = Clock.fixed(now, ZoneOffset.UTC)
@@ -103,6 +104,7 @@ class ExcuseRepositoryTest {
             api,
             config,
             JudgeConfig(timeoutMillis = 500),
+            settings,
             clock,
         )
     }
@@ -181,6 +183,19 @@ class ExcuseRepositoryTest {
             body,
         )
         assertTrue(body.contains(""""attempts_today":3"""), body)
+    }
+
+    @Test
+    fun `quotas chosen in settings travel to the judge`() = runBlocking {
+        settings.setExtraTimeDaily(5)
+        settings.setEmergencyDaily(1)
+        judgeReplies(valid = true, minutes = 10, message = "Vale.", code = "legit_work")
+
+        excuses.judge(session(), ExcuseType.EXTRA_TIME, "Responder un correo del trabajo")
+
+        val body = server.takeRequest().body!!.utf8()
+        assertTrue(body.contains(""""extra_time_daily_limit":5"""), body)
+        assertTrue(body.contains(""""emergency_daily_limit":1"""), body)
     }
 
     @Test

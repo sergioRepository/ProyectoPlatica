@@ -34,4 +34,10 @@ interface ExcuseDao {
 
     @Query("SELECT * FROM excuses WHERE attempt_id = :attemptId ORDER BY id")
     suspend fun forAttempt(attemptId: Long): List<ExcuseEntity>
+
+    @Query("SELECT * FROM excuses WHERE decided_at >= :since ORDER BY decided_at DESC, id DESC")
+    fun observeSince(since: Long): Flow<List<ExcuseEntity>>
+
+    @Query("UPDATE excuses SET needs_review = 0 WHERE id = :id")
+    suspend fun markReviewed(id: Long)
 }
