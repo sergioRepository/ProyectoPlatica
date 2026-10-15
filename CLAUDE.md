@@ -37,6 +37,30 @@ uv --directory backend run uvicorn banano.main:app --reload     # servidor local
 docker compose up --build                                       # el mismo backend en Docker
 ```
 
+Prueba contra Grok real con `backend/.env`. Gasta tokens del gateway y nunca imprime la llave:
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+uv --directory backend run python -m scripts.smoke_grok                    # todo
+uv --directory backend run python -m scripts.smoke_grok --solo juez        # modelos | conectividad | estructurada | plantilla | juez
+uv --directory backend run python -m scripts.smoke_grok --api http://localhost:8000   # API desplegada, de punta a punta
+```
+Para probar otro modelo sin tocar el `.env`: `$env:GROK_MODEL_JUDGE = "..."` antes de correrlo (el entorno pesa más que el `.env`).
+
+## API del backend
+- `GET /health`.
+- `POST /devices/register` con `{device_id, enrollment_code}` devuelve `{device_token}`. El token lleva el id del dispositivo firmado con HMAC (`DEVICE_TOKEN_SECRET`); no hay base de datos. Cambiar el secreto obliga a registrar de nuevo.
+- `POST /templates/generate` (token Bearer): perfil del onboarding, devuelve `messages`, `verdict_lines` y `profile_summary`. La app guarda `profile_summary` y lo manda al juez.
+- `POST /excuses/judge` (token Bearer): devuelve el veredicto del spec. Un 503 significa que el LLM no respondió: la app aplica la regla sin conexión.
+- Extensiones al spec, todas con valor por defecto: en el juez, `emergencies_granted_today`, `extra_time_daily_limit`, `emergency_daily_limit`, `sarcasm_level`, `profanity_allowed` y `country`. El `reason_code` suma `too_short`.
+- Juez: `detectar_crisis` (palabras clave, sin LLM) aprueba directo con tono humano y va antes del `prefiltro` (cupo, menos de 15 caracteres, excusa repetida, sin LLM). `evaluar` hace una sola llamada al LLM, con 6 s de tiempo, y `redactar_veredicto` limpia y aplica las reglas sin LLM.
+- Plantilla: los mensajes se piden en lotes paralelos de 20. La revisión cambia nombres de apps y del usuario por `{app}` y `{nombre}`, y descarta lo repetido, genérico o fuera de los guardarraíles.
+
+## Despliegue en Vercel
+1. Crear el proyecto desde el repo con Root Directory `backend`. Vercel detecta FastAPI por `[tool.vercel]` en `pyproject.toml`; `.vercelignore` evita subir el `.env`.
+2. En Environment Variables: `XAI_BASE_URL`, `XAI_API_KEY`, `GROK_MODEL_GENERATE`, `GROK_MODEL_JUDGE`, `ENROLLMENT_CODE` y `DEVICE_TOKEN_SECRET`.
+3. La app debe usar la URL de producción. Las de preview piden login de Vercel (Deployment Protection), así que la rama de producción debe ser la que tenga el código listo.
+4. Verificar con `smoke_grok --api https://<proyecto>.vercel.app`.
+
 ## Convenciones
 - **Cero emojis** en todo: UI, strings, mensajes de la IA, notificaciones y documentación. El backend filtra cualquier emoji que devuelva el LLM.
 - **Secretos:** `XAI_API_KEY` vive solo en `backend/.env` (ignorado por git) o en las variables de Vercel. Nunca en Android, en git ni en logs. La URL del gateway y los nombres de modelo también llegan solo por entorno; no se escriben en el código.
@@ -47,5 +71,6 @@ docker compose up --build                                       # el mismo backe
 - **Git:** un commit al cerrar cada fase, en la rama `desarrollo`. Fuera de eso, solo cuando el usuario lo pida.
 
 ## Problemas conocidos
+- **`grok-4.6` es lento:** razona antes de responder. Como juez tarda de 4 a 17 s y no alcanza los 8 s del teléfono; generando la plantilla, cada lote de 20 pasó de 120 s. `grok-4.20-0309-non-reasoning`, que también está en el gateway, juzga en 1 a 3 s y genera la plantilla en unos 18 s.
 - **Bloqueador automático de Samsung (Auto Blocker):** si está activo, bloquea instalar APKs y comandos por USB. Hay que apagarlo para desarrollar.
 - **Ajustes restringidos (Android 13+):** si el APK se instala desde un gestor de archivos, hay que permitirlos antes de activar Accesibilidad. Instalando por adb normalmente no aparece.
