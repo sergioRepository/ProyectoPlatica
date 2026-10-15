@@ -11,7 +11,7 @@ App de uso personal: no se publica en Play Store.
 
 ## Instalar en el teléfono
 
-**[Descargar el APK](apk/la-vida-no-es-un-banano.apk)** (versión 0.1.0, 11 MB). Usa el backend de producción en Vercel.
+**[Descargar el APK](https://www.mediafire.com/file/dyz4x8pszfndc5m/la-vida-no-es-un-banano.apk/file)** (versión 0.1.0, 11 MB). Usa el backend de producción en Vercel.
 
 1. Ábrelo en el teléfono. Android pide permitir instalar apps desde el navegador o el gestor de archivos.
 2. En Samsung, si el Bloqueador automático (Auto Blocker) está activo, apágalo para poder instalar.
