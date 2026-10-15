@@ -31,6 +31,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Solo la primera vez: al recrear la Activity no se vuelve a abrir la guía.
+        val openSetup = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_SETUP, false)
         // Una lectura corta antes del primer cuadro: sin ella, el tema claro arrancaría oscuro.
         val initialTheme = runBlocking { settings.theme.first() }
         applyWindowTheme(initialTheme.isDark(isSystemDark))
@@ -46,9 +48,14 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(LaVidaTheme.colors.background),
                 ) {
-                    start?.let { LaVidaNavHost(startDestination = it) }
+                    start?.let { LaVidaNavHost(startDestination = it, openSetup = openSetup) }
                 }
             }
         }
+    }
+
+    companion object {
+        /** La notificación de bloqueo apagado abre la app directo en la guía. */
+        const val EXTRA_OPEN_SETUP = "open_setup"
     }
 }

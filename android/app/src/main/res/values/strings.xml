@@ -123,8 +123,6 @@
     <string name="home_preview_label">vista previa</string>
     <string name="home_preview_next">Otro mensaje</string>
     <string name="home_blocker_label">bloqueo</string>
-    <string name="home_blocker_off_hint">Para bloquear, activa la app en Accesibilidad. En Samsung está en Apps instaladas.</string>
-    <string name="home_blocker_enable">Abrir Accesibilidad</string>
     <string name="home_judge_code_title">Conecta el juez</string>
     <string name="home_judge_code_hint">El servidor ya no reconoce este teléfono. Sin el código, las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
 
@@ -216,6 +214,63 @@
     <string name="settings_regenerate">Regenerar mensajes</string>
     <string name="settings_regenerate_hint">Reemplaza todos los mensajes. Tarda cerca de un minuto y necesita conexión.</string>
     <string name="generation_done_back">Volver a ajustes</string>
+
+    <!-- Guía de configuración -->
+    <string name="setup_title">Configurar el bloqueo</string>
+    <string name="setup_progress">%1$d de %2$d listos</string>
+    <string name="setup_done">listo</string>
+    <string name="setup_pending">falta</string>
+    <string name="setup_required">necesario</string>
+    <string name="setup_recommended">recomendado</string>
+    <string name="setup_restricted_title">Permitir ajustes restringidos</string>
+    <string name="setup_restricted_desc">Android bloquea Accesibilidad a las apps instaladas desde un archivo. En la info de la app, toca los tres puntos de arriba y elige Permitir ajustes restringidos.</string>
+    <string name="setup_restricted_action">Abrir info de la app</string>
+    <string name="setup_accessibility_title">Activar Accesibilidad</string>
+    <string name="setup_accessibility_desc">Es lo que detecta qué app se abre. No lee la pantalla ni lo que escribes. En Samsung está en Apps instaladas.</string>
+    <string name="setup_accessibility_stopped_desc">Está activado, pero Android lo detuvo. Apágalo y vuélvelo a encender en Accesibilidad.</string>
+    <string name="setup_accessibility_action">Abrir Accesibilidad</string>
+    <string name="setup_notifications_title">Permitir notificaciones</string>
+    <string name="setup_notifications_desc">Para la cuenta regresiva de un desbloqueo y para avisarte si el bloqueo se apaga.</string>
+    <string name="setup_notifications_action">Permitir</string>
+    <string name="setup_overlay_title">Mostrar sobre otras apps</string>
+    <string name="setup_overlay_desc">Un seguro para que la pantalla de bloqueo pueda abrirse aunque el sistema se ponga estricto.</string>
+    <string name="setup_overlay_action">Abrir permiso</string>
+    <string name="setup_battery_title">Batería sin restricciones</string>
+    <string name="setup_battery_desc">Para que Android no apague el bloqueo por ahorrar batería.</string>
+    <string name="setup_battery_action">Quitar restricción</string>
+    <string name="setup_battery_samsung">En Samsung, además: Ajustes, Batería, Límites de uso en segundo plano, Apps que nunca se suspenden, y agrega La vida no es un banano.</string>
+    <string name="setup_battery_xiaomi">En Xiaomi, además: Seguridad, Permisos, Inicio automático, y actívalo para La vida no es un banano.</string>
+    <string name="setup_protection_note">La protección anti-autosabotaje está encendida: en tu horario de bloqueo, los ajustes que mencionan la app también se tapan. Configura fuera de ese horario.</string>
+
+    <string name="home_setup_title">Falta configurar el bloqueo</string>
+    <string name="home_setup_hint">Sin estos pasos, las apps no se bloquean.</string>
+    <string name="home_setup_action">Configurar</string>
+    <string name="setup_link">Permisos y batería</string>
+    <string name="setup_all_done">todo listo</string>
+    <plurals name="setup_pending_count">
+        <item quantity="one">%1$d paso pendiente</item>
+        <item quantity="many">%1$d pasos pendientes</item>
+        <item quantity="other">%1$d pasos pendientes</item>
+    </plurals>
+    <string name="status_blocker_stopped">detenido por el sistema</string>
+
+    <!-- Protección -->
+    <string name="settings_section_protection">protección</string>
+    <string name="settings_anti_sabotage">Anti-autosabotaje</string>
+    <string name="settings_anti_sabotage_desc">En tu horario de bloqueo tapa la página del bloqueo en Accesibilidad y el diálogo para desinstalar, y no deja cambiar apps, horarios, cupos ni la protección.</string>
+    <string name="settings_locked">Protección activa: en tu horario de bloqueo no se pueden cambiar apps, horarios, cupos ni la protección.</string>
+    <string name="sabotage_label">Ajustes</string>
+
+    <!-- Notificaciones -->
+    <string name="notify_channel_unlocks">Desbloqueos</string>
+    <string name="notify_channel_unlocks_desc">Cuenta regresiva mientras una app está desbloqueada.</string>
+    <string name="notify_channel_status">Estado del bloqueo</string>
+    <string name="notify_channel_status_desc">Aviso cuando el bloqueo se apaga.</string>
+    <string name="notify_unlock_title">Desbloqueo de %1$s</string>
+    <string name="notify_unlock_text">Se bloquea otra vez a las %1$s.</string>
+    <string name="notify_off_title">El bloqueo está apagado</string>
+    <string name="notify_stopped_title">Android detuvo el bloqueo</string>
+    <string name="notify_off_text">Toca para activarlo otra vez.</string>
 
     <!-- Estado del servidor -->
     <string name="status_checking">verificando...</string>

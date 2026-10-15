@@ -11,13 +11,19 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import com.lavidanoesunbanano.app.BuildConfig
+import com.lavidanoesunbanano.app.R
+import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.domain.blocking.BlockRules
 import com.lavidanoesunbanano.app.domain.blocking.ForegroundTracker
+import com.lavidanoesunbanano.app.domain.blocking.SabotageGuard
 import com.lavidanoesunbanano.app.domain.blocking.TrackerAction
+import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.feature.block.BlockActivity
 import com.lavidanoesunbanano.app.feature.block.BlockRequest
+import com.lavidanoesunbanano.app.service.health.HealthCheckWorker
+import com.lavidanoesunbanano.app.service.notify.Notifier
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Clock
 import java.time.Duration
@@ -47,6 +53,10 @@ class BlockerService : AccessibilityService() {
 
     @Inject lateinit var clock: Clock
 
+    @Inject lateinit var settings: SettingsStore
+
+    @Inject lateinit var notifier: Notifier
+
     private val scope = MainScope()
     private var tracker: ForegroundTracker? = null
     private var rules = BlockRules.EMPTY
@@ -54,6 +64,9 @@ class BlockerService : AccessibilityService() {
     /** Hasta cuándo está desbloqueada cada app por una excusa aprobada. */
     private var unlocks: Map<String, Instant> = emptyMap()
     private var recheck: Job? = null
+
+    /** Anti-autosabotaje activado en Ajustes. */
+    private var antiSabotage = false
 
     /**
      * Al encender la pantalla se revisa la app al frente: la espera programada no avanza
@@ -72,6 +85,10 @@ class BlockerService : AccessibilityService() {
             ignoredPackages = ignoredPackages()
         }
         bridge.attach(this)
+        // Desde ahora, si el servicio se apaga, se avisa.
+        notifier.cancelBlockerOff()
+        scope.launch { settings.markBlockerSetUp() }
+        scope.launch { settings.antiSabotage.collect { antiSabotage = it } }
         ContextCompat.registerReceiver(
             this,
             screenReceiver,
@@ -101,14 +118,24 @@ class BlockerService : AccessibilityService() {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val tracker = tracker ?: return
         val packageName = event.packageName?.toString() ?: return
-        val action = tracker.onWindow(packageName, clock.instant(), rules, unlocks)
-        if (BuildConfig.DEBUG) Log.d(TAG, "ventana $packageName ${event.className} -> $action")
+        val texts = event.text.mapNotNull { it?.toString() } + listOfNotNull(event.contentDescription?.toString())
+        val guarded = guardedWindow(packageName, texts)
+        val effectiveRules = if (guarded != null) rules.guarding(guarded) else rules
+        val action = tracker.onWindow(packageName, clock.instant(), effectiveRules, unlocks)
+        if (BuildConfig.DEBUG) Log.d(TAG, "ventana $packageName ${event.className} $texts -> $action")
         perform(action, triggerUptime = event.eventTime)
     }
 
     override fun onInterrupt() = Unit
 
+    /** Se apagó (el usuario o el sistema): en 30 s se revisa y, si sigue así, se avisa. */
+    override fun onUnbind(intent: Intent?): Boolean {
+        HealthCheckWorker.checkSoon(this)
+        return super.onUnbind(intent)
+    }
+
     override fun onDestroy() {
+        HealthCheckWorker.checkSoon(this)
         bridge.detach(this)
         if (tracker != null) unregisterReceiver(screenReceiver)
         scope.cancel()
@@ -128,6 +155,16 @@ class BlockerService : AccessibilityService() {
     fun grantUnlock(packageName: String, until: Instant) {
         val current = unlocks[packageName]
         if (current == null || current < until) unlocks = unlocks + (packageName to until)
+    }
+
+    /**
+     * Con el anti-autosabotaje encendido, la página del servicio en Accesibilidad y el diálogo
+     * de desinstalar se tratan como una app bloqueada más; el horario decide si se tapan.
+     */
+    private fun guardedWindow(packageName: String, texts: List<String>): AppInfo? {
+        if (!antiSabotage) return null
+        if (!SabotageGuard.isSabotage(packageName, texts, getString(R.string.app_name))) return null
+        return AppInfo(packageName, getString(R.string.sabotage_label))
     }
 
     private fun recheckNow() {

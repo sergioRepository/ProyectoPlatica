@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -49,6 +50,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+
+/** Lo que no se puede tocar se ve apagado, sin cambiar de color. */
+private const val DISABLED_ALPHA = 0.45f
 
 // Animaciones mínimas: fundidos de 150 a 200 ms, nada que rebote.
 const val FADE_IN_MS = 180
@@ -224,17 +228,19 @@ fun SelectableRow(
     subtitle: String? = null,
     monoSubtitle: Boolean = false,
     multiple: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val colors = LaVidaTheme.colors
     val shape = MaterialTheme.shapes.medium
     val interaction = if (multiple) {
-        Modifier.toggleable(value = selected, role = Role.Checkbox, onValueChange = { onClick() })
+        Modifier.toggleable(value = selected, enabled = enabled, role = Role.Checkbox, onValueChange = { onClick() })
     } else {
-        Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+        Modifier.selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
     }
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .alpha(if (enabled) 1f else DISABLED_ALPHA)
             .clip(shape)
             .background(colors.surface)
             .border(1.dp, if (selected) colors.accent else colors.border, shape)
@@ -284,16 +290,18 @@ fun LinkRow(
     modifier: Modifier = Modifier,
     value: String? = null,
     monoValue: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val colors = LaVidaTheme.colors
     val shape = MaterialTheme.shapes.medium
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .alpha(if (enabled) 1f else DISABLED_ALPHA)
             .clip(shape)
             .background(colors.surface)
             .border(1.dp, colors.border, shape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {

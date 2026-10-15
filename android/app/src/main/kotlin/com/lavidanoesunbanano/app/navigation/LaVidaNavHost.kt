@@ -1,6 +1,7 @@
 package com.lavidanoesunbanano.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -15,6 +16,7 @@ import com.lavidanoesunbanano.app.feature.onboarding.EditAnswerScreen
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingScreen
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingStep
 import com.lavidanoesunbanano.app.feature.settings.SettingsScreen
+import com.lavidanoesunbanano.app.feature.setup.SetupScreen
 import com.lavidanoesunbanano.app.feature.stats.StatsScreen
 import kotlinx.serialization.Serializable
 
@@ -37,13 +39,21 @@ data object HistoryRoute
 @Serializable
 data object SettingsRoute
 
+@Serializable
+data object SetupRoute
+
 /** `step`: nombre de un [OnboardingStep]. */
 @Serializable
 data class EditAnswerRoute(val step: String)
 
+/** `openSetup`: se abrió desde la notificación de bloqueo apagado. */
 @Composable
-fun LaVidaNavHost(startDestination: Any) {
+fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false) {
     val navController = rememberNavController()
+    LaunchedEffect(openSetup) {
+        // Sin onboarding terminado no hay bloqueo que configurar todavía.
+        if (openSetup && startDestination == HomeRoute) navController.navigate(SetupRoute)
+    }
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -90,6 +100,7 @@ fun LaVidaNavHost(startDestination: Any) {
                 onOpenStats = { navController.navigate(StatsRoute) },
                 onOpenHistory = { navController.navigate(HistoryRoute) },
                 onOpenSettings = { navController.navigate(SettingsRoute) },
+                onOpenSetup = { navController.navigate(SetupRoute) },
             )
         }
         composable<StatsRoute> { StatsScreen() }
@@ -98,8 +109,10 @@ fun LaVidaNavHost(startDestination: Any) {
             SettingsScreen(
                 onEditStep = { step -> navController.navigate(EditAnswerRoute(step.name)) },
                 onRegenerate = { navController.navigate(GenerationRoute(regenerate = true)) },
+                onOpenSetup = { navController.navigate(SetupRoute) },
             )
         }
+        composable<SetupRoute> { SetupScreen() }
         composable<EditAnswerRoute> { entry ->
             val step = OnboardingStep.valueOf(entry.toRoute<EditAnswerRoute>().step)
             EditAnswerScreen(step = step, onDone = { navController.popBackStack() })

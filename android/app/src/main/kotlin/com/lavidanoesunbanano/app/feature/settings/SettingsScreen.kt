@@ -19,9 +19,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.FadeIn
@@ -44,32 +47,43 @@ import com.lavidanoesunbanano.app.feature.onboarding.OnboardingStep
 fun SettingsScreen(
     onEditStep: (OnboardingStep) -> Unit,
     onRegenerate: () -> Unit,
+    onOpenSetup: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshSetup() }
     SettingsContent(
         state = state,
-        onEditStep = onEditStep,
-        onExtraTimeChange = viewModel::changeExtraTimeDaily,
-        onEmergencyChange = viewModel::changeEmergencyDaily,
-        onThemeChange = viewModel::setTheme,
-        onNextPreview = viewModel::nextPreview,
-        onRegenerate = onRegenerate,
+        actions = SettingsActions(
+            onEditStep = onEditStep,
+            onExtraTimeChange = viewModel::changeExtraTimeDaily,
+            onEmergencyChange = viewModel::changeEmergencyDaily,
+            onAntiSabotageChange = viewModel::setAntiSabotage,
+            onOpenSetup = onOpenSetup,
+            onThemeChange = viewModel::setTheme,
+            onNextPreview = viewModel::nextPreview,
+            onRegenerate = onRegenerate,
+        ),
     )
 }
 
+private class SettingsActions(
+    val onEditStep: (OnboardingStep) -> Unit,
+    val onExtraTimeChange: (Int) -> Unit,
+    val onEmergencyChange: (Int) -> Unit,
+    val onAntiSabotageChange: (Boolean) -> Unit,
+    val onOpenSetup: () -> Unit,
+    val onThemeChange: (ThemeMode) -> Unit,
+    val onNextPreview: () -> Unit,
+    val onRegenerate: () -> Unit,
+)
+
 @Composable
-private fun SettingsContent(
-    state: SettingsUiState,
-    onEditStep: (OnboardingStep) -> Unit,
-    onExtraTimeChange: (Int) -> Unit,
-    onEmergencyChange: (Int) -> Unit,
-    onThemeChange: (ThemeMode) -> Unit,
-    onNextPreview: () -> Unit,
-    onRegenerate: () -> Unit,
-) {
+private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
     val colors = LaVidaTheme.colors
     val profile = state.profile
+    val locked = state.protection.locked
+    val onEditStep = actions.onEditStep
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -82,16 +96,21 @@ private fun SettingsContent(
         Text(text = stringResource(R.string.settings_title), style = LaVidaTheme.type.title, color = colors.textPrimary)
 
         Section(R.string.settings_section_rules) {
+            if (locked) {
+                Text(text = stringResource(R.string.settings_locked), style = LaVidaTheme.type.small, color = colors.rejected)
+            }
             LinkRow(
                 title = stringResource(R.string.settings_apps),
                 value = state.apps.joinToString(", ") { it.label },
                 onClick = { onEditStep(OnboardingStep.APPS) },
+                enabled = !locked,
             )
             LinkRow(
                 title = stringResource(R.string.settings_schedule),
                 value = state.schedule,
                 monoValue = true,
                 onClick = { onEditStep(OnboardingStep.SCHEDULE) },
+                enabled = !locked,
             )
         }
 
@@ -100,23 +119,45 @@ private fun SettingsContent(
             StepperRow(
                 title = stringResource(R.string.settings_extra_time),
                 value = stringResource(R.string.settings_quota_value, limits.extraTimeDaily),
-                onDecrease = { onExtraTimeChange(-1) },
-                onIncrease = { onExtraTimeChange(1) },
-                canDecrease = limits.extraTimeDaily > 0,
-                canIncrease = limits.extraTimeDaily < UnlockLimits.MAX_EXTRA_TIME_DAILY,
+                onDecrease = { actions.onExtraTimeChange(-1) },
+                onIncrease = { actions.onExtraTimeChange(1) },
+                canDecrease = !locked && limits.extraTimeDaily > 0,
+                canIncrease = !locked && limits.extraTimeDaily < UnlockLimits.MAX_EXTRA_TIME_DAILY,
             )
             StepperRow(
                 title = stringResource(R.string.settings_emergency),
                 value = stringResource(R.string.settings_quota_value, limits.emergencyDaily),
-                onDecrease = { onEmergencyChange(-1) },
-                onIncrease = { onEmergencyChange(1) },
-                canDecrease = limits.emergencyDaily > 0,
-                canIncrease = limits.emergencyDaily < UnlockLimits.MAX_EMERGENCY_DAILY,
+                onDecrease = { actions.onEmergencyChange(-1) },
+                onIncrease = { actions.onEmergencyChange(1) },
+                canDecrease = !locked && limits.emergencyDaily > 0,
+                canIncrease = !locked && limits.emergencyDaily < UnlockLimits.MAX_EMERGENCY_DAILY,
             )
             Text(
                 text = stringResource(R.string.settings_quotas_hint),
                 style = LaVidaTheme.type.small,
                 color = colors.textSecondary,
+            )
+        }
+
+        Section(R.string.settings_section_protection) {
+            LinkRow(
+                title = stringResource(R.string.setup_link),
+                value = state.setupPending?.let { pending ->
+                    if (pending == 0) {
+                        stringResource(R.string.setup_all_done)
+                    } else {
+                        pluralStringResource(R.plurals.setup_pending_count, pending, pending)
+                    }
+                },
+                onClick = actions.onOpenSetup,
+            )
+            SelectableRow(
+                title = stringResource(R.string.settings_anti_sabotage),
+                subtitle = stringResource(R.string.settings_anti_sabotage_desc),
+                selected = state.protection.on,
+                onClick = { actions.onAntiSabotageChange(!state.protection.on) },
+                multiple = true,
+                enabled = !locked,
             )
         }
 
@@ -178,7 +219,7 @@ private fun SettingsContent(
                 SelectableRow(
                     title = stringResource(themeLabel(mode)),
                     selected = state.theme == mode,
-                    onClick = { onThemeChange(mode) },
+                    onClick = { actions.onThemeChange(mode) },
                 )
             }
         }
@@ -209,7 +250,7 @@ private fun SettingsContent(
                         Text(text = text, style = LaVidaTheme.type.title, color = colors.textPrimary)
                     }
                 }
-                SecondaryButton(text = stringResource(R.string.home_preview_next), onClick = onNextPreview)
+                SecondaryButton(text = stringResource(R.string.home_preview_next), onClick = actions.onNextPreview)
             }
             Text(
                 text = stringResource(R.string.settings_regenerate_hint),
@@ -218,7 +259,7 @@ private fun SettingsContent(
             )
             PrimaryButton(
                 text = stringResource(R.string.settings_regenerate),
-                onClick = onRegenerate,
+                onClick = actions.onRegenerate,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

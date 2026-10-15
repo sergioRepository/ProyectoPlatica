@@ -12,6 +12,8 @@ class FakeSettingsStore(
     override val limits = MutableStateFlow(limits)
     override val theme = MutableStateFlow(theme)
     override val profileChangedAt = MutableStateFlow<Long?>(null)
+    override val antiSabotage = MutableStateFlow(false)
+    override val blockerSetUp = MutableStateFlow(false)
 
     override suspend fun setExtraTimeDaily(value: Int) {
         limits.value = limits.value.copy(extraTimeDaily = value)
@@ -27,5 +29,13 @@ class FakeSettingsStore(
 
     override suspend fun markProfileChanged(at: Long) {
         profileChangedAt.value = at
+    }
+
+    override suspend fun setAntiSabotage(enabled: Boolean) {
+        antiSabotage.value = enabled
+    }
+
+    override suspend fun markBlockerSetUp() {
+        blockerSetUp.value = true
     }
 }

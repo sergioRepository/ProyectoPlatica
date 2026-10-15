@@ -10,6 +10,7 @@ import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
 import com.lavidanoesunbanano.app.domain.model.Verdict
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
+import com.lavidanoesunbanano.app.service.notify.Notifier
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
@@ -90,6 +91,7 @@ data class Unlock(val packageName: String, val until: Instant)
 class BlockViewModel @Inject constructor(
     private val sessions: BlockSessionRepository,
     private val excuses: ExcuseRepository,
+    private val notifier: Notifier,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<BlockUiState?>(null)
@@ -150,6 +152,8 @@ class BlockViewModel @Inject constructor(
         viewModelScope.launch {
             val result = excuses.judge(current, step.type, step.reason)
             drafts.remove(step.type)
+            // El tiempo corre desde el veredicto, se abra o no la app enseguida.
+            result.unlockedUntil?.let { notifier.showUnlock(current.app, it) }
             // Si mientras tanto llegó otro intento, el veredicto solo queda en el historial.
             if (session?.attemptId == current.attemptId) {
                 updateStep { BlockStep.Decided(step.type, result.verdict, result.unlockedUntil) }

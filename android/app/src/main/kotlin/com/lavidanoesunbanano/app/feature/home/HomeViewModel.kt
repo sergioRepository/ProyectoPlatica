@@ -9,12 +9,13 @@ import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.HistoryRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.data.repository.RegistrationResult
+import com.lavidanoesunbanano.app.data.system.SetupStatusSource
 import com.lavidanoesunbanano.app.domain.model.BackendStatus
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
+import com.lavidanoesunbanano.app.domain.setup.SetupStatus
 import com.lavidanoesunbanano.app.domain.stats.Stats
 import com.lavidanoesunbanano.app.domain.stats.StatsCalculator
 import com.lavidanoesunbanano.app.feature.generation.CodeError
-import com.lavidanoesunbanano.app.service.blocker.BlockerBridge
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Instant
@@ -38,8 +39,8 @@ data class ActiveUnlock(val label: String, val until: String)
 data class HomeUiState(
     /** `null` mientras se verifica. */
     val backend: BackendStatus? = null,
-    /** Si el servicio de accesibilidad está activado; `null` antes de revisar. */
-    val blockerEnabled: Boolean? = null,
+    /** Estado del teléfono para el bloqueo; `null` antes de revisar. */
+    val setup: SetupStatus? = null,
     /** Sin token el juez no puede responder; se pide otra vez el código de registro. */
     val codeEntry: CodeEntry? = null,
     val today: Stats? = null,
@@ -58,14 +59,14 @@ class HomeViewModel @Inject constructor(
     excuseRepository: ExcuseRepository,
     history: HistoryRepository,
     private val backendRepository: BackendRepository,
-    private val blockerBridge: BlockerBridge,
+    private val setupSource: SetupStatusSource,
     private val deviceRepository: DeviceRepository,
     private val backendConfig: BackendConfig,
     private val clock: Clock,
 ) : ViewModel() {
 
     private val backend = MutableStateFlow<BackendStatus?>(null)
-    private val blockerEnabled = MutableStateFlow<Boolean?>(null)
+    private val setup = MutableStateFlow<SetupStatus?>(null)
     private val codeEntry = MutableStateFlow<CodeEntry?>(null)
 
     private val today: Flow<Stats> = history.observe(days = 1).map {
@@ -96,12 +97,12 @@ class HomeViewModel @Inject constructor(
 
     val state: StateFlow<HomeUiState> = combine(
         backend,
-        blockerEnabled,
+        setup,
         codeEntry,
         today,
         unlocks,
-    ) { backend, blocker, codeEntry, today, unlocks ->
-        HomeUiState(backend, blocker, codeEntry, today, unlocks)
+    ) { backend, setup, codeEntry, today, unlocks ->
+        HomeUiState(backend, setup, codeEntry, today, unlocks)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     init {
@@ -116,11 +117,11 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Se llama al volver a la app: el usuario pudo activar o apagar el bloqueo en Ajustes, y
+     * Se llama al volver a la app: el usuario pudo cambiar permisos o el bloqueo en Ajustes, y
      * el juez pudo haber rechazado el token (por ejemplo si cambió el secreto del servidor).
      */
     fun refreshOnResume() {
-        blockerEnabled.value = blockerBridge.isEnabled()
+        setup.value = setupSource.current()
         viewModelScope.launch {
             val missing = backendConfig.isConfigured && deviceRepository.authorization() == null
             codeEntry.update { current -> if (missing) current ?: CodeEntry() else null }

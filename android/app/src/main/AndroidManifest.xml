@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Cuenta regresiva del desbloqueo y aviso de bloqueo apagado (Android 13+ lo pide). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Seguro para abrir la pantalla de bloqueo desde segundo plano si el sistema lo restringe. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <!-- La app no se publica: puede pedir quedar fuera de la optimización de batería. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <!--
         Para listar las apps con ícono en el launcher (Android 11+), sin QUERY_ALL_PACKAGES,

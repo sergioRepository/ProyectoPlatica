@@ -1,7 +1,5 @@
 package com.lavidanoesunbanano.app.feature.home
 
-import android.content.Intent
-import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,7 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,6 +37,8 @@ import com.lavidanoesunbanano.app.core.designsystem.Panel
 import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
 import com.lavidanoesunbanano.app.core.designsystem.StatusLine
 import com.lavidanoesunbanano.app.domain.model.BackendStatus
+import com.lavidanoesunbanano.app.domain.setup.ServiceHealth
+import com.lavidanoesunbanano.app.domain.setup.SetupChecklist
 import com.lavidanoesunbanano.app.feature.generation.CodeError
 
 @Composable
@@ -46,15 +46,15 @@ fun HomeScreen(
     onOpenStats: () -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenSetup: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshOnResume() }
     HomeContent(
         state = state,
         actions = HomeActions(
-            onEnableBlocker = { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
+            onOpenSetup = onOpenSetup,
             onCodeChange = viewModel::onCodeChange,
             onSubmitCode = viewModel::submitCode,
             onOpenStats = onOpenStats,
@@ -65,7 +65,7 @@ fun HomeScreen(
 }
 
 private class HomeActions(
-    val onEnableBlocker: () -> Unit,
+    val onOpenSetup: () -> Unit,
     val onCodeChange: (String) -> Unit,
     val onSubmitCode: () -> Unit,
     val onOpenStats: () -> Unit,
@@ -88,22 +88,31 @@ private fun HomeContent(state: HomeUiState, actions: HomeActions) {
         Text(text = stringResource(R.string.app_name), style = LaVidaTheme.type.title, color = colors.textPrimary)
         Spacer(Modifier.height(24.dp))
         Panel {
-            InfoRow(label = stringResource(R.string.home_blocker_label), value = blockerText(state.blockerEnabled))
+            InfoRow(label = stringResource(R.string.home_blocker_label), value = blockerText(state.setup?.service))
             InfoRow(label = stringResource(R.string.home_backend_label), value = backendText(state.backend))
         }
-        if (state.blockerEnabled == false) {
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = stringResource(R.string.home_blocker_off_hint),
-                style = LaVidaTheme.type.small,
-                color = colors.textSecondary,
-            )
-            Spacer(Modifier.height(12.dp))
-            PrimaryButton(
-                text = stringResource(R.string.home_blocker_enable),
-                onClick = actions.onEnableBlocker,
-                modifier = Modifier.fillMaxWidth(),
-            )
+        state.setup?.let { setup ->
+            val items = SetupChecklist.items(setup)
+            if (!SetupChecklist.blockerReady(items)) {
+                Spacer(Modifier.height(16.dp))
+                Text(text = stringResource(R.string.home_setup_title), style = LaVidaTheme.type.body, color = colors.textPrimary)
+                Spacer(Modifier.height(4.dp))
+                Text(text = stringResource(R.string.home_setup_hint), style = LaVidaTheme.type.small, color = colors.textSecondary)
+                Spacer(Modifier.height(12.dp))
+                PrimaryButton(
+                    text = stringResource(R.string.home_setup_action),
+                    onClick = actions.onOpenSetup,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else if (SetupChecklist.pending(items) > 0) {
+                Spacer(Modifier.height(12.dp))
+                val pending = SetupChecklist.pending(items)
+                LinkRow(
+                    title = stringResource(R.string.setup_link),
+                    value = pluralStringResource(R.plurals.setup_pending_count, pending, pending),
+                    onClick = actions.onOpenSetup,
+                )
+            }
         }
         state.codeEntry?.let { entry ->
             Spacer(Modifier.height(24.dp))
@@ -198,10 +207,11 @@ private fun CodeForm(entry: CodeEntry, onCodeChange: (String) -> Unit, onSubmit:
 }
 
 @Composable
-private fun blockerText(enabled: Boolean?): String = when (enabled) {
+private fun blockerText(health: ServiceHealth?): String = when (health) {
     null -> stringResource(R.string.status_checking)
-    true -> stringResource(R.string.status_blocker_on)
-    false -> stringResource(R.string.status_blocker_off)
+    ServiceHealth.ACTIVE -> stringResource(R.string.status_blocker_on)
+    ServiceHealth.OFF -> stringResource(R.string.status_blocker_off)
+    ServiceHealth.STOPPED -> stringResource(R.string.status_blocker_stopped)
 }
 
 @Composable
@@ -220,7 +230,6 @@ private fun HomePreview() {
         HomeContent(
             state = HomeUiState(
                 backend = BackendStatus.Online("0.1.0"),
-                blockerEnabled = true,
                 unlocks = listOf(ActiveUnlock("Instagram", "21:55")),
             ),
             actions = HomeActions({}, {}, {}, {}, {}, {}),
