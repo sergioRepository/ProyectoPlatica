@@ -11,10 +11,10 @@ Bloqueador de apps para Android con una IA sarcástica. El producto, las reglas 
 ## Estructura
 - `android/`: Gradle 9.5.1, AGP 9.1.1 y Kotlin 2.4.20 (el Kotlin integrado de AGP 9, sin plugin `kotlin-android`). Un solo módulo, `:app`, paquete `com.lavidanoesunbanano.app`. Dentro de `app/src/main/kotlin/com/lavidanoesunbanano/app/`:
   - `core/designsystem`: colores y formas (`Theme.kt`), tipografía (`Type.kt`) y componentes (`Components.kt`).
-  - `domain`: Kotlin puro y probado en JVM: horarios (`BlockRange`), formato de horarios, placeholders, orden de apps, selección del mensaje por contexto (`MessagePicker`) y la decisión de bloqueo (`blocking`: `BlockPolicy` y `ForegroundTracker`).
-  - `data`: Room (`local`, esquemas en `app/schemas`), DataStore (`prefs`: id y token del dispositivo), Retrofit (`remote`), conversiones (`mapper`), repositorios y apps instaladas. `BlockSessionRepository` guarda cada intento en `attempts` y elige su mensaje.
+  - `domain`: Kotlin puro y probado en JVM: horarios (`BlockRange`), formato de horarios, placeholders, orden de apps, selección del mensaje por contexto (`MessagePicker`), la decisión de bloqueo (`blocking`: `BlockPolicy` y `ForegroundTracker`) y la regla sin conexión del juez (`excuse/OfflineVerdict`).
+  - `data`: Room (`local`, esquemas en `app/schemas`), DataStore (`prefs`: id y token del dispositivo), Retrofit (`remote`), conversiones (`mapper`), repositorios y apps instaladas. `BlockSessionRepository` guarda cada intento en `attempts` y elige su mensaje. `ExcuseRepository` pide el veredicto con un límite de 8 s, aplica la regla sin conexión si no llega y guarda cada excusa en `excuses`; de ahí salen los desbloqueos temporales (`unlocked_until`) y los cupos del día. Los cupos y el límite viven en `JudgeConfig`.
   - `service/blocker`: `BlockerService` (accesibilidad, solo `typeWindowStateChanged`, sin leer la pantalla) y `BlockerBridge` (estado del servicio y Salir con `GLOBAL_ACTION_HOME`).
-  - `feature`: `onboarding` (11 pasos), `generation` (registro con código y generación de la plantilla), `home` y `block` (pantalla de bloqueo, una `Activity` en su propia tarea). Las rutas están en `navigation`.
+  - `feature`: `onboarding` (11 pasos), `generation` (registro con código y generación de la plantilla), `home` (también pide el código otra vez si el backend rechazó el token) y `block` (pantalla de bloqueo, una `Activity` en su propia tarea: mensaje, pregunta de la excusa y veredicto). Las rutas están en `navigation`.
 - `backend/`: servicio `lavidanoesunbanano-api`, paquete Python `banano`, dependencias con uv. Vercel lo carga desde `[tool.vercel] entrypoint` en `pyproject.toml`.
 - `docker-compose.yml`: backend local en `http://localhost:8000`.
 
@@ -89,7 +89,8 @@ Para probar otro modelo sin tocar el `.env`: `$env:GROK_MODEL_JUDGE = "..."` ant
 - **Git:** un commit al cerrar cada fase, en la rama `desarrollo`. Fuera de eso, solo cuando el usuario lo pida.
 
 ## Problemas conocidos
-- **`grok-4.6` es lento:** razona antes de responder. Como juez tarda de 4 a 17 s y no alcanza los 8 s del teléfono; generando la plantilla, cada lote de 20 pasó de 120 s. `grok-4.20-0309-non-reasoning`, que también está en el gateway, juzga en 1 a 3 s y genera la plantilla en unos 18 s.
+- **`grok-4.6` es lento:** razona antes de responder. Como juez tarda de 4 a 17 s y no alcanza los 8 s del teléfono; generando la plantilla, cada lote de 20 pasó de 120 s. `grok-4.20-0309-non-reasoning`, que también está en el gateway, juzga en 1 a 3 s y genera la plantilla en unos 18 s. Con `grok-4.6` como juez, el backend corta a los 6 s, devuelve 503 y la app aplica la regla sin conexión.
+- **Tests con el juez:** `ExcuseRepositoryTest` usa `runBlocking` y no `runTest`, porque con el tiempo virtual el límite de 8 s vence apenas la petición se queda esperando.
 - **Emulador lento:** dibuja por software, así que un arranque en frío en debug pasa de 10 s. No sirve para medir el criterio de menos de 1 s; eso se mide en el teléfono.
 - **`uiautomator dump` falla** mientras un campo de texto tiene el foco, porque el cursor parpadeando no deja la pantalla quieta. En ese caso se toca por coordenadas.
 - **Salir no cierra la app bloqueada:** desde Android 14 una app solo puede matar sus propios procesos. Salir manda al inicio y la app queda en segundo plano; si se reabre, se bloquea otra vez.

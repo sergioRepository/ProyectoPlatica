@@ -48,10 +48,18 @@ class BlockActivity : ComponentActivity() {
         // Si Android la recreó, el evento original ya no sirve para medir.
         handle(intent, measure = savedInstanceState == null)
 
+        val actions = BlockActions(
+            onExit = ::exit,
+            onAskExcuse = viewModel::askExcuse,
+            onReasonChange = viewModel::updateReason,
+            onSubmit = viewModel::submit,
+            onBack = viewModel::back,
+            onOpenApp = ::openApp,
+        )
         setContent {
             LaVidaTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
-                BlockScreen(state = state, onExit = ::exit, onShown = ::logLatency)
+                BlockScreen(state = state, actions = actions, onShown = ::logLatency)
             }
         }
     }
@@ -85,6 +93,16 @@ class BlockActivity : ComponentActivity() {
             // Sin servicio (por ejemplo si lo apagaron con la pantalla abierta), el launcher.
             startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
+    }
+
+    /** Veredicto aprobado: el servicio ya sabe del desbloqueo y la app pasa al frente. */
+    private fun openApp() {
+        val unlock = viewModel.approvedUnlock() ?: return
+        bridge.grantUnlock(unlock.packageName, unlock.until)
+        packageManager.getLaunchIntentForPackage(unlock.packageName)?.let {
+            startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+        finish()
     }
 
     private fun logLatency() {

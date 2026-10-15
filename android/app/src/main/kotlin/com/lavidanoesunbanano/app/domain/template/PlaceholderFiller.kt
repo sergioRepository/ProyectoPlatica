@@ -34,9 +34,10 @@ object PlaceholderFiller {
         return capitalizeFirstLetter(tidy)
     }
 
+    /** "¿instagram otra vez?" pasa a "¿Instagram..."; "4 veces ya" se queda igual. */
     private fun capitalizeFirstLetter(text: String): String {
-        val index = text.indexOfFirst { it.isLetter() }
-        if (index < 0 || text[index].isUpperCase()) return text
+        val index = text.indexOfFirst { it.isLetterOrDigit() }
+        if (index < 0 || !text[index].isLetter() || text[index].isUpperCase()) return text
         return text.substring(0, index) + text[index].uppercaseChar() + text.substring(index + 1)
     }
 }

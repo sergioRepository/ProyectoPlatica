@@ -127,6 +127,8 @@
     <string name="home_blocker_label">bloqueo</string>
     <string name="home_blocker_off_hint">Para bloquear, activa la app en Accesibilidad. En Samsung está en Apps instaladas.</string>
     <string name="home_blocker_enable">Abrir Accesibilidad</string>
+    <string name="home_judge_code_title">Conecta el juez</string>
+    <string name="home_judge_code_hint">El servidor ya no reconoce este teléfono. Sin el código, las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
     <plurals name="home_apps_count">
         <item quantity="one">%1$d bloqueada</item>
         <item quantity="many">%1$d bloqueadas</item>
@@ -148,6 +150,28 @@
     <string name="block_exit">Salir</string>
     <string name="block_emergency">Esto es una emergencia</string>
     <string name="block_extra_time">Dame 10 minutos más</string>
+
+    <!-- Excusas y veredicto -->
+    <string name="excuse_emergency_title">¿Cuál es la emergencia?</string>
+    <string name="excuse_emergency_hint">Concreta. El juez decide si es real.</string>
+    <string name="excuse_emergency_placeholder">Tengo que pagar el arriendo antes de las 5</string>
+    <string name="excuse_extra_time_title">¿Para qué los 10 minutos?</string>
+    <string name="excuse_extra_time_hint">Convence al juez. Cada intento lo pone más estricto.</string>
+    <string name="excuse_extra_time_placeholder">Responder un mensaje del trabajo</string>
+    <string name="excuse_submit">Enviar</string>
+    <string name="excuse_judging">evaluando...</string>
+    <string name="verdict_approved">APROBADO · %1$d min</string>
+    <string name="verdict_approved_offline">APROBADO · %1$d min · sin conexión</string>
+    <string name="verdict_rejected">RECHAZADO · %1$s</string>
+    <string name="verdict_reason_repeated">excusa repetida</string>
+    <string name="verdict_reason_over_quota">sin cupo hoy</string>
+    <string name="verdict_reason_too_short">muy corta</string>
+    <string name="verdict_reason_boredom">aburrimiento</string>
+    <string name="verdict_reason_offline">sin conexión</string>
+    <string name="verdict_offline_emergency">No hay conexión con el juez, así que te creo. Tienes %1$d minutos y queda anotado para revisarlo después.</string>
+    <string name="verdict_offline_rejected">Sin juez no hay minutos extra. Vuelve cuando tengas conexión, o mejor no vuelvas.</string>
+    <string name="verdict_open_app">Abrir %1$s</string>
+    <string name="verdict_back">Volver</string>
 
     <!-- Servicio de accesibilidad -->
     <string name="blocker_service_description">Detecta qué app pasa al frente para mostrar la pantalla de bloqueo en tu horario. No lee el contenido de la pantalla ni lo que escribes.</string>

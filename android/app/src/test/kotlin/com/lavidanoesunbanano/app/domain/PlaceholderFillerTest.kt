@@ -43,6 +43,11 @@ class PlaceholderFillerTest {
     }
 
     @Test
+    fun `a sentence that starts with a number keeps its words in lowercase`() {
+        assertEquals("7 veces ya. ¿Cuántas más?", PlaceholderFiller.fill("{intentos_hoy} veces ya. ¿Cuántas más?", values))
+    }
+
+    @Test
     fun `drops placeholders it does not know`() {
         assertEquals("Hola Alex.", PlaceholderFiller.fill("Hola {edad} {nombre}.", values))
     }

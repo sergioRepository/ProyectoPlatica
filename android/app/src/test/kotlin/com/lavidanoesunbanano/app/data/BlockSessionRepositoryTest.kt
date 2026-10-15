@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.lavidanoesunbanano.app.data.local.LaVidaDatabase
 import com.lavidanoesunbanano.app.data.local.entity.AttemptEntity
+import com.lavidanoesunbanano.app.data.local.entity.ExcuseEntity
 import com.lavidanoesunbanano.app.data.local.entity.TemplateMessageEntity
 import com.lavidanoesunbanano.app.data.local.entity.TemplateMetaEntity
 import com.lavidanoesunbanano.app.data.mapper.toEntity
@@ -62,6 +63,7 @@ class BlockSessionRepositoryTest {
         sessions = BlockSessionRepository(
             database,
             database.attemptDao(),
+            database.excuseDao(),
             database.templateDao(),
             database.profileDao(),
             Clock.fixed(at(), ZoneOffset.UTC),
@@ -134,6 +136,51 @@ class BlockSessionRepositoryTest {
         assertEquals(AttemptEntity.OUTCOME_EXIT, saved?.outcome)
         assertEquals("m01", saved?.messageId)
     }
+
+    @Test
+    fun `minutes today are the minutes granted to that app today`() = runTest {
+        val message = TemplateMessageEntity(id = "min", text = "Llevas {minutos_hoy} minutos en {app}.", context = "general", intensity = 3)
+        database.templateDao().replaceTemplate(listOf(message), emptyList(), TemplateMetaEntity(generatedAt = 0, profileSummary = ""))
+        listOf(instagram to at(hour = 9), instagram to at(hour = 10), tiktok to at(hour = 10), instagram to at(day = 11)).forEach { (app, time) ->
+            database.excuseDao().insert(grant(app, time))
+        }
+
+        assertEquals("Llevas 20 minutos en Instagram.", sessions.open(instagram, at()).message)
+    }
+
+    @Test
+    fun `after a rejection the same attempt gets a message for that moment`() = runTest {
+        val messages = listOf(
+            TemplateMessageEntity(id = "g1", text = "General.", context = "general", intensity = 3),
+            TemplateMessageEntity(id = "t1", text = "La excusa no pasó, {nombre}.", context = "tras_rechazo", intensity = 3),
+        )
+        database.templateDao().replaceTemplate(messages, emptyList(), TemplateMetaEntity(generatedAt = 0, profileSummary = ""))
+        val session = sessions.open(instagram, at())
+        assertEquals("General.", session.message)
+
+        val updated = sessions.afterRejection(session)
+
+        assertEquals("La excusa no pasó, Alex.", updated.message)
+        assertEquals(session.attemptNumber, updated.attemptNumber)
+        assertEquals("t1", database.attemptDao().get(session.attemptId)?.messageId)
+    }
+
+    private fun grant(app: AppInfo, at: Instant) = ExcuseEntity(
+        attemptId = 0,
+        packageName = app.packageName,
+        appLabel = app.label,
+        type = "extra_time",
+        reason = "Responder un correo del trabajo",
+        decidedAt = at.toEpochMilli(),
+        valid = true,
+        grantedMinutes = 10,
+        unlockedUntil = at.plusSeconds(600).toEpochMilli(),
+        message = "Vale.",
+        reasonCode = "legit_work",
+        confidence = 0.9,
+        offline = false,
+        needsReview = false,
+    )
 
     @Test
     fun `without a template the attempt is still saved`() = runTest {

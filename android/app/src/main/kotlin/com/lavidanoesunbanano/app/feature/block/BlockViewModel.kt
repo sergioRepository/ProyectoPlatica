@@ -5,7 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lavidanoesunbanano.app.data.repository.BlockSession
 import com.lavidanoesunbanano.app.data.repository.BlockSessionRepository
+import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.domain.model.AppInfo
+import com.lavidanoesunbanano.app.domain.model.ExcuseType
+import com.lavidanoesunbanano.app.domain.model.Verdict
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
@@ -15,6 +18,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -51,17 +55,41 @@ data class BlockRequest(
     }
 }
 
+/** Qué muestra la pantalla: el mensaje, la pregunta de una excusa o el veredicto. */
+sealed interface BlockStep {
+    data object Message : BlockStep
+
+    data class Excuse(
+        val type: ExcuseType,
+        val reason: String = "",
+        val judging: Boolean = false,
+    ) : BlockStep
+
+    data class Decided(
+        val type: ExcuseType,
+        val verdict: Verdict,
+        val unlockedUntil: Instant?,
+    ) : BlockStep
+}
+
 data class BlockUiState(
+    val attemptId: Long,
+    val packageName: String,
     val appLabel: String,
     val time: String,
     val attemptNumber: Int,
     /** `null`: no hay plantilla y se muestra la frase local. */
     val message: String?,
+    val step: BlockStep = BlockStep.Message,
 )
+
+/** App y hora hasta la que queda desbloqueada, para abrirla después de un veredicto aprobado. */
+data class Unlock(val packageName: String, val until: Instant)
 
 @HiltViewModel
 class BlockViewModel @Inject constructor(
     private val sessions: BlockSessionRepository,
+    private val excuses: ExcuseRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<BlockUiState?>(null)
@@ -71,6 +99,9 @@ class BlockViewModel @Inject constructor(
 
     private var session: BlockSession? = null
     private var opening: Job? = null
+
+    /** Lo escrito en cada pregunta, por si el usuario vuelve al mensaje y luego regresa. */
+    private val drafts = mutableMapOf<ExcuseType, String>()
 
     fun open(request: BlockRequest) {
         val current = session
@@ -83,17 +114,65 @@ class BlockViewModel @Inject constructor(
         }
         opening?.cancel()
         session = null
+        drafts.clear()
         _state.value = null
         opening = viewModelScope.launch {
             val opened = sessions.open(request.app, request.startedAt)
             session = opened
-            _state.value = BlockUiState(
-                appLabel = opened.app.label,
-                time = ScheduleFormatter.time(opened.time),
-                attemptNumber = opened.attemptNumber,
-                message = opened.message,
-            )
+            _state.value = opened.toUiState()
         }
+    }
+
+    fun askExcuse(type: ExcuseType) = updateStep { step ->
+        if (step is BlockStep.Message) BlockStep.Excuse(type, drafts[type].orEmpty()) else step
+    }
+
+    fun updateReason(reason: String) = updateStep { step ->
+        if (step is BlockStep.Excuse && !step.judging) step.copy(reason = reason) else step
+    }
+
+    fun back() {
+        when (val step = _state.value?.step) {
+            is BlockStep.Excuse -> if (!step.judging) {
+                drafts[step.type] = step.reason
+                updateStep { BlockStep.Message }
+            }
+            is BlockStep.Decided -> if (!step.verdict.valid) dismissRejection()
+            BlockStep.Message, null -> Unit
+        }
+    }
+
+    fun submit() {
+        val current = session ?: return
+        val step = _state.value?.step as? BlockStep.Excuse ?: return
+        if (step.judging || step.reason.isBlank()) return
+        updateStep { step.copy(judging = true) }
+        viewModelScope.launch {
+            val result = excuses.judge(current, step.type, step.reason)
+            drafts.remove(step.type)
+            // Si mientras tanto llegó otro intento, el veredicto solo queda en el historial.
+            if (session?.attemptId == current.attemptId) {
+                updateStep { BlockStep.Decided(step.type, result.verdict, result.unlockedUntil) }
+            }
+        }
+    }
+
+    /** Volver tras un rechazo: otro mensaje, ahora del contexto `tras_rechazo`. */
+    fun dismissRejection() {
+        val current = session ?: return
+        viewModelScope.launch {
+            val updated = sessions.afterRejection(current)
+            if (session?.attemptId != current.attemptId) return@launch
+            session = updated
+            _state.update { it?.copy(message = updated.message, step = BlockStep.Message) }
+        }
+    }
+
+    /** El desbloqueo del veredicto aprobado que se muestra, si hay uno. */
+    fun approvedUnlock(): Unlock? {
+        val state = _state.value ?: return null
+        val step = state.step as? BlockStep.Decided ?: return null
+        return step.unlockedUntil?.let { Unlock(state.packageName, it) }
     }
 
     fun recordExit() {
@@ -101,4 +180,17 @@ class BlockViewModel @Inject constructor(
         // La pantalla se cierra justo después: el registro termina aunque se limpie el ViewModel.
         viewModelScope.launch { withContext(NonCancellable) { sessions.recordExit(attemptId) } }
     }
+
+    private fun updateStep(transform: (BlockStep) -> BlockStep) {
+        _state.update { it?.copy(step = transform(it.step)) }
+    }
+
+    private fun BlockSession.toUiState() = BlockUiState(
+        attemptId = attemptId,
+        packageName = app.packageName,
+        appLabel = app.label,
+        time = ScheduleFormatter.time(time),
+        attemptNumber = attemptNumber,
+        message = message,
+    )
 }

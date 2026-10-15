@@ -118,6 +118,18 @@ class ForegroundTrackerTest {
     }
 
     @Test
+    fun `when an unlock granted from the block screen expires the screen returns as a new attempt`() {
+        val tracker = tracker()
+        val unlocks = mapOf(instagram.packageName to at(21, 10))
+
+        tracker.onWindow(instagram.packageName, now, rules)
+        tracker.onWindow(own, now, rules)
+        // Veredicto aprobado: abre Instagram sin pasar por el launcher.
+        assertEquals(TrackerAction.RecheckAt(at(21, 10)), tracker.onWindow(instagram.packageName, at(21, 1), rules, unlocks))
+        assertEquals(show(instagram, newAttempt = true, at = at(21, 10)), tracker.recheck(at(21, 10), rules, unlocks))
+    }
+
+    @Test
     fun `new rules apply to the app already in front`() {
         val tracker = tracker()
 

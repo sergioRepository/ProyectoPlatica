@@ -3,6 +3,7 @@ package com.lavidanoesunbanano.app.di
 import com.lavidanoesunbanano.app.BuildConfig
 import com.lavidanoesunbanano.app.data.remote.BackendConfig
 import com.lavidanoesunbanano.app.data.remote.LaVidaApi
+import com.lavidanoesunbanano.app.data.repository.JudgeConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,6 +28,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideBackendConfig(): BackendConfig = BackendConfig(BuildConfig.API_BASE_URL)
+
+    @Provides
+    @Singleton
+    fun provideJudgeConfig(): JudgeConfig = JudgeConfig()
 
     @Provides
     @Singleton

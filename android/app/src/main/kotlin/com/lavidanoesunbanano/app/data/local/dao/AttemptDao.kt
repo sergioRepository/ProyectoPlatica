@@ -27,4 +27,10 @@ interface AttemptDao {
 
     @Query("UPDATE attempts SET outcome = :outcome WHERE id = :id")
     suspend fun setOutcome(id: Long, outcome: String)
+
+    @Query("UPDATE attempts SET message_id = :messageId WHERE id = :id")
+    suspend fun setMessage(id: Long, messageId: String?)
+
+    @Query("SELECT * FROM attempts WHERE id = :id")
+    suspend fun get(id: Long): AttemptEntity?
 }

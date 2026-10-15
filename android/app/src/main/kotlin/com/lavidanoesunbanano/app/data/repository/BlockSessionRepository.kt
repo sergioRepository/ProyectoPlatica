@@ -3,11 +3,13 @@ package com.lavidanoesunbanano.app.data.repository
 import androidx.room.withTransaction
 import com.lavidanoesunbanano.app.data.local.LaVidaDatabase
 import com.lavidanoesunbanano.app.data.local.dao.AttemptDao
+import com.lavidanoesunbanano.app.data.local.dao.ExcuseDao
 import com.lavidanoesunbanano.app.data.local.dao.ProfileDao
 import com.lavidanoesunbanano.app.data.local.dao.TemplateDao
 import com.lavidanoesunbanano.app.data.local.entity.AttemptEntity
 import com.lavidanoesunbanano.app.data.mapper.toDomain
 import com.lavidanoesunbanano.app.domain.model.AppInfo
+import com.lavidanoesunbanano.app.domain.model.TemplateMessage
 import com.lavidanoesunbanano.app.domain.template.MessagePicker
 import com.lavidanoesunbanano.app.domain.template.PickSituation
 import com.lavidanoesunbanano.app.domain.template.PlaceholderFiller
@@ -15,6 +17,7 @@ import com.lavidanoesunbanano.app.domain.template.PlaceholderValues
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalTime
+import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -35,6 +38,7 @@ data class BlockSession(
 class BlockSessionRepository @Inject constructor(
     private val database: LaVidaDatabase,
     private val attemptDao: AttemptDao,
+    private val excuseDao: ExcuseDao,
     private val templateDao: TemplateDao,
     private val profileDao: ProfileDao,
     private val clock: Clock,
@@ -46,22 +50,15 @@ class BlockSessionRepository @Inject constructor(
     suspend fun open(app: AppInfo, startedAt: Instant): BlockSession = database.withTransaction {
         val at = startedAt.toEpochMilli()
         val local = startedAt.atZone(clock.zone)
-        val dayStart = local.toLocalDate().atStartOfDay(clock.zone).toInstant().toEpochMilli()
         val existing = attemptDao.find(app.packageName, at)
-        val attemptNumber = attemptDao.countBetween(app.packageName, dayStart, at) + if (existing == null) 1 else 0
+        val attemptNumber = attemptDao.countBetween(app.packageName, dayStart(local), at) + if (existing == null) 1 else 0
 
         val messages = templateDao.getMessages().map { it.toDomain() }
+        val minutesToday = excuseDao.grantedMinutesSince(app.packageName, dayStart(local))
         val chosen = if (existing != null) {
             messages.firstOrNull { it.id == existing.messageId }
         } else {
-            val situation = PickSituation(
-                attemptsToday = attemptNumber,
-                // Los minutos concedidos hoy llegan con los desbloqueos temporales.
-                minutesToday = 0,
-                time = local.toLocalTime(),
-                recentIds = attemptDao.recentMessageIds(MessagePicker.RECENT_WINDOW),
-            )
-            MessagePicker.pick(messages, situation)
+            pick(messages, attemptNumber, minutesToday, local, afterRejection = false)
         }
         val attemptId = existing?.id ?: attemptDao.insert(
             AttemptEntity(
@@ -72,32 +69,68 @@ class BlockSessionRepository @Inject constructor(
                 outcome = null,
             ),
         )
-
-        val profile = profileDao.get()
-        val text = chosen?.let {
-            PlaceholderFiller.fill(
-                it.text,
-                PlaceholderValues(
-                    name = profile?.name.orEmpty(),
-                    goal = profile?.mainGoal.orEmpty(),
-                    app = app.label,
-                    attemptsToday = attemptNumber,
-                    minutesToday = 0,
-                    time = local.toLocalTime(),
-                ),
-            )
-        }
         BlockSession(
             attemptId = attemptId,
             app = app,
             startedAt = startedAt,
             time = local.toLocalTime(),
             attemptNumber = attemptNumber,
-            message = text,
+            message = chosen?.let { fill(it, app, attemptNumber, minutesToday, local) },
         )
+    }
+
+    /** Mensaje nuevo para el mismo intento, justo después de que el juez rechazó la excusa. */
+    suspend fun afterRejection(session: BlockSession): BlockSession = database.withTransaction {
+        val now = clock.instant().atZone(clock.zone)
+        val messages = templateDao.getMessages().map { it.toDomain() }
+        val minutesToday = excuseDao.grantedMinutesSince(session.app.packageName, dayStart(now))
+        val chosen = pick(messages, session.attemptNumber, minutesToday, now, afterRejection = true)
+            ?: return@withTransaction session
+        attemptDao.setMessage(session.attemptId, chosen.id)
+        session.copy(message = fill(chosen, session.app, session.attemptNumber, minutesToday, now))
     }
 
     suspend fun recordExit(attemptId: Long) {
         attemptDao.setOutcome(attemptId, AttemptEntity.OUTCOME_EXIT)
     }
+
+    private suspend fun pick(
+        messages: List<TemplateMessage>,
+        attemptNumber: Int,
+        minutesToday: Int,
+        at: ZonedDateTime,
+        afterRejection: Boolean,
+    ): TemplateMessage? = MessagePicker.pick(
+        messages,
+        PickSituation(
+            attemptsToday = attemptNumber,
+            minutesToday = minutesToday,
+            time = at.toLocalTime(),
+            afterRejection = afterRejection,
+            recentIds = attemptDao.recentMessageIds(MessagePicker.RECENT_WINDOW),
+        ),
+    )
+
+    private suspend fun fill(
+        message: TemplateMessage,
+        app: AppInfo,
+        attemptNumber: Int,
+        minutesToday: Int,
+        at: ZonedDateTime,
+    ): String {
+        val profile = profileDao.get()
+        return PlaceholderFiller.fill(
+            message.text,
+            PlaceholderValues(
+                name = profile?.name.orEmpty(),
+                goal = profile?.mainGoal.orEmpty(),
+                app = app.label,
+                attemptsToday = attemptNumber,
+                minutesToday = minutesToday,
+                time = at.toLocalTime(),
+            ),
+        )
+    }
+
+    private fun dayStart(at: ZonedDateTime): Long = at.toLocalDate().atStartOfDay(at.zone).toInstant().toEpochMilli()
 }

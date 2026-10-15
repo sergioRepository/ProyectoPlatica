@@ -9,6 +9,7 @@ import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
+import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.domain.blocking.BlockRules
 import com.lavidanoesunbanano.app.domain.blocking.ForegroundTracker
@@ -38,6 +39,8 @@ class BlockerService : AccessibilityService() {
 
     @Inject lateinit var profileRepository: ProfileRepository
 
+    @Inject lateinit var excuseRepository: ExcuseRepository
+
     @Inject lateinit var bridge: BlockerBridge
 
     @Inject lateinit var clock: Clock
@@ -45,6 +48,9 @@ class BlockerService : AccessibilityService() {
     private val scope = MainScope()
     private var tracker: ForegroundTracker? = null
     private var rules = BlockRules.EMPTY
+
+    /** Hasta cuándo está desbloqueada cada app por una excusa aprobada. */
+    private var unlocks: Map<String, Instant> = emptyMap()
     private var recheck: Job? = null
 
     /**
@@ -81,13 +87,19 @@ class BlockerService : AccessibilityService() {
                 recheckNow()
             }
         }
+        scope.launch {
+            excuseRepository.observeUnlocks().collect {
+                unlocks = it
+                recheckNow()
+            }
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val tracker = tracker ?: return
         val packageName = event.packageName?.toString() ?: return
-        perform(tracker.onWindow(packageName, clock.instant(), rules), triggerUptime = event.eventTime)
+        perform(tracker.onWindow(packageName, clock.instant(), rules, unlocks), triggerUptime = event.eventTime)
     }
 
     override fun onInterrupt() = Unit
@@ -105,9 +117,18 @@ class BlockerService : AccessibilityService() {
         return performGlobalAction(GLOBAL_ACTION_HOME)
     }
 
+    /**
+     * Desbloqueo recién aprobado. Room también avisa, pero la app se abre enseguida y no
+     * debe bloquearse por llegar antes que ese aviso.
+     */
+    fun grantUnlock(packageName: String, until: Instant) {
+        val current = unlocks[packageName]
+        if (current == null || current < until) unlocks = unlocks + (packageName to until)
+    }
+
     private fun recheckNow() {
         val tracker = tracker ?: return
-        perform(tracker.recheck(clock.instant(), rules), triggerUptime = SystemClock.uptimeMillis())
+        perform(tracker.recheck(clock.instant(), rules, unlocks), triggerUptime = SystemClock.uptimeMillis())
     }
 
     private fun perform(action: TrackerAction, triggerUptime: Long) {

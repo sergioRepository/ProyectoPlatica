@@ -81,7 +81,12 @@ class ForegroundTracker(
         unlockedUntil: Map<String, Instant>,
     ): TrackerAction = when (val verdict = BlockPolicy.evaluate(packageName, now, zone, rules, unlockedUntil)) {
         BlockVerdict.NotListed -> TrackerAction.Idle
-        is BlockVerdict.Allowed -> verdict.until?.let { TrackerAction.RecheckAt(it) } ?: TrackerAction.Idle
+        is BlockVerdict.Allowed -> {
+            // Ya no está tapada (por ejemplo, la abrió con un desbloqueo): cuando vuelva a
+            // bloquearse, es un intento nuevo.
+            if (covered == packageName) covered = null
+            verdict.until?.let { TrackerAction.RecheckAt(it) } ?: TrackerAction.Idle
+        }
         is BlockVerdict.Blocked -> {
             val newAttempt = covered != packageName
             covered = packageName
