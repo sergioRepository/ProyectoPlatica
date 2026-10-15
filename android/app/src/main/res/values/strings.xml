@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">La vida no es un banano</string>
+
+    <!-- Estado del sistema -->
+    <string name="status_subtitle">fase 0 · esqueleto</string>
+    <string name="status_backend_label">backend</string>
+    <string name="status_url_label">url</string>
+    <string name="status_template_label">plantilla</string>
+    <string name="status_checking">verificando...</string>
+    <string name="status_online">en línea · v%1$s</string>
+    <string name="status_unreachable">sin conexión</string>
+    <string name="status_not_configured">sin configurar</string>
+    <string name="status_http_error">error http %1$d</string>
+    <string name="status_retry">Verificar de nuevo</string>
+    <plurals name="status_template_messages">
+        <item quantity="one">%1$d mensaje</item>
+        <item quantity="many">%1$d mensajes</item>
+        <item quantity="other">%1$d mensajes</item>
+    </plurals>
+</resources>

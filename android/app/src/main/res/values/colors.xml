@@ -1,0 +1,4 @@
+<resources>
+    <!-- Igual a DarkLaVidaColors.background en Theme.kt -->
+    <color name="graphite">#FF0F1114</color>
+</resources>

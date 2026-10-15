@@ -1,0 +1,18 @@
+# Backend local. En producción corre en Vercel; este compose es para desarrollo y pruebas.
+# Uso: docker compose up --build   ->   http://localhost:8000/health
+services:
+  api:
+    build: ./backend
+    image: lavidanoesunbanano-api:dev
+    container_name: lavidanoesunbanano-api
+    env_file:
+      - path: ./backend/.env
+        required: false
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
