@@ -84,6 +84,9 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrlDebug\"")
         }
         release {
+            // La app no se publica: el APK de release se firma con la llave de debug de esta
+            // máquina para poder instalarlo encima de la versión de desarrollo.
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

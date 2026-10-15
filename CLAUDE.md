@@ -30,6 +30,8 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 android\gradlew.bat -p android :app:assembleDebug       # APK debug
 android\gradlew.bat -p android :app:testDebugUnitTest   # tests JVM
 android\gradlew.bat -p android :app:installDebug        # instala en el teléfono conectado
+android\gradlew.bat -p android :app:assembleRelease     # APK contra Vercel, firmado con la llave de debug
+Copy-Item android\app\build\outputs\apk\release\app-release.apk apk\la-vida-no-es-un-banano.apk   # el que enlaza el README
 adb reverse tcp:8000 tcp:8000                           # el teléfono ve el backend local en 127.0.0.1:8000
 adb logcat --pid=$(adb shell pidof com.lavidanoesunbanano.app)
 adb logcat -s LaVidaBlock                               # debug: cada ventana que ve el servicio y ms hasta el primer cuadro del bloqueo
@@ -39,7 +41,7 @@ Activar el servicio de bloqueo sin pasar por Ajustes (reemplaza la lista de serv
 adb shell settings put secure enabled_accessibility_services com.lavidanoesunbanano.app/com.lavidanoesunbanano.app.service.blocker.BlockerService
 adb shell settings put secure accessibility_enabled 1
 ```
-La URL del backend se cambia con `-Plavida.apiBaseUrl.debug=...` o `-Plavida.apiBaseUrl.release=...`, o en `android/gradle.properties`. No es un secreto. En debug solo se permite HTTP hacia `127.0.0.1`, `localhost` y `10.0.2.2` (`src/debug/res/xml/network_security_config.xml`).
+La URL del backend se cambia con `-Plavida.apiBaseUrl.debug=...` o `-Plavida.apiBaseUrl.release=...`, o en `android/gradle.properties`. No es un secreto. El release apunta a producción (`https://proyecto-platica-nine.vercel.app/`); el debug, a `localhost`. Al publicar un APK nuevo en `apk/`, subir `versionCode` y `versionName` en `app/build.gradle.kts`. En debug solo se permite HTTP hacia `127.0.0.1`, `localhost` y `10.0.2.2` (`src/debug/res/xml/network_security_config.xml`).
 
 Emulador para revisar la interfaz sin teléfono. El AVD `LaVida_API37` se creó a mano en `~/.android/avd` con la pantalla del A14 (1080x2408, 400 dpi):
 ```powershell
