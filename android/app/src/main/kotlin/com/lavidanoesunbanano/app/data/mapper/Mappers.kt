@@ -10,7 +10,9 @@ import com.lavidanoesunbanano.app.data.remote.dto.ProfileDto
 import com.lavidanoesunbanano.app.data.remote.dto.TemplateResponseDto
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.BlockRange
+import com.lavidanoesunbanano.app.domain.model.MessageContext
 import com.lavidanoesunbanano.app.domain.model.Profile
+import com.lavidanoesunbanano.app.domain.model.TemplateMessage
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -19,8 +21,6 @@ import java.time.LocalTime
 private const val MAX_SCHEDULE_SUMMARY = 300
 private const val MAX_BLOCKED_APPS = 60
 private const val MAX_APP_LABEL = 120
-
-private val KNOWN_CONTEXTS = setOf("general", "reincidente", "noche", "mañana", "tras_rechazo")
 
 fun ProfileEntity.toDomain() = Profile(
     name = name,
@@ -44,6 +44,13 @@ fun Profile.toEntity() = ProfileEntity(
     profanityAllowed = profanityAllowed,
     country = country,
     forbiddenTopics = forbiddenTopics,
+)
+
+fun TemplateMessageEntity.toDomain() = TemplateMessage(
+    id = id,
+    text = text,
+    context = MessageContext.fromWire(context),
+    intensity = intensity,
 )
 
 fun BlockedAppEntity.toDomain() = AppInfo(packageName = packageName, label = label)
@@ -91,7 +98,7 @@ fun TemplateResponseDto.toRows(generatedAt: Long) = TemplateRows(
         TemplateMessageEntity(
             id = it.id,
             text = it.text,
-            context = if (it.context in KNOWN_CONTEXTS) it.context else "general",
+            context = MessageContext.fromWire(it.context).wire,
             intensity = it.intensity.coerceIn(1, 5),
         )
     },

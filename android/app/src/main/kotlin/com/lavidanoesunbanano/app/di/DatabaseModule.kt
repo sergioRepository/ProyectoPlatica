@@ -3,6 +3,7 @@ package com.lavidanoesunbanano.app.di
 import android.content.Context
 import androidx.room.Room
 import com.lavidanoesunbanano.app.data.local.LaVidaDatabase
+import com.lavidanoesunbanano.app.data.local.dao.AttemptDao
 import com.lavidanoesunbanano.app.data.local.dao.ProfileDao
 import com.lavidanoesunbanano.app.data.local.dao.RulesDao
 import com.lavidanoesunbanano.app.data.local.dao.TemplateDao
@@ -34,4 +35,7 @@ object DatabaseModule {
 
     @Provides
     fun provideTemplateDao(database: LaVidaDatabase): TemplateDao = database.templateDao()
+
+    @Provides
+    fun provideAttemptDao(database: LaVidaDatabase): AttemptDao = database.attemptDao()
 }

@@ -124,7 +124,9 @@
     <string name="home_backend_label">servidor</string>
     <string name="home_preview_label">vista previa</string>
     <string name="home_preview_next">Otro mensaje</string>
-    <string name="home_blocking_pending">El bloqueo todavía no está activo.</string>
+    <string name="home_blocker_label">bloqueo</string>
+    <string name="home_blocker_off_hint">Para bloquear, activa la app en Accesibilidad. En Samsung está en Apps instaladas.</string>
+    <string name="home_blocker_enable">Abrir Accesibilidad</string>
     <plurals name="home_apps_count">
         <item quantity="one">%1$d bloqueada</item>
         <item quantity="many">%1$d bloqueadas</item>
@@ -137,4 +139,16 @@
     <string name="status_unreachable">sin conexión</string>
     <string name="status_not_configured">sin configurar</string>
     <string name="status_http_error">error http %1$d</string>
+    <string name="status_blocker_on">activo</string>
+    <string name="status_blocker_off">apagado</string>
+
+    <!-- Pantalla de bloqueo -->
+    <string name="block_meta">%1$s · %2$s · intento %3$d hoy</string>
+    <string name="block_fallback_message">Esta app está bloqueada a esta hora. Lo decidiste tú.</string>
+    <string name="block_exit">Salir</string>
+    <string name="block_emergency">Esto es una emergencia</string>
+    <string name="block_extra_time">Dame 10 minutos más</string>
+
+    <!-- Servicio de accesibilidad -->
+    <string name="blocker_service_description">Detecta qué app pasa al frente para mostrar la pantalla de bloqueo en tu horario. No lee el contenido de la pantalla ni lo que escribes.</string>
 </resources>

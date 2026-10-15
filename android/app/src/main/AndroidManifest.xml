@@ -3,11 +3,17 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <!-- Para listar las apps con ícono en el launcher (Android 11+), sin QUERY_ALL_PACKAGES. -->
+    <!--
+        Para listar las apps con ícono en el launcher (Android 11+), sin QUERY_ALL_PACKAGES,
+        y los teclados, cuyas ventanas el servicio de bloqueo ignora.
+    -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN"/>
             <category android:name="android.intent.category.LAUNCHER"/>
+        </intent>
+        <intent>
+            <action android:name="android.view.InputMethod"/>
         </intent>
     </queries>
 
@@ -29,6 +35,31 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <!--
+            Pantalla de bloqueo: tarea propia (otra afinidad) para no arrastrar el inicio de la
+            app, fuera de recientes, y una sola instancia que el servicio reutiliza.
+        -->
+        <activity
+                android:excludeFromRecents="true"
+                android:exported="false"
+                android:launchMode="singleTask"
+                android:name=".feature.block.BlockActivity"
+                android:taskAffinity="com.lavidanoesunbanano.app.block"
+                android:windowSoftInputMode="adjustResize"/>
+
+        <service
+                android:exported="true"
+                android:label="@string/app_name"
+                android:name=".service.blocker.BlockerService"
+                android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+            <meta-data
+                    android:name="android.accessibilityservice"
+                    android:resource="@xml/blocker_service"/>
+        </service>
     </application>
 
 </manifest>
