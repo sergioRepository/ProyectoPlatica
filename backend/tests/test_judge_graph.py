@@ -165,6 +165,19 @@ async def test_message_with_placeholders_or_too_long_is_fixed() -> None:
     assert len(long_verdict.message) <= MAX_MESSAGE_CHARS
 
 
+@pytest.mark.parametrize(("level", "allowed"), [(1, False), (3, False), (4, True), (5, True)])
+async def test_direct_insults_only_with_high_sarcasm(level: int, allowed: bool) -> None:
+    llm = FakeLLM({JudgeEvaluation: evaluation()})
+
+    await judge(judge_request(sarcasm_level=level), llm)
+
+    _, system, _ = llm.calls[0]
+    assert ("puedes insultar directamente a la persona" in system) is allowed
+    assert ("nunca a la persona" in system) is not allowed
+    # Los temas vetados no dependen del nivel.
+    assert "Nunca te burles de apariencia, cuerpo, peso, salud mental, familia" in system
+
+
 async def test_prompt_carries_context_and_injection_guard() -> None:
     llm = FakeLLM({JudgeEvaluation: evaluation()})
     request = judge_request(

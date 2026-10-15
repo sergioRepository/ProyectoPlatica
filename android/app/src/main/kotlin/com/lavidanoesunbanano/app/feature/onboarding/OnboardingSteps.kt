@@ -81,6 +81,14 @@ internal fun ColumnScope.StepBody(step: OnboardingStep, state: OnboardingUiState
                     onClick = { actions.onSarcasmChange(level.value) },
                 )
             }
+            if (draft.sarcasmLevel >= OnboardingRules.INSULTS_FROM_LEVEL) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.onboarding_sarcasm_insults_warning),
+                    style = LaVidaTheme.type.small,
+                    color = LaVidaTheme.colors.rejected,
+                )
+            }
         }
         OnboardingStep.PROFANITY -> ChoiceList {
             SelectableRow(

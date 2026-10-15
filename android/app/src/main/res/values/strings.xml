@@ -69,6 +69,7 @@
     <string name="sarcasm_4_desc">Sin anestesia.</string>
     <string name="sarcasm_5">5 · Despiadado</string>
     <string name="sarcasm_5_desc">Que duela un poco.</string>
+    <string name="onboarding_sarcasm_insults_warning">Ojo: desde el nivel 4, el juez puede insultarte a ti, no solo a tu excusa. Tu cuerpo, tu familia y los temas que prohíbas siguen fuera de límites.</string>
 
     <string name="onboarding_profanity_title">¿Groserías?</string>
     <string name="onboarding_profanity_hint">Para cuando el sarcasmo solo no alcanza.</string>

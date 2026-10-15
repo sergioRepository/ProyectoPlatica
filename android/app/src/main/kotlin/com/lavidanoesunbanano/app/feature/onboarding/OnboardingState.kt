@@ -47,6 +47,9 @@ object OnboardingRules {
     const val MAX_EXCUSES = 500
     const val MAX_FORBIDDEN = 300
 
+    /** Desde este nivel el juez puede insultar a la persona (INSULTS_FROM_LEVEL en el backend). */
+    const val INSULTS_FROM_LEVEL = 4
+
     const val DEFAULT_COUNTRY = "Colombia"
     const val NEUTRAL_COUNTRY = "español neutro"
     val COUNTRIES = listOf(

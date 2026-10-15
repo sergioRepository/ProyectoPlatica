@@ -112,7 +112,8 @@ class ExcuseRepository @Inject constructor(
             profileSummary = templateDao.getMeta()?.profileSummary.orEmpty().take(MAX_SUMMARY_CHARS),
             attemptsToday = session.attemptNumber,
             extraTimeGrantedToday = excuseDao.countGrantedSince(ExcuseType.EXTRA_TIME.wire, dayStart),
-            recentExcuses = excuseDao.recentReasons(RECENT_EXCUSES),
+            // De la más vieja a la más nueva: el backend toma las últimas como las más recientes.
+            recentExcuses = excuseDao.recentReasons(RECENT_EXCUSES).asReversed(),
             localTime = ScheduleFormatter.time(now.toLocalTime()),
             emergenciesGrantedToday = excuseDao.countGrantedSince(ExcuseType.EMERGENCY.wire, dayStart),
             extraTimeDailyLimit = limits.extraTimeDaily,

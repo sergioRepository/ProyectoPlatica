@@ -164,17 +164,23 @@ class ExcuseRepositoryTest {
     fun `quotas and recent excuses travel to the judge`() = runBlocking {
         judgeReplies(valid = true, minutes = 10, message = "Vale.", code = "legit_work")
         excuses.judge(session(0), ExcuseType.EXTRA_TIME, "Responder un correo del trabajo")
+        judgeReplies(valid = false, minutes = 0, message = "No.", code = "boredom")
+        excuses.judge(session(1), ExcuseType.EXTRA_TIME, "Solo quiero ver un video de gatos")
         judgeReplies(valid = false, minutes = 0, message = "Esa excusa ya la usaste.", code = "repeated")
-        val rejected = excuses.judge(session(1), ExcuseType.EXTRA_TIME, "Responder un correo del trabajo")
+        val rejected = excuses.judge(session(2), ExcuseType.EXTRA_TIME, "Responder un correo del trabajo")
 
         assertEquals(VerdictReason.REPEATED, rejected.verdict.reason)
         assertNull(rejected.unlockedUntil)
-        server.takeRequest()
+        repeat(2) { server.takeRequest() }
         val body = server.takeRequest().body!!.utf8()
         assertTrue(body.contains(""""extra_time_granted_today":1"""), body)
         assertTrue(body.contains(""""emergencies_granted_today":0"""), body)
-        assertTrue(body.contains(""""recent_excuses":["Responder un correo del trabajo"]"""), body)
-        assertTrue(body.contains(""""attempts_today":2"""), body)
+        // De la más vieja a la más nueva, como las lee el backend.
+        assertTrue(
+            body.contains(""""recent_excuses":["Responder un correo del trabajo","Solo quiero ver un video de gatos"]"""),
+            body,
+        )
+        assertTrue(body.contains(""""attempts_today":3"""), body)
     }
 
     @Test

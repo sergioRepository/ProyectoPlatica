@@ -70,7 +70,7 @@ Para probar otro modelo sin tocar el `.env`: `$env:GROK_MODEL_JUDGE = "..."` ant
 - `POST /templates/generate` (token Bearer): perfil del onboarding, devuelve `messages`, `verdict_lines` y `profile_summary`. La app guarda `profile_summary` y lo manda al juez.
 - `POST /excuses/judge` (token Bearer): devuelve el veredicto del spec. Un 503 significa que el LLM no respondió: la app aplica la regla sin conexión.
 - Extensiones al spec, todas con valor por defecto: en el juez, `emergencies_granted_today`, `extra_time_daily_limit`, `emergency_daily_limit`, `sarcasm_level`, `profanity_allowed` y `country`. El `reason_code` suma `too_short`.
-- Juez: `detectar_crisis` (palabras clave, sin LLM) aprueba directo con tono humano y va antes del `prefiltro` (cupo, menos de 15 caracteres, excusa repetida, sin LLM). `evaluar` hace una sola llamada al LLM, con 6 s de tiempo, y `redactar_veredicto` limpia y aplica las reglas sin LLM.
+- Juez: `detectar_crisis` (palabras clave, sin LLM) aprueba directo con tono humano y va antes del `prefiltro` (cupo, menos de 15 caracteres, excusa repetida, sin LLM). `evaluar` hace una sola llamada al LLM, con 6 s de tiempo, y `redactar_veredicto` limpia y aplica las reglas sin LLM. Desde `sarcasm_level` 4 (`INSULTS_FROM_LEVEL` en `prompts.py`) el juez puede insultar a la persona, no solo a la excusa; el usuario lo pidió y la app lo advierte en el paso de sarcasmo del onboarding. Los temas vetados (cuerpo, familia, salud mental, etc.) siguen vetados en todos los niveles.
 - Plantilla: los mensajes se piden en lotes paralelos de 20. La revisión cambia nombres de apps y del usuario por `{app}` y `{nombre}`, y descarta lo repetido, genérico o fuera de los guardarraíles.
 
 ## Despliegue en Vercel
