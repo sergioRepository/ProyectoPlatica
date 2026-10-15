@@ -56,6 +56,8 @@ val LightLaVidaColors = LaVidaColors(
 )
 
 private val LocalLaVidaColors = staticCompositionLocalOf { DarkLaVidaColors }
+private val LocalLaVidaType = staticCompositionLocalOf { LaVidaType() }
+private val DefaultType = LaVidaType()
 
 private val LaVidaShapes = Shapes(
     extraSmall = RoundedCornerShape(4.dp),
@@ -71,10 +73,14 @@ fun LaVidaTheme(
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) DarkLaVidaColors else LightLaVidaColors
-    CompositionLocalProvider(LocalLaVidaColors provides colors) {
+    CompositionLocalProvider(
+        LocalLaVidaColors provides colors,
+        LocalLaVidaType provides DefaultType,
+    ) {
         MaterialTheme(
             colorScheme = colors.toColorScheme(darkTheme),
             shapes = LaVidaShapes,
+            typography = DefaultType.toMaterial(),
             content = content,
         )
     }
@@ -85,6 +91,11 @@ object LaVidaTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalLaVidaColors.current
+
+    val type: LaVidaType
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalLaVidaType.current
 }
 
 private fun LaVidaColors.toColorScheme(dark: Boolean): ColorScheme {

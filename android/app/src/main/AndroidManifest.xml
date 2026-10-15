@@ -3,6 +3,14 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <!-- Para listar las apps con ícono en el launcher (Android 11+), sin QUERY_ALL_PACKAGES. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.LAUNCHER"/>
+        </intent>
+    </queries>
+
     <application
             android:name=".LaVidaApp"
             android:allowBackup="true"
@@ -13,7 +21,8 @@
             android:theme="@style/Theme.LaVida">
         <activity
                 android:exported="true"
-                android:name=".MainActivity">
+                android:name=".MainActivity"
+                android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

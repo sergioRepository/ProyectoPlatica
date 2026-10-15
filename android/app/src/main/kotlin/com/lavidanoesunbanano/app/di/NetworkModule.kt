@@ -38,7 +38,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(5, TimeUnit.SECONDS)
+        .connectTimeout(10, TimeUnit.SECONDS)
+        // Generar la plantilla puede tardar minutos (Vercel corta a los 300 s). Los usos
+        // rápidos, como el juez, ponen su propio límite con withTimeout.
+        .readTimeout(300, TimeUnit.SECONDS)
         .apply {
             if (BuildConfig.DEBUG) {
                 addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC))

@@ -124,7 +124,8 @@ async def test_generator_prompt_carries_the_profile_and_rules() -> None:
 
     await run_template_graph(sample_profile(), llm, make_settings())
 
-    system = next(s for schema, s, _ in llm.calls if schema is DraftBatch)
+    system, user = next((s, u) for schema, s, u in llm.calls if schema is DraftBatch)
+    assert 'cambia {meta} por "ser el mejor programador del mundo"' in user
     assert "Sarcasmo nivel 4/5. Groserías: sí. Jerga de Colombia." in system
     assert "Los temas que el usuario marcó como prohibidos: mi exnovia." in system
     assert "{app}, {nombre}, {meta}, {intentos_hoy}, {minutos_hoy}, {hora}" in system

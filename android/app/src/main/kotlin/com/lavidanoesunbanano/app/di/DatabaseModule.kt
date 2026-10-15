@@ -3,7 +3,9 @@ package com.lavidanoesunbanano.app.di
 import android.content.Context
 import androidx.room.Room
 import com.lavidanoesunbanano.app.data.local.LaVidaDatabase
-import com.lavidanoesunbanano.app.data.local.dao.TemplateMessageDao
+import com.lavidanoesunbanano.app.data.local.dao.ProfileDao
+import com.lavidanoesunbanano.app.data.local.dao.RulesDao
+import com.lavidanoesunbanano.app.data.local.dao.TemplateDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,6 +27,11 @@ object DatabaseModule {
             .build()
 
     @Provides
-    fun provideTemplateMessageDao(database: LaVidaDatabase): TemplateMessageDao =
-        database.templateMessageDao()
+    fun provideProfileDao(database: LaVidaDatabase): ProfileDao = database.profileDao()
+
+    @Provides
+    fun provideRulesDao(database: LaVidaDatabase): RulesDao = database.rulesDao()
+
+    @Provides
+    fun provideTemplateDao(database: LaVidaDatabase): TemplateDao = database.templateDao()
 }

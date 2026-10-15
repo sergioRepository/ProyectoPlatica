@@ -1,20 +1,140 @@
 <resources>
     <string name="app_name">La vida no es un banano</string>
 
-    <!-- Estado del sistema -->
-    <string name="status_subtitle">fase 0 · esqueleto</string>
-    <string name="status_backend_label">backend</string>
-    <string name="status_url_label">url</string>
-    <string name="status_template_label">plantilla</string>
+    <!-- Acciones -->
+    <string name="action_next">Siguiente</string>
+    <string name="action_back">Atrás</string>
+    <string name="action_add">Agregar</string>
+    <string name="action_remove">Quitar</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_accept">Aceptar</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_name_title">¿Cómo te llamamos?</string>
+    <string name="onboarding_name_hint">Nombre o apodo. Lo vamos a usar en tu contra.</string>
+    <string name="onboarding_name_placeholder">Tu nombre</string>
+
+    <string name="onboarding_goal_title">¿Qué quieres lograr?</string>
+    <string name="onboarding_goal_hint">Tu meta principal. Sé concreto: la vamos a citar seguido.</string>
+    <string name="onboarding_goal_placeholder">Ser el mejor programador del mundo</string>
+
+    <string name="onboarding_secondary_title">¿Algo más?</string>
+    <string name="onboarding_secondary_hint">Metas secundarias. Opcionales, pero dan más material.</string>
+    <string name="onboarding_secondary_placeholder">Leer un libro al mes</string>
+
+    <string name="onboarding_reason_title">¿Por qué importa?</string>
+    <string name="onboarding_reason_hint">Lo que está en juego si no lo logras.</string>
+    <string name="onboarding_reason_placeholder">Quiero vivir de lo que construyo</string>
+
+    <string name="onboarding_apps_title">¿Qué apps te roban el tiempo?</string>
+    <string name="onboarding_apps_hint">Las que elijas se bloquean en tu horario.</string>
+    <string name="onboarding_apps_search">Buscar app</string>
+    <string name="onboarding_apps_loading">cargando apps...</string>
+    <string name="onboarding_apps_empty">Ninguna app coincide.</string>
+    <plurals name="onboarding_apps_selected">
+        <item quantity="one">%1$d seleccionada</item>
+        <item quantity="many">%1$d seleccionadas</item>
+        <item quantity="other">%1$d seleccionadas</item>
+    </plurals>
+
+    <string name="onboarding_schedule_title">¿Cuándo bloqueamos?</string>
+    <string name="onboarding_schedule_hint">Rangos por día. Fuera de ellos, tú decides.</string>
+    <string name="onboarding_schedule_presets">atajos</string>
+    <string name="onboarding_schedule_preset_work">Laboral</string>
+    <string name="onboarding_schedule_preset_nights">Noches</string>
+    <string name="onboarding_schedule_preset_mornings">Mañanas</string>
+    <string name="onboarding_schedule_custom">Rango a mano</string>
+    <string name="onboarding_schedule_from">desde</string>
+    <string name="onboarding_schedule_to">hasta</string>
+    <string name="onboarding_schedule_empty">Sin rangos todavía.</string>
+    <string name="onboarding_schedule_overnight">cruza la medianoche</string>
+    <string name="onboarding_schedule_all_day">desde y hasta iguales: todo el día</string>
+    <string name="onboarding_schedule_pick_time">Elige la hora</string>
+
+    <string name="onboarding_excuses_title">¿Qué excusas te dices?</string>
+    <string name="onboarding_excuses_hint">Las que usas para abrirlas \"solo un ratito\". La IA se las va a saber.</string>
+    <string name="onboarding_excuses_placeholder">Solo cinco minutos. Es para descansar.</string>
+
+    <string name="onboarding_sarcasm_title">¿Qué tan duro?</string>
+    <string name="onboarding_sarcasm_hint">Nivel de sarcasmo. Después lo puedes cambiar.</string>
+    <string name="sarcasm_1">1 · Suave</string>
+    <string name="sarcasm_1_desc">Un codazo amable.</string>
+    <string name="sarcasm_2">2 · Irónico</string>
+    <string name="sarcasm_2_desc">Ironía con buenos modales.</string>
+    <string name="sarcasm_3">3 · Directo</string>
+    <string name="sarcasm_3_desc">Te dice las cosas como son.</string>
+    <string name="sarcasm_4">4 · Sin filtro</string>
+    <string name="sarcasm_4_desc">Sin anestesia.</string>
+    <string name="sarcasm_5">5 · Despiadado</string>
+    <string name="sarcasm_5_desc">Que duela un poco.</string>
+
+    <string name="onboarding_profanity_title">¿Groserías?</string>
+    <string name="onboarding_profanity_hint">Para cuando el sarcasmo solo no alcanza.</string>
+    <string name="profanity_yes">Sí</string>
+    <string name="profanity_yes_desc">Que hable como en la calle.</string>
+    <string name="profanity_no">No</string>
+    <string name="profanity_no_desc">Sarcasmo limpio.</string>
+
+    <string name="onboarding_country_title">¿De dónde es tu jerga?</string>
+    <string name="onboarding_country_hint">Para que te regañe en tu idioma.</string>
+    <string name="country_neutral">Español neutro</string>
+
+    <string name="onboarding_forbidden_title">¿Qué temas no se tocan?</string>
+    <string name="onboarding_forbidden_hint">La IA nunca los va a mencionar. Opcional.</string>
+    <string name="onboarding_forbidden_placeholder">Mi familia, mi peso</string>
+    <string name="onboarding_finish">Generar mensajes</string>
+
+    <!-- Generación de la plantilla -->
+    <string name="generation_code_title">Conecta con tu servidor</string>
+    <string name="generation_code_hint">Escribe el código de registro del backend. Solo se pide una vez.</string>
+    <string name="generation_code_placeholder">código de registro</string>
+    <string name="generation_code_action">Conectar</string>
+    <string name="generation_code_wrong">Ese código no es.</string>
+    <string name="generation_code_unreachable">No hay conexión con el servidor.</string>
+    <string name="generation_code_server">El servidor no está listo para registrar teléfonos.</string>
+    <string name="generation_working_title">Escribiendo tus mensajes</string>
+    <string name="generation_working_hint">Puede tardar un minuto. Menos de lo que se te va en un solo scroll.</string>
+    <string name="generation_status_1">analizando tu perfil...</string>
+    <string name="generation_status_2">buscando contradicciones...</string>
+    <string name="generation_status_3">anotando tus excusas...</string>
+    <string name="generation_status_4">afinando el sarcasmo...</string>
+    <string name="generation_status_5">quitando emojis...</string>
+    <string name="generation_done_title">Listo.</string>
+    <plurals name="generation_done_count">
+        <item quantity="one">%1$d mensaje listo para avergonzarte.</item>
+        <item quantity="many">%1$d mensajes listos para avergonzarte.</item>
+        <item quantity="other">%1$d mensajes listos para avergonzarte.</item>
+    </plurals>
+    <string name="generation_sample_label">muestra</string>
+    <string name="generation_done_action">Empezar</string>
+    <string name="generation_failed_title">No salió.</string>
+    <string name="generation_failed_unreachable">No hay conexión con el servidor. Revisa que esté encendido y que el teléfono lo alcance.</string>
+    <string name="generation_failed_server">El servidor no pudo escribir los mensajes. Intenta otra vez en un momento.</string>
+    <string name="generation_failed_not_configured">Esta compilación no tiene servidor configurado.</string>
+    <string name="generation_failed_missing_profile">Faltan tus respuestas del inicio.</string>
+    <string name="generation_edit_answers">Revisar respuestas</string>
+
+    <!-- Inicio -->
+    <string name="home_subtitle">plantilla lista</string>
+    <string name="home_apps_label">apps</string>
+    <string name="home_schedule_label">horario</string>
+    <string name="home_messages_label">mensajes</string>
+    <string name="home_backend_label">servidor</string>
+    <string name="home_preview_label">vista previa</string>
+    <string name="home_preview_next">Otro mensaje</string>
+    <string name="home_blocking_pending">El bloqueo todavía no está activo.</string>
+    <plurals name="home_apps_count">
+        <item quantity="one">%1$d bloqueada</item>
+        <item quantity="many">%1$d bloqueadas</item>
+        <item quantity="other">%1$d bloqueadas</item>
+    </plurals>
+
+    <!-- Estado del servidor -->
     <string name="status_checking">verificando...</string>
     <string name="status_online">en línea · v%1$s</string>
     <string name="status_unreachable">sin conexión</string>
     <string name="status_not_configured">sin configurar</string>
     <string name="status_http_error">error http %1$d</string>
-    <string name="status_retry">Verificar de nuevo</string>
-    <plurals name="status_template_messages">
-        <item quantity="one">%1$d mensaje</item>
-        <item quantity="many">%1$d mensajes</item>
-        <item quantity="other">%1$d mensajes</item>
-    </plurals>
 </resources>

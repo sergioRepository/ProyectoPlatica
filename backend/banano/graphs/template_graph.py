@@ -283,6 +283,7 @@ async def generar_mensajes(
             user=generation_request(
                 analysis.angles[index :: len(counts)] or analysis.angles,
                 analysis.real_life,
+                profile=state["profile"],
                 count=size,
                 avoid=avoid,
                 with_verdicts=first_run and index == 0,

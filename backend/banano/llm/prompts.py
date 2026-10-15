@@ -112,7 +112,13 @@ def generator_system(profile: Profile) -> str:
 
 
 def generation_request(
-    angles: list[str], real_life: list[str], *, count: int, avoid: list[str], with_verdicts: bool
+    angles: list[str],
+    real_life: list[str],
+    *,
+    profile: Profile,
+    count: int,
+    avoid: list[str],
+    with_verdicts: bool,
 ) -> str:
     parts = [
         f"Escribe {count} mensajes nuevos para la pantalla de bloqueo.",
@@ -124,6 +130,10 @@ def generation_request(
         "sin emojis ni hashtags.",
         "Escribe siempre {app} en vez del nombre de una app y {nombre} en vez de su nombre: "
         "el mismo mensaje se muestra al abrir cualquiera de sus apps bloqueadas.",
+        # La app reemplaza el texto tal cual; si la meta ya empieza con un verbo,
+        # "Así piensas ser {meta}" quedaría "ser ser...".
+        f'La app cambia {{meta}} por "{profile.main_goal}" y {{nombre}} por "{profile.name}", '
+        "tal cual: escribe cada frase para que se lea bien con ese reemplazo.",
     ]
     if with_verdicts:
         parts.append(
