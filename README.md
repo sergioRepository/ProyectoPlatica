@@ -7,7 +7,7 @@ Bloqueador de apps para Android con un agente de IA de sarcasmo personalizado. C
 
 La idea central: la vida es mucho más que estar en el celular. La app no compite por tu atención; aparece, dice lo que tiene que decir y se quita del camino.
 
-**[Ver el video de demostración](ENLACE_AL_VIDEO)**
+**[Ver el video de demostración](https://www.youtube.com/watch?v=uU0Go189CdI)**
 
 ## El problema
 
