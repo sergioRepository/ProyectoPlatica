@@ -33,6 +33,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -48,6 +49,7 @@ import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
 import com.lavidanoesunbanano.app.core.designsystem.Panel
+import com.lavidanoesunbanano.app.core.designsystem.toon
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import com.lavidanoesunbanano.app.domain.stats.AppCount
@@ -57,14 +59,13 @@ import com.lavidanoesunbanano.app.domain.stats.StatsCalculator
 import kotlin.math.min
 
 // Marcas finas: columnas de 24 dp como máximo con la punta redondeada y la base recta,
-// barras de 8 dp, una línea base de 1 dp y nada de cuadrícula.
+// barras de 10 dp, una línea base y nada de cuadrícula. Todas con contorno de tinta: el
+// amarillo solo sobre papel no llega al contraste mínimo.
 private val MaxColumnWidth = 24.dp
-private val BarThickness = 8.dp
+private val BarThickness = 10.dp
 private val MarkRadius = 4.dp
 private val ChartHeight = 120.dp
 
-/** Las columnas que no se están leyendo se apagan para que el día elegido destaque. */
-private const val UNSELECTED_ALPHA = 0.45f
 
 @Composable
 fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
@@ -165,13 +166,13 @@ private fun StatsContent(state: StatsUiState?, onPeriodChange: (Int) -> Unit, on
 @Composable
 private fun PeriodChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val colors = LaVidaTheme.colors
-    val shape = MaterialTheme.shapes.extraSmall
+    val shape = MaterialTheme.shapes.small
     Box(
         modifier = Modifier
+            .toon(shape, if (selected) colors.accent else colors.surface, colors.border, shadow = if (selected) 2.dp else 0.dp)
             .clip(shape)
-            .border(1.dp, if (selected) colors.accent else colors.border, shape)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Text(
             text = label,
@@ -194,6 +195,7 @@ private fun Figure(label: String, value: String, modifier: Modifier = Modifier) 
 private fun DayColumns(perDay: List<DayCount>, selected: Int, onSelect: (Int) -> Unit) {
     val accent = LaVidaTheme.colors.accent
     val baseline = LaVidaTheme.colors.border
+    val paper = LaVidaTheme.colors.surface
     val description = perDay.joinToString("; ") { "${ScheduleFormatter.date(it.date)}: ${it.attempts}" }
     Canvas(
         modifier = Modifier
@@ -230,9 +232,11 @@ private fun DayColumns(perDay: List<DayCount>, selected: Int, onSelect: (Int) ->
                     ),
                 )
             }
-            drawPath(column, color = if (index == selected) accent else accent.copy(alpha = UNSELECTED_ALPHA))
+            // El día que se lee va en amarillo; los demás, en papel con el mismo contorno.
+            drawPath(column, color = if (index == selected) accent else paper)
+            drawPath(column, color = baseline, style = Stroke(width = 2.dp.toPx()))
         }
-        drawLine(baseline, Offset(0f, size.height), Offset(size.width, size.height), strokeWidth = 1.dp.toPx())
+        drawLine(baseline, Offset(0f, size.height), Offset(size.width, size.height), strokeWidth = 2.dp.toPx())
     }
 }
 
@@ -286,7 +290,7 @@ private fun AppBars(perApp: List<AppCount>) {
                             Modifier
                                 .width(track * (app.attempts.toFloat() / max))
                                 .height(BarThickness)
-                                .background(colors.accent, RoundedCornerShape(topEnd = MarkRadius, bottomEnd = MarkRadius)),
+                                .toon(RoundedCornerShape(topEnd = MarkRadius, bottomEnd = MarkRadius), colors.accent, colors.border, shadow = 0.dp),
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(text = app.attempts.toString(), style = LaVidaTheme.type.monoBody, color = colors.textPrimary)

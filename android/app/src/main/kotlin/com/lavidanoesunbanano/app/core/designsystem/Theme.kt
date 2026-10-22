@@ -4,7 +4,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -15,8 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
- * Tokens de color. La jerarquía va por tamaño y peso tipográfico, no por color:
- * el acento es el único color y se reserva para el botón principal y estados activos.
+ * Tokens de color del estilo Warm Toon (`Desing/warm_toon_modern/DESIGN.md`): papel cálido,
+ * tinta para bordes, texto y sombras, y el amarillo banano para acciones y estados activos.
  */
 @Immutable
 data class LaVidaColors(
@@ -31,54 +30,40 @@ data class LaVidaColors(
     val rejected: Color,
 )
 
-val DarkLaVidaColors = LaVidaColors(
-    background = Color(0xFF0F1114),
-    surface = Color(0xFF171A1E),
-    textPrimary = Color(0xFFE3E6E9),
-    textSecondary = Color(0xFF8A9199),
-    border = Color(0xFF272B31),
-    accent = Color(0xFF8499AE),
-    onAccent = Color(0xFF0F1114),
-    approved = Color(0xFF7FA087),
-    rejected = Color(0xFFB37A7B),
+val LaVidaPalette = LaVidaColors(
+    background = Color(0xFFFFFDF7),
+    surface = Color(0xFFFFFFFF),
+    textPrimary = Color(0xFF1E1E24),
+    textSecondary = Color(0xFF4D4632),
+    border = Color(0xFF1E1E24),
+    accent = Color(0xFFFACC15),
+    onAccent = Color(0xFF1E1E24),
+    approved = Color(0xFF1F7A3A),
+    rejected = Color(0xFFBA1A1A),
 )
 
-val LightLaVidaColors = LaVidaColors(
-    background = Color(0xFFF3F4F6),
-    surface = Color(0xFFFBFBFC),
-    textPrimary = Color(0xFF15181C),
-    textSecondary = Color(0xFF5F666E),
-    border = Color(0xFFDADDE2),
-    accent = Color(0xFF4F6B85),
-    onAccent = Color(0xFFFFFFFF),
-    approved = Color(0xFF4E7A58),
-    rejected = Color(0xFF9A4F50),
-)
-
-private val LocalLaVidaColors = staticCompositionLocalOf { DarkLaVidaColors }
+private val LocalLaVidaColors = staticCompositionLocalOf { LaVidaPalette }
 private val LocalLaVidaType = staticCompositionLocalOf { LaVidaType() }
 private val DefaultType = LaVidaType()
 
+// Controles en píldora; tarjetas de 24 dp. `extraSmall` sirve para casillas y marcas.
 private val LaVidaShapes = Shapes(
-    extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(4.dp),
-    medium = RoundedCornerShape(6.dp),
-    large = RoundedCornerShape(8.dp),
-    extraLarge = RoundedCornerShape(8.dp),
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(percent = 50),
+    medium = RoundedCornerShape(24.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp),
 )
 
 @Composable
-fun LaVidaTheme(
-    darkTheme: Boolean = true,
-    content: @Composable () -> Unit,
-) {
-    val colors = if (darkTheme) DarkLaVidaColors else LightLaVidaColors
+fun LaVidaTheme(content: @Composable () -> Unit) {
+    val colors = LaVidaPalette
     CompositionLocalProvider(
         LocalLaVidaColors provides colors,
         LocalLaVidaType provides DefaultType,
     ) {
         MaterialTheme(
-            colorScheme = colors.toColorScheme(darkTheme),
+            colorScheme = colors.toColorScheme(),
             shapes = LaVidaShapes,
             typography = DefaultType.toMaterial(),
             content = content,
@@ -98,9 +83,8 @@ object LaVidaTheme {
         get() = LocalLaVidaType.current
 }
 
-private fun LaVidaColors.toColorScheme(dark: Boolean): ColorScheme {
-    val base = if (dark) darkColorScheme() else lightColorScheme()
-    return base.copy(
+private fun LaVidaColors.toColorScheme(): ColorScheme =
+    lightColorScheme().copy(
         primary = accent,
         onPrimary = onAccent,
         secondary = textSecondary,
@@ -119,4 +103,3 @@ private fun LaVidaColors.toColorScheme(dark: Boolean): ColorScheme {
         error = rejected,
         onError = background,
     )
-}

@@ -9,20 +9,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lavidanoesunbanano.app.BuildConfig
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
 import com.lavidanoesunbanano.app.core.designsystem.applyWindowTheme
-import com.lavidanoesunbanano.app.core.designsystem.isSystemDark
-import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.service.blocker.BlockerBridge
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 
 /**
  * Pantalla de bloqueo a pantalla completa. La lanza el servicio de accesibilidad en su propia
@@ -32,8 +26,6 @@ import kotlinx.coroutines.runBlocking
 class BlockActivity : ComponentActivity() {
 
     @Inject lateinit var bridge: BlockerBridge
-
-    @Inject lateinit var settings: SettingsStore
 
     private val viewModel: BlockViewModel by viewModels()
 
@@ -45,10 +37,7 @@ class BlockActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Una lectura corta antes del primer cuadro (DataStore deja el archivo en memoria tras
-        // la primera): evita que la pantalla aparezca con el tema equivocado.
-        val initialTheme = runBlocking { settings.theme.first() }
-        applyWindowTheme(initialTheme.isDark(isSystemDark))
+        applyWindowTheme()
         // Atrás no salta el bloqueo: solo los botones sacan de aquí.
         onBackPressedDispatcher.addCallback(this) {}
         // Si Android la recreó, el evento original ya no sirve para medir.
@@ -63,10 +52,7 @@ class BlockActivity : ComponentActivity() {
             onOpenApp = ::openApp,
         )
         setContent {
-            val mode by settings.theme.collectAsStateWithLifecycle(initialTheme)
-            val dark = mode.isDark(isSystemInDarkTheme())
-            LaunchedEffect(dark) { applyWindowTheme(dark) }
-            LaVidaTheme(darkTheme = dark) {
+            LaVidaTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 BlockScreen(state = state, actions = actions, onShown = ::logLatency)
             }

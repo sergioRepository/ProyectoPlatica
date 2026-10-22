@@ -188,7 +188,6 @@
     <string name="settings_section_quotas">cupos por día</string>
     <string name="settings_section_tone">tono</string>
     <string name="settings_section_profile">perfil</string>
-    <string name="settings_section_theme">apariencia</string>
     <string name="settings_section_template">plantilla</string>
     <string name="settings_apps">Apps bloqueadas</string>
     <string name="settings_schedule">Horario</string>
@@ -206,9 +205,6 @@
     <string name="settings_secondary">Metas secundarias</string>
     <string name="settings_reason">Por qué importa</string>
     <string name="settings_excuses">Excusas típicas</string>
-    <string name="theme_dark">Oscuro</string>
-    <string name="theme_light">Claro</string>
-    <string name="theme_system">Según el sistema</string>
     <string name="settings_template_generated">generada</string>
     <string name="settings_template_stale">Cambiaste tu perfil o el tono después de generarla. Regenera para que los mensajes lo usen.</string>
     <string name="settings_regenerate">Regenerar mensajes</string>

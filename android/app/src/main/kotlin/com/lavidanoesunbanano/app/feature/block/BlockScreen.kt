@@ -1,6 +1,7 @@
 package com.lavidanoesunbanano.app.feature.block
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
@@ -108,6 +111,8 @@ private fun BlockUiState.contentKey(): String = when (val step = step) {
 
 @Composable
 private fun ColumnScope.MessageStep(state: BlockUiState, actions: BlockActions) {
+    Spacer(Modifier.height(24.dp))
+    Mascot(happy = false)
     CenteredText(state.message ?: stringResource(R.string.block_fallback_message))
     Spacer(Modifier.height(24.dp))
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -191,6 +196,8 @@ private fun ColumnScope.DecidedStep(state: BlockUiState, step: BlockStep.Decided
         contentAlignment = Alignment.CenterStart,
     ) {
         Column(Modifier.verticalScroll(rememberScrollState())) {
+            Mascot(happy = verdict.valid)
+            Spacer(Modifier.height(24.dp))
             Text(
                 text = verdictMessage(verdict),
                 style = LaVidaTheme.type.display,
@@ -221,6 +228,16 @@ private fun ColumnScope.DecidedStep(state: BlockUiState, step: BlockStep.Decided
             )
         }
     }
+}
+
+/** El banano: decepcionado en el bloqueo y en los rechazos, feliz cuando se aprueba. Decorativo. */
+@Composable
+private fun Mascot(happy: Boolean) {
+    Image(
+        painter = painterResource(if (happy) R.drawable.banana_happy else R.drawable.banana_sad),
+        contentDescription = null,
+        modifier = Modifier.size(112.dp),
+    )
 }
 
 /** Mensaje centrado verticalmente; con letra grande se desplaza en vez de tapar los botones. */

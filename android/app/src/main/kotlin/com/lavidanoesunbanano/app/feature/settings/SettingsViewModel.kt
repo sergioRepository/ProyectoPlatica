@@ -11,7 +11,6 @@ import com.lavidanoesunbanano.app.data.system.SetupStatusSource
 import com.lavidanoesunbanano.app.domain.blocking.SabotageGuard
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.Profile
-import com.lavidanoesunbanano.app.domain.model.ThemeMode
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import com.lavidanoesunbanano.app.domain.setup.SetupChecklist
@@ -46,7 +45,6 @@ data class SettingsUiState(
     val apps: List<AppInfo> = emptyList(),
     val schedule: String = "",
     val limits: UnlockLimits = UnlockLimits(),
-    val theme: ThemeMode = ThemeMode.DARK,
     val protection: Protection = Protection(),
     /** Pasos de la guía que faltan; `null` antes de revisar. */
     val setupPending: Int? = null,
@@ -97,8 +95,8 @@ class SettingsViewModel @Inject constructor(
         Protection(on = on, locked = SabotageGuard.rulesLocked(on, ranges, now))
     }
 
-    private val preferences = combine(settings.limits, settings.theme, protection, setupPending) { limits, theme, protection, pending ->
-        Preferences(limits, theme, protection, pending)
+    private val preferences = combine(settings.limits, protection, setupPending) { limits, protection, pending ->
+        Preferences(limits, protection, pending)
     }
 
     val state: StateFlow<SettingsUiState> = combine(rules, preferences, template, preview) { rules, prefs, template, preview ->
@@ -108,7 +106,6 @@ class SettingsViewModel @Inject constructor(
             apps = apps,
             schedule = ScheduleFormatter.summary(ranges),
             limits = prefs.limits,
-            theme = prefs.theme,
             protection = prefs.protection,
             setupPending = prefs.setupPending,
             template = template,
@@ -138,10 +135,6 @@ class SettingsViewModel @Inject constructor(
         settings.setAntiSabotage(enabled)
     }
 
-    fun setTheme(mode: ThemeMode) {
-        viewModelScope.launch { settings.setTheme(mode) }
-    }
-
     fun nextPreview() {
         viewModelScope.launch { preview.value = previewer.random(excludeRaw = preview.value?.raw) }
     }
@@ -154,7 +147,6 @@ class SettingsViewModel @Inject constructor(
 
     private data class Preferences(
         val limits: UnlockLimits,
-        val theme: ThemeMode,
         val protection: Protection,
         val setupPending: Int?,
     )

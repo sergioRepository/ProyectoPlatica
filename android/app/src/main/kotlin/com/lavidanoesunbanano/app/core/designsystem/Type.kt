@@ -10,10 +10,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.lavidanoesunbanano.app.R
 
-// Geist y Geist Mono van empaquetadas (no descargables): la pantalla de bloqueo debe verse
-// igual en modo avión. Son fuentes variables; cada peso fija el eje "wght".
-private fun geist(weight: Int) = Font(
-    R.font.geist,
+// Plus Jakarta Sans y Geist Mono van empaquetadas (no descargables): la pantalla de bloqueo
+// debe verse igual en modo avión. Son fuentes variables; cada peso fija el eje "wght".
+private fun jakarta(weight: Int) = Font(
+    R.font.plus_jakarta_sans,
     weight = FontWeight(weight),
     variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
 )
@@ -24,41 +24,42 @@ private fun geistMono(weight: Int) = Font(
     variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
 )
 
-val GeistFamily = FontFamily(geist(400), geist(500), geist(600))
+val JakartaFamily = FontFamily(jakarta(500), jakarta(700), jakarta(800))
 val GeistMonoFamily = FontFamily(geistMono(400), geistMono(500))
 
 /**
- * Cinco tamaños: 30, 22, 16, 14 y 12. La jerarquía va por tamaño y peso, no por color.
+ * Cinco tamaños: 30, 22, 16, 14 y 12. Pesos del estilo Warm Toon: 800 en títulos, 700 en
+ * etiquetas interactivas y 500 en el cuerpo (nada más delgado).
  * Mono para datos: contadores, horas, paquetes, etiquetas e historial.
  */
 @Immutable
 data class LaVidaType(
-    /** Mensaje de la pantalla de bloqueo: grande, de peso medio. */
+    /** Mensaje de la pantalla de bloqueo: grande y grueso, como una viñeta. */
     val display: TextStyle = TextStyle(
-        fontFamily = GeistFamily,
-        fontWeight = FontWeight.Medium,
+        fontFamily = JakartaFamily,
+        fontWeight = FontWeight.ExtraBold,
         fontSize = 30.sp,
         lineHeight = 38.sp,
         letterSpacing = (-0.3).sp,
     ),
     /** Pregunta del onboarding y títulos de pantalla. */
     val title: TextStyle = TextStyle(
-        fontFamily = GeistFamily,
-        fontWeight = FontWeight.Medium,
+        fontFamily = JakartaFamily,
+        fontWeight = FontWeight.ExtraBold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = (-0.2).sp,
     ),
     val body: TextStyle = TextStyle(
-        fontFamily = GeistFamily,
-        fontWeight = FontWeight.Normal,
+        fontFamily = JakartaFamily,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
     ),
     /** Ayudas y texto secundario. */
     val small: TextStyle = TextStyle(
-        fontFamily = GeistFamily,
-        fontWeight = FontWeight.Normal,
+        fontFamily = JakartaFamily,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
     ),
@@ -89,11 +90,11 @@ data class LaVidaType(
 internal fun LaVidaType.toMaterial() = Typography(
     displaySmall = display,
     headlineSmall = title,
-    titleMedium = body.copy(fontWeight = FontWeight.Medium),
+    titleMedium = body.copy(fontWeight = FontWeight.Bold),
     bodyLarge = body,
     bodyMedium = small,
     bodySmall = small,
-    labelLarge = body.copy(fontWeight = FontWeight.Medium),
+    labelLarge = body.copy(fontWeight = FontWeight.Bold),
     labelMedium = mono,
     labelSmall = mono,
 )

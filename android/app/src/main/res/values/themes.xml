@@ -1,6 +1,6 @@
 <resources>
-    <!-- Fondo grafito desde el primer cuadro para que no haya destello blanco al abrir. -->
-    <style name="Theme.LaVida" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/graphite</item>
+    <!-- Fondo de papel desde el primer cuadro para que no haya destello al abrir. -->
+    <style name="Theme.LaVida" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/vellum</item>
     </style>
 </resources>

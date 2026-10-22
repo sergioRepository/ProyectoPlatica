@@ -38,7 +38,6 @@ import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SelectableRow
 import com.lavidanoesunbanano.app.core.designsystem.StepperRow
-import com.lavidanoesunbanano.app.domain.model.ThemeMode
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingRules
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingStep
@@ -60,7 +59,6 @@ fun SettingsScreen(
             onEmergencyChange = viewModel::changeEmergencyDaily,
             onAntiSabotageChange = viewModel::setAntiSabotage,
             onOpenSetup = onOpenSetup,
-            onThemeChange = viewModel::setTheme,
             onNextPreview = viewModel::nextPreview,
             onRegenerate = onRegenerate,
         ),
@@ -73,7 +71,6 @@ private class SettingsActions(
     val onEmergencyChange: (Int) -> Unit,
     val onAntiSabotageChange: (Boolean) -> Unit,
     val onOpenSetup: () -> Unit,
-    val onThemeChange: (ThemeMode) -> Unit,
     val onNextPreview: () -> Unit,
     val onRegenerate: () -> Unit,
 )
@@ -214,16 +211,6 @@ private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
             )
         }
 
-        Section(R.string.settings_section_theme) {
-            ThemeMode.entries.forEach { mode ->
-                SelectableRow(
-                    title = stringResource(themeLabel(mode)),
-                    selected = state.theme == mode,
-                    onClick = { actions.onThemeChange(mode) },
-                )
-            }
-        }
-
         Section(R.string.settings_section_template) {
             Panel {
                 InfoRow(label = stringResource(R.string.home_messages_label), value = state.template.messageCount.toString())
@@ -281,11 +268,4 @@ private fun sarcasmLabel(level: Int): Int = when (level) {
     3 -> R.string.sarcasm_3
     4 -> R.string.sarcasm_4
     else -> R.string.sarcasm_5
-}
-
-@StringRes
-private fun themeLabel(mode: ThemeMode): Int = when (mode) {
-    ThemeMode.DARK -> R.string.theme_dark
-    ThemeMode.LIGHT -> R.string.theme_light
-    ThemeMode.SYSTEM -> R.string.theme_system
 }

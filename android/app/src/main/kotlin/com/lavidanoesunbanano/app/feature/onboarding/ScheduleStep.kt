@@ -36,6 +36,7 @@ import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.DayToggle
 import com.lavidanoesunbanano.app.core.designsystem.GhostButton
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
+import com.lavidanoesunbanano.app.core.designsystem.toon
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
 import com.lavidanoesunbanano.app.core.designsystem.Panel
 import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
@@ -85,9 +86,8 @@ private fun RangeRow(range: BlockRange, onRemove: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(colors.surface, MaterialTheme.shapes.medium)
-            .border(1.dp, colors.border, MaterialTheme.shapes.medium)
-            .padding(start = 14.dp),
+            .toon(MaterialTheme.shapes.medium, colors.surface, colors.border)
+            .padding(start = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
@@ -160,8 +160,8 @@ private fun TimeBox(label: String, time: LocalTime, onClick: () -> Unit) {
         Text(
             text = ScheduleFormatter.time(time),
             modifier = Modifier
+                .toon(MaterialTheme.shapes.small, colors.surface, colors.border, shadow = 2.dp)
                 .clip(MaterialTheme.shapes.small)
-                .border(1.dp, colors.border, MaterialTheme.shapes.small)
                 .clickable(onClick = onClick)
                 .padding(horizontal = 14.dp, vertical = 10.dp)
                 .width(56.dp),

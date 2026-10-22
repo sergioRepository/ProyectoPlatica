@@ -41,31 +41,18 @@ Reglas de trabajo:
 
 **Regla absoluta: cero emojis** en toda la app (UI, mensajes de la IA, notificaciones). Pídeselo también a Grok en los prompts de sistema y filtra en el backend cualquier emoji que se cuele.
 
-**Estilo: clean y tech, sin nada llamativo.**
-- Minimalista, mucho espacio en blanco, jerarquía por tamaño y peso tipográfico, no por color.
-- Estética de herramienta de desarrollador: precisa, ordenada, sobria. Piensa en una terminal bien diseñada o un panel de sistema, no en una app de consumo.
-- Sin degradados, sin sombras marcadas, sin ilustraciones, sin glassmorphism, sin colores saturados.
-- Bordes finos de 1 dp, esquinas con radio pequeño (4 a 8 dp), superficies planas.
-- Animaciones mínimas y rápidas (fundidos de 150 a 200 ms). Nada que rebote ni que llame la atención.
-- Modo oscuro por defecto, con modo claro disponible.
+**Estilo: Warm Toon Modern** (guía completa en [`Desing/warm_toon_modern/DESIGN.md`](Desing/warm_toon_modern/DESIGN.md), mockups en `Desing/*/screen.png`). Reemplaza el estilo minimalista oscuro original.
+- Papel cálido (`#FFFDF7`), tarjetas blancas, tinta `#1E1E24` para bordes, texto y sombras, y amarillo banano (`#FACC15`) para acciones y estados activos.
+- Bordes de tinta de 2 dp y sombra dura desplazada, sin difuminar; los botones se hunden al presionarlos.
+- Botones, campos y chips en píldora; tarjetas con radio de 24 dp.
+- Solo tema claro.
+- Mascota: un banano decepcionado en la pantalla de bloqueo y en los rechazos, feliz en las aprobaciones.
+- Aprobado y rechazado siempre llevan su palabra al lado: el color nunca va solo.
 
-**Paleta (tokens en `Theme.kt`):**
-- Fondo: negro grafito con un leve tinte frío (oscuro) / blanco grisáceo frío (claro)
-- Superficie: un paso más clara que el fondo, para tarjetas y campos
-- Texto principal: gris muy claro (oscuro) / casi negro (claro)
-- Texto secundario: gris medio
-- Bordes: gris de bajo contraste
-- Acento único: un color frío y apagado (por ejemplo verde salvia o azul acero desaturado), solo para el botón principal y estados activos
-- Estados: verde apagado para "aprobado", rojo apagado para "rechazado". Nunca saturados.
-
-**Tipografía (Google Fonts descargables en Compose):**
-- Texto e interfaz: una sans geométrica limpia (por ejemplo Inter Tight, Geist o IBM Plex Sans).
-- Datos y detalles técnicos: una monoespaciada (por ejemplo JetBrains Mono o IBM Plex Mono) para contadores, horas, nombres de paquetes, historial y etiquetas.
-- Escala corta y consistente: 4 o 5 tamaños como máximo.
-- Propón tú la combinación final y justifícala en una línea.
+**Tipografía:** Plus Jakarta Sans (800 en títulos, 700 en etiquetas, 500 en el cuerpo) y Geist Mono para cifras, horas y etiquetas técnicas. Cinco tamaños: 30, 22, 16, 14 y 12.
 
 **Pantallas clave:**
-- **Pantalla de bloqueo:** fondo plano. Arriba, en mono pequeño y gris: nombre de la app bloqueada, hora e "intento 7 hoy". Al centro, el mensaje sarcástico en sans, grande pero de peso medio, alineado a la izquierda. Abajo, los tres botones: Salir (relleno, color acento), Emergencia y 10 minutos más (con borde fino, sin relleno).
+- **Pantalla de bloqueo:** fondo de papel. Arriba, en mono pequeño: nombre de la app bloqueada, hora e "intento 7 hoy"; debajo, el banano decepcionado. Al centro, el mensaje sarcástico grande y grueso, alineado a la izquierda. Abajo, los tres botones en píldora: Salir (amarillo) y Emergencia y 10 minutos más (blancos).
 - **Formulario de justificación:** una sola pregunta, un campo de texto amplio con borde fino y un contador de caracteres en mono. Mientras la IA decide: una línea de estado discreta tipo "evaluando..." con un indicador lineal fino, sin spinner.
 - **Veredicto:** la frase del juez en sans y, debajo, una etiqueta en mono: `APROBADO · 10 min` o `RECHAZADO · excusa repetida`, con el color de estado apagado.
 - **Onboarding:** una pregunta por pantalla, indicador de progreso fino arriba (por ejemplo `03 / 10` en mono). Copy breve y con ironía seca.
