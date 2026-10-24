@@ -58,7 +58,8 @@ class Settings(BaseSettings):
 
     # Agente de intervención (S2)
     database_url: SecretStr | None = None
-    db_timeout_s: float = 3.0
+    # Neon Free suspende la base sin uso; despertarla toma uno o dos segundos.
+    db_timeout_s: float = 5.0
     rate_limit_agent_per_hour: int = 12
     agent_llm_timeout_s: float = 6.0
     agent_total_timeout_s: float = 20.0

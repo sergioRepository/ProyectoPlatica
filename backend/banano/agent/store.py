@@ -1,5 +1,6 @@
 """Historial del agente en PostgreSQL. Vercel no tiene disco: la base es la memoria."""
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 from functools import cache
 from pathlib import Path
@@ -136,22 +137,26 @@ class PostgresStore:
 
     async def _fetch(self, sql: str, params: tuple[Any, ...]) -> list[dict[str, Any]]:
         try:
-            async with await psycopg.AsyncConnection.connect(
-                self._url,
-                autocommit=True,
-                connect_timeout=max(1, round(self._timeout_s)),
-                options=f"-c statement_timeout={int(self._timeout_s * 1000)}",
-                row_factory=dict_row,
-            ) as conn:
-                if not self._schema_ready:
-                    # Las tablas se crean solas (IF NOT EXISTS): desplegar no exige correr
-                    # init_db ni manejar la URL de la base fuera de Vercel.
-                    await conn.execute(schema_sql())
-                    self._schema_ready = True
-                cursor = await conn.execute(sql, params)
-                return await cursor.fetchall() if cursor.description else []
-        except (psycopg.Error, OSError) as exc:
+            # El límite va aquí y no en `options=-c statement_timeout`: el pooler de Neon
+            # (PgBouncer) rechaza ese parámetro de arranque.
+            return await asyncio.wait_for(self._run(sql, params), self._timeout_s)
+        except (psycopg.Error, OSError, TimeoutError) as exc:
             raise StoreError(type(exc).__name__) from exc
+
+    async def _run(self, sql: str, params: tuple[Any, ...]) -> list[dict[str, Any]]:
+        async with await psycopg.AsyncConnection.connect(
+            self._url,
+            autocommit=True,
+            connect_timeout=max(1, round(self._timeout_s)),
+            row_factory=dict_row,
+        ) as conn:
+            if not self._schema_ready:
+                # Las tablas se crean solas (IF NOT EXISTS): desplegar no exige correr
+                # init_db ni manejar la URL de la base fuera de Vercel.
+                await conn.execute(schema_sql())
+                self._schema_ready = True
+            cursor = await conn.execute(sql, params)
+            return await cursor.fetchall() if cursor.description else []
 
     async def get_by_request(self, device_id: str, request_id: UUID) -> dict[str, Any] | None:
         rows = await self._fetch(
