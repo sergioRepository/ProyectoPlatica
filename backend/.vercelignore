@@ -1,0 +1,15 @@
+# Nunca subir secretos ni archivos locales al desplegar con la CLI de Vercel.
+.env
+.env.*
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+tests
+scripts
+# LangGraph Studio: solo desarrollo
+langgraph.json
+banano/studio.py
+.langgraph_api
+Dockerfile
+.dockerignore

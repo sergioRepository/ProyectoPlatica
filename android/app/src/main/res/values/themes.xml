@@ -1,0 +1,6 @@
+<resources>
+    <!-- Fondo de papel desde el primer cuadro para que no haya destello al abrir. -->
+    <style name="Theme.LaVida" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/vellum</item>
+    </style>
+</resources>

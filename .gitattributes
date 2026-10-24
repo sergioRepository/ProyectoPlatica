@@ -1,0 +1,7 @@
+# Finales de línea LF en el repo y en la copia de trabajo (Docker y Vercel corren en Linux).
+* text=auto eol=lf
+*.bat text eol=crlf
+*.jar binary
+*.png binary
+*.ttf binary
+*.otf binary

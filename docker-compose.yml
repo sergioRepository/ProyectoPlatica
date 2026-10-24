@@ -1,0 +1,46 @@
+# Backend local. En producción corre en Vercel; este compose es para desarrollo y pruebas.
+# Uso: docker compose up --build   ->   http://localhost:8000/health
+services:
+  api:
+    build: ./backend
+    image: lavidanoesunbanano-api:dev
+    container_name: lavidanoesunbanano-api
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      # Dentro de la red del compose la base se llama db, no localhost.
+      DATABASE_URL: postgresql://banano:banano@db:5432/banano
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Historial del agente (S2). En producción es Neon; aquí, solo para desarrollo.
+  db:
+    image: postgres:17-alpine
+    container_name: lavidanoesunbanano-db
+    environment:
+      POSTGRES_USER: banano
+      POSTGRES_PASSWORD: banano
+      POSTGRES_DB: banano
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./backend/sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banano -d banano"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:

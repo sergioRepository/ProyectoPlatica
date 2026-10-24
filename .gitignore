@@ -1,0 +1,30 @@
+# Secretos: el .env real nunca se versiona
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Vercel
+.vercel/
+
+# Claude Code (ajustes locales)
+.claude/settings.local.json
+
+# LangGraph Studio (langgraph dev guarda aquí su estado)
+.langgraph_api/
+
+# Graphify (grafo y skill locales)
+graphify-out/
+.claude/skills/graphify/
+.claude/settings.json
+.claude/CLAUDE.md
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

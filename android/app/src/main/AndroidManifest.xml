@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Cuenta regresiva del desbloqueo y aviso de bloqueo apagado (Android 13+ lo pide). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Seguro para abrir la pantalla de bloqueo desde segundo plano si el sistema lo restringe. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <!-- La app no se publica: puede pedir quedar fuera de la optimización de batería. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    <!-- Evidencia de uso para el agente (S2). Se concede a mano en Acceso a datos de uso. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+                     tools:ignore="ProtectedPermissions"/>
+
+    <!--
+        Para listar las apps con ícono en el launcher (Android 11+), sin QUERY_ALL_PACKAGES,
+        y los teclados, cuyas ventanas el servicio de bloqueo ignora.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.LAUNCHER"/>
+        </intent>
+        <intent>
+            <action android:name="android.view.InputMethod"/>
+        </intent>
+    </queries>
+
+    <application
+            android:name=".LaVidaApp"
+            android:allowBackup="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:supportsRtl="true"
+            android:theme="@style/Theme.LaVida">
+        <activity
+                android:exported="true"
+                android:name=".MainActivity"
+                android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <!--
+            Pantalla de bloqueo: tarea propia (otra afinidad) para no arrastrar el inicio de la
+            app, fuera de recientes, y una sola instancia que el servicio reutiliza.
+        -->
+        <activity
+                android:excludeFromRecents="true"
+                android:exported="false"
+                android:launchMode="singleTask"
+                android:name=".feature.block.BlockActivity"
+                android:taskAffinity="com.lavidanoesunbanano.app.block"
+                android:windowSoftInputMode="adjustResize"/>
+
+        <service
+                android:exported="true"
+                android:label="@string/app_name"
+                android:name=".service.blocker.BlockerService"
+                android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+            <meta-data
+                    android:name="android.accessibilityservice"
+                    android:resource="@xml/blocker_service"/>
+        </service>
+    </application>
+
+</manifest>

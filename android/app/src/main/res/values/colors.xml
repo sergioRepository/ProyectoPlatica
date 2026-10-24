@@ -1,0 +1,4 @@
+<resources>
+    <!-- Igual a LaVidaColors.background en Theme.kt: papel cálido desde el primer cuadro. -->
+    <color name="vellum">#FFFFFDF7</color>
+</resources>
