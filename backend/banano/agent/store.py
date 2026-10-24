@@ -1,6 +1,8 @@
 """Historial del agente en PostgreSQL. Vercel no tiene disco: la base es la memoria."""
 
 from datetime import UTC, datetime, timedelta
+from functools import cache
+from pathlib import Path
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -23,6 +25,15 @@ COLUMNS = (
     "status",
     "error_code",
 )
+
+
+SQL_DIR = Path(__file__).resolve().parents[2] / "sql"
+
+
+@cache
+def schema_sql() -> str:
+    """El esquema de backend/sql/, en orden. Es idempotente: se puede aplicar siempre."""
+    return "\n".join(p.read_text(encoding="utf-8") for p in sorted(SQL_DIR.glob("*.sql")))
 
 
 class StoreError(Exception):
@@ -121,6 +132,7 @@ class PostgresStore:
     def __init__(self, url: str, timeout_s: float) -> None:
         self._url = url
         self._timeout_s = timeout_s
+        self._schema_ready = False
 
     async def _fetch(self, sql: str, params: tuple[Any, ...]) -> list[dict[str, Any]]:
         try:
@@ -131,6 +143,11 @@ class PostgresStore:
                 options=f"-c statement_timeout={int(self._timeout_s * 1000)}",
                 row_factory=dict_row,
             ) as conn:
+                if not self._schema_ready:
+                    # Las tablas se crean solas (IF NOT EXISTS): desplegar no exige correr
+                    # init_db ni manejar la URL de la base fuera de Vercel.
+                    await conn.execute(schema_sql())
+                    self._schema_ready = True
                 cursor = await conn.execute(sql, params)
                 return await cursor.fetchall() if cursor.description else []
         except (psycopg.Error, OSError) as exc:

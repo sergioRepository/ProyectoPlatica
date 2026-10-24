@@ -9,9 +9,10 @@ import os
 from datetime import timedelta
 from uuid import uuid4
 
+import psycopg
 import pytest
 
-from banano.agent.store import PostgresStore, effective_status, utcnow
+from banano.agent.store import PostgresStore, effective_status, schema_sql, utcnow
 from tests.fakes import MemoryStore
 
 DB_URL = os.environ.get("TEST_DATABASE_URL")
@@ -67,6 +68,36 @@ def test_postgres_store_contract():
     # psycopg async no corre en el ProactorEventLoop de Windows.
     store = PostgresStore(DB_URL or "", timeout_s=3)
     asyncio.run(contract(store), loop_factory=asyncio.SelectorEventLoop)
+
+
+async def test_postgres_store_applies_the_schema_once(monkeypatch):
+    executed: list[str] = []
+
+    class FakeCursor:
+        description = None
+
+    class FakeConn:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return False
+
+        async def execute(self, sql, params=None):
+            executed.append(sql)
+            return FakeCursor()
+
+    async def connect(*_, **__):
+        return FakeConn()
+
+    monkeypatch.setattr(psycopg.AsyncConnection, "connect", connect)
+    store = PostgresStore("postgresql://x", timeout_s=3)
+    await store.save(event("d"))
+    await store.save(event("d"))
+
+    assert schema_sql() and "CREATE TABLE IF NOT EXISTS agent_events" in schema_sql()
+    assert executed.count(schema_sql()) == 1
+    assert len(executed) == 3
 
 
 def test_unconfirmed_sent_reads_as_unknown():
