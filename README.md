@@ -58,7 +58,7 @@ No está en Play Store; se instala por APK.
 
 **Requisitos:** Android 8.0 o superior. Internet solo para el onboarding y el juez; los mensajes de bloqueo funcionan sin conexión.
 
-**[Descargar el APK](https://www.mediafire.com/file/t1x19xrl4jngmfi/la-vida-no-es-un-banano.apk/file)** (versión 0.2.0, estilo Warm Toon, 11 MB). Usa el backend de producción en Vercel. También está en el repositorio: [apk/la-vida-no-es-un-banano.apk](apk/la-vida-no-es-un-banano.apk).
+**[Descargar el APK](apk/la-vida-no-es-un-banano.apk)** (versión 0.3.0, con el agente de intervención, 11 MB). Usa el backend de producción en Vercel. La versión 0.2.0, sin el agente, sigue en [MediaFire](https://www.mediafire.com/file/t1x19xrl4jngmfi/la-vida-no-es-un-banano.apk/file).
 
 1. Ábrelo en el teléfono. Android pide permitir instalar apps desde el navegador o el gestor de archivos.
 2. En Samsung, si el Bloqueador automático (Auto Blocker) está activo, apágalo para instalar y vuelve a encenderlo después.
