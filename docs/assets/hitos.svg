@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="190" viewBox="0 0 960 190" role="img" aria-labelledby="t d">
+  <title id="t">Progreso de hitos del Reto Agente 2026</title>
+  <desc id="d">S1 y S2 implementados, con aprobación por confirmar. S3 y S4 próximos.</desc>
+  <style>
+    .k { font: 800 22px 'Plus Jakarta Sans', 'Segoe UI', Helvetica, Arial, sans-serif; fill: #1E1E24; }
+    .n { font: 700 15px 'Plus Jakarta Sans', 'Segoe UI', Helvetica, Arial, sans-serif; fill: #1E1E24; }
+    .s { font: 700 11px 'Geist Mono', ui-monospace, Consolas, 'Courier New', monospace; fill: #1E1E24; letter-spacing: .5px; }
+    .m { font: 700 11px 'Geist Mono', ui-monospace, Consolas, 'Courier New', monospace; fill: #4D4632; letter-spacing: .5px; }
+  </style>
+  <rect x="6" y="6" width="948" height="178" rx="24" fill="#FFFDF7" stroke="#1E1E24" stroke-width="2"/>
+
+  <!-- Línea de tiempo -->
+  <line x1="120" y1="62" x2="840" y2="62" stroke="#1E1E24" stroke-width="2" stroke-dasharray="6 6"/>
+  <line x1="120" y1="62" x2="360" y2="62" stroke="#1E1E24" stroke-width="4"/>
+
+  <!-- Para actualizar un hito: cambia el fill del círculo (#FACC15 = hecho, #FFFFFF = próximo) y su texto de estado. -->
+  <g id="s1" transform="translate(120 0)">
+    <circle cy="62" r="26" fill="#FACC15" stroke="#1E1E24" stroke-width="2"/>
+    <text y="70" class="k" text-anchor="middle">S1</text>
+    <text y="114" class="n" text-anchor="middle">Agente corriendo</text>
+    <text y="138" class="s" text-anchor="middle">IMPLEMENTADO</text>
+    <text y="156" class="m" text-anchor="middle">aprobación por confirmar</text>
+  </g>
+  <g id="s2" transform="translate(360 0)">
+    <circle cy="62" r="26" fill="#FACC15" stroke="#1E1E24" stroke-width="2"/>
+    <text y="70" class="k" text-anchor="middle">S2</text>
+    <text y="114" class="n" text-anchor="middle">Herramientas reales</text>
+    <text y="138" class="s" text-anchor="middle">IMPLEMENTADO</text>
+    <text y="156" class="m" text-anchor="middle">aprobación por confirmar</text>
+  </g>
+  <g id="s3" transform="translate(600 0)">
+    <circle cy="62" r="26" fill="#FFFFFF" stroke="#1E1E24" stroke-width="2"/>
+    <text y="70" class="k" text-anchor="middle">S3</text>
+    <text y="114" class="n" text-anchor="middle">Datos reales</text>
+    <text y="138" class="s" text-anchor="middle">PRÓXIMO</text>
+  </g>
+  <g id="s4" transform="translate(840 0)">
+    <circle cy="62" r="26" fill="#FFFFFF" stroke="#1E1E24" stroke-width="2"/>
+    <text y="70" class="k" text-anchor="middle">S4</text>
+    <text y="114" class="n" text-anchor="middle">Semana de carga</text>
+    <text y="138" class="s" text-anchor="middle">PRÓXIMO</text>
+  </g>
+</svg>
