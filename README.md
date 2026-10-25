@@ -232,7 +232,7 @@ Este proyecto participa en el **[Reto Agente 2026 de PLATICA MX](https://reto.pl
 | S3 · Datos reales | Set de evaluación propio de más de 30 casos | Reporte de costo por tarea |
 | S4 · Semana de carga | 1,000 unidades de trabajo y 12 horas de ejecución desatendida | Bitácora completa |
 
-> Para documentar un hito nuevo, copia la tabla de un hito anterior, agrega su fila al resumen y cambia su estado en `docs/assets/hitos.svg`.
+
 
 ## Estructura del repositorio
 
