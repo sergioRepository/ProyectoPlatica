@@ -17,7 +17,6 @@
 </p>
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=uU0Go189CdI"><b>Video de demostración</b></a> ·
   <a href="apk/la-vida-no-es-un-banano.apk"><b>Descargar el APK</b></a> ·
   <a href="#reto-agente-2026"><b>Bitácora del reto</b></a>
 </p>
