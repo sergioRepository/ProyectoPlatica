@@ -179,8 +179,8 @@ Este proyecto participa en el **[Reto Agente 2026 de PLATICA MX](https://reto.pl
 
 | Hito | Nombre | Estado | Commit | Video | Reporte | Nota de entrega |
 |---|---|---|---|---|---|---|
-| [S1](#hito-1-agente-corriendo-end-to-end) | Agente corriendo end-to-end | Implementado · aprobación por confirmar | [`0af6038`](https://github.com/sergioRepository/ProyectoPlatica/commit/0af6038a61448ea9b6545cf723548ca44a0f569c) | [YouTube](https://www.youtube.com/watch?v=uU0Go189CdI) | Pendiente | Pendiente |
-| [S2](#hito-2-3-herramientas-y-video-de-2-min) | 3 herramientas y video de 2 min | Implementado · aprobación por confirmar | [`f9760fe`](https://github.com/sergioRepository/ProyectoPlatica/commit/f9760fe81f73925e900a7bc02388cf25979eef2d) | Pendiente | Pendiente | Pendiente |
+| [S1](#hito-1-agente-corriendo-end-to-end) | Agente corriendo end-to-end | Implementado · aprobación por confirmar | [`0af6038`](https://github.com/sergioRepository/ProyectoPlatica/commit/0af6038a61448ea9b6545cf723548ca44a0f569c) | [YouTube](https://www.youtube.com/watch?v=uU0Go189CdI) |  [Drive](https://drive.google.com/file/d/10EzgVXprkzpQFAJsLh0oijpimPKuLbi7/view?usp=sharing)  | Pendiente |
+| [S2](#hito-2-3-herramientas-y-video-de-2-min) | 3 herramientas y video de 2 min | Implementado · aprobación por confirmar | [`f9760fe`](https://github.com/sergioRepository/ProyectoPlatica/commit/f9760fe81f73925e900a7bc02388cf25979eef2d) |  [YouTube](https://www.youtube.com/watch?v=px2msdFu3Ts) |   [Drive](https://drive.google.com/file/d/1tE0FzPb9SE-tQMhmXmqcP__8SFa1GKFh/view?usp=drive_link)  | Pendiente |
 | S3 | Datos reales | Próximo | | | | |
 | S4 | Semana de carga | Próximo | | | | |
 
