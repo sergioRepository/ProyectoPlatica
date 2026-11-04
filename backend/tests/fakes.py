@@ -51,7 +51,9 @@ class FakeLLM:
         }
         self.calls: list[tuple[type, str, str]] = []
 
-    async def generate(self, schema: type, *, system: str, user: str, timeout: float) -> Any:
+    async def generate(
+        self, schema: type, *, system: str, user: str, timeout: float, node: str = ""
+    ) -> Any:
         self.calls.append((schema, system, user))
         queue = self._responses[schema]
         value = queue.pop(0) if len(queue) > 1 else queue[0]
@@ -75,7 +77,7 @@ class FakeToolLLM:
         self.seen: list[list[BaseMessage]] = []
 
     async def step(
-        self, messages: list[BaseMessage], tools: list[Any], *, timeout: float
+        self, messages: list[BaseMessage], tools: list[Any], *, timeout: float, node: str = ""
     ) -> AIMessage:
         self.seen.append(list(messages))
         turn = self._turns.pop(0)

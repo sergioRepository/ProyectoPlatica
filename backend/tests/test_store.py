@@ -58,6 +58,25 @@ async def contract(store) -> None:
     assert again is not None and again["status"] == "executed"
     assert await store.confirm(other, first["id"], "executed", None) is None
 
+    await store.record_usage(
+        [
+            {
+                "id": uuid4(),
+                "device_id": device,
+                "plan": "free",
+                "graph": "judge",
+                "node": "evaluar",
+                "model": "m",
+                "input_tokens": 10,
+                "output_tokens": None,
+                "cost_usd": None,
+                "latency_ms": 5,
+                "status": "timeout",
+                "request_id": uuid4(),
+            }
+        ]
+    )
+
     today = date(2026, 11, 4)
     assert await store.get_device(device, today) is None
     consents = {

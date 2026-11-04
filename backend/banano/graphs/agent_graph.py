@@ -98,6 +98,7 @@ async def planificar(state: AgentState, runtime: Runtime[AgentContext]) -> dict[
             state["messages"],
             list(TOOLS.values()),
             timeout=min(ctx.settings.agent_llm_timeout_s, remaining),
+            node="planificar",
         )
     except LLMError as exc:
         logger.warning("El agente no respondió: %s", exc)

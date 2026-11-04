@@ -13,6 +13,7 @@ from langchain_xai import ChatXAI
 from pydantic import BaseModel
 
 from banano.config import Settings, StructuredMethod
+from banano.llm.usage import tracked_call
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class LLMNotConfiguredError(Exception):
 
 class StructuredLLM(Protocol):
     async def generate[T: BaseModel](
-        self, schema: type[T], *, system: str, user: str, timeout: float
+        self, schema: type[T], *, system: str, user: str, timeout: float, node: str = ""
     ) -> T: ...
 
 
@@ -62,17 +63,27 @@ class GrokStructuredLLM:
         self._method = method
 
     async def generate[T: BaseModel](
-        self, schema: type[T], *, system: str, user: str, timeout: float
+        self, schema: type[T], *, system: str, user: str, timeout: float, node: str = ""
     ) -> T:
         deadline = time.monotonic() + timeout
         hinted_system = f"{system}\n\n{json_instructions(schema)}"
         first_system = hinted_system if self._method == "json_mode" else system
+        model = str(getattr(self._model, "model_name", ""))
         try:
-            structured = self._model.with_structured_output(schema, method=self._method)
-            result = await asyncio.wait_for(
-                structured.ainvoke([SystemMessage(first_system), HumanMessage(user)]), timeout
-            )
-            return result if isinstance(result, schema) else schema.model_validate(result)
+            with tracked_call(node, model) as call:
+                # include_raw conserva usage_metadata, pero ya no lanza si la salida no valida.
+                structured = self._model.with_structured_output(
+                    schema, method=self._method, include_raw=True
+                )
+                result = await asyncio.wait_for(
+                    structured.ainvoke([SystemMessage(first_system), HumanMessage(user)]), timeout
+                )
+                call.raw, parsed = result["raw"], result["parsed"]
+                if result["parsing_error"] is not None or parsed is None:
+                    raise ValueError("La salida estructurada no valida")
+                value = parsed if isinstance(parsed, schema) else schema.model_validate(parsed)
+                call.status = "ok"
+                return value
         except TimeoutError as exc:
             raise LLMError("El LLM no respondió a tiempo") from exc
         except Exception as exc:
@@ -86,10 +97,14 @@ class GrokStructuredLLM:
         if remaining <= 0:
             raise LLMError("El LLM no respondió a tiempo")
         try:
-            reply = await asyncio.wait_for(
-                self._model.ainvoke([SystemMessage(hinted_system), HumanMessage(user)]), remaining
-            )
-            return parse_json_model(schema, reply.text)
+            with tracked_call(node, model) as call:
+                call.raw = await asyncio.wait_for(
+                    self._model.ainvoke([SystemMessage(hinted_system), HumanMessage(user)]),
+                    remaining,
+                )
+                value = parse_json_model(schema, call.raw.text)
+                call.status = "ok"
+                return value
         except TimeoutError as exc:
             raise LLMError("El LLM no respondió a tiempo") from exc
         except Exception as exc:
@@ -100,7 +115,12 @@ class ToolLLM(Protocol):
     """Un turno del agente: el modelo responde con llamadas a herramientas."""
 
     async def step(
-        self, messages: list[BaseMessage], tools: list[type[BaseModel]], *, timeout: float
+        self,
+        messages: list[BaseMessage],
+        tools: list[type[BaseModel]],
+        *,
+        timeout: float,
+        node: str = "",
     ) -> AIMessage: ...
 
 
@@ -111,12 +131,19 @@ class GrokToolLLM:
         self._model = model
 
     async def step(
-        self, messages: list[BaseMessage], tools: list[type[BaseModel]], *, timeout: float
+        self,
+        messages: list[BaseMessage],
+        tools: list[type[BaseModel]],
+        *,
+        timeout: float,
+        node: str = "",
     ) -> AIMessage:
         # "required": cada turno es una herramienta; el texto suelto no sirve para decidir.
         bound = self._model.bind_tools(tools, tool_choice="required")
         try:
-            reply = await asyncio.wait_for(bound.ainvoke(messages), timeout)
+            with tracked_call(node, str(getattr(self._model, "model_name", ""))) as call:
+                reply = call.raw = await asyncio.wait_for(bound.ainvoke(messages), timeout)
+                call.status = "ok"
         except TimeoutError as exc:
             raise LLMError("El LLM no respondió a tiempo") from exc
         except Exception as exc:

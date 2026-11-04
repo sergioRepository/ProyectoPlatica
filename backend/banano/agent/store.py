@@ -41,6 +41,20 @@ class StoreError(Exception):
     """La base no respondió o falló: el agente no debe fingir que consultó o guardó."""
 
 
+USAGE_COLUMNS = (
+    "id",
+    "device_id",
+    "plan",
+    "graph",
+    "node",
+    "model",
+    "input_tokens",
+    "output_tokens",
+    "cost_usd",
+    "latency_ms",
+    "status",
+    "request_id",
+)
 DailyCounter = Literal["llm_calls", "rejections", "templates"]
 DAILY_COUNTERS: tuple[DailyCounter, ...] = ("llm_calls", "rejections", "templates")
 CONSENT_FIELDS = ("excuses", "phone_usage", "cross_border", "analytics", "text_version")
@@ -70,6 +84,8 @@ class DeviceStore(Protocol):
     async def save_consents(self, device_id: str, consents: dict[str, Any]) -> None: ...
 
     async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool: ...
+
+    async def record_usage(self, rows: list[dict[str, Any]]) -> None: ...
 
     async def increment(
         self,
@@ -101,7 +117,7 @@ class UnconfiguredStore:
         raise StoreError("not_configured")
 
     get_by_request = recent = count_interventions_since = save = confirm = _fail
-    get_device = save_consents = set_plan = increment = _fail
+    get_device = save_consents = set_plan = increment = record_usage = _fail
 
 
 class MemoryStore:
@@ -113,6 +129,7 @@ class MemoryStore:
         self.devices: dict[str, dict[str, Any]] = {}
         self.consents: list[dict[str, Any]] = []
         self.daily: dict[tuple[str, date], dict[str, int]] = {}
+        self.usage: list[dict[str, Any]] = []
         self.fail = False
 
     def _check(self) -> None:
@@ -179,6 +196,10 @@ class MemoryStore:
             consent_excuses=consents["excuses"], consent_analytics=consents["analytics"]
         )
         self.consents.append({"device_id": device_id, **consents})
+
+    async def record_usage(self, rows: list[dict[str, Any]]) -> None:
+        self._check()
+        self.usage.extend(rows)
 
     async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool:
         self._check()
@@ -311,6 +332,14 @@ class PostgresStore:
                 consents["analytics"],
                 *(consents[field] for field in CONSENT_FIELDS),
             ),
+        )
+
+    async def record_usage(self, rows: list[dict[str, Any]]) -> None:
+        row = "(" + ", ".join("%s" for _ in USAGE_COLUMNS) + ")"
+        await self._fetch(
+            f"INSERT INTO llm_usage ({', '.join(USAGE_COLUMNS)}) "
+            f"VALUES {', '.join(row for _ in rows)}",
+            tuple(r[column] for r in rows for column in USAGE_COLUMNS),
         )
 
     async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool:

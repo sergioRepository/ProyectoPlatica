@@ -219,6 +219,7 @@ async def evaluar(state: JudgeState, runtime: Runtime[JudgeContext]) -> dict[str
             system=judge_system(request),
             user=judge_request_text(request),
             timeout=context.settings.judge_llm_timeout_s,
+            node="evaluar",
         )
     except LLMError as exc:
         logger.warning("El juez no respondió: %s", exc)

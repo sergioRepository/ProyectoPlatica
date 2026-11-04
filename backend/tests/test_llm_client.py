@@ -48,7 +48,9 @@ class SlowModel:
     async def _sleep(self, _: object) -> None:
         await asyncio.sleep(1)
 
-    def with_structured_output(self, schema: type, method: str) -> RunnableLambda:
+    def with_structured_output(
+        self, schema: type, method: str, include_raw: bool
+    ) -> RunnableLambda:
         return RunnableLambda(self._sleep)
 
     async def ainvoke(self, messages: object) -> None:

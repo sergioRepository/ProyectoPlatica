@@ -26,6 +26,7 @@ from banano.graphs.agent_graph import run_agent_graph
 from banano.graphs.judge_graph import JudgeUnavailableError, run_judge_graph
 from banano.graphs.template_graph import TemplateGenerationError, run_template_graph
 from banano.llm.client import LLMError, StructuredLLM, ToolLLM
+from banano.llm.usage import metering
 from banano.quota import QuotaReason, bump, plan_limit, quota_day, take_llm_call
 from banano.schemas.agent import AnalyzeRequest, AnalyzeResponse, ConfirmRequest, ConfirmResponse
 from banano.schemas.devices import (
@@ -168,7 +169,8 @@ async def generate_template(
             status.HTTP_429_TOO_MANY_REQUESTS, detail="Ya generaste tus mensajes hoy."
         )
     try:
-        template = await run_template_graph(profile, llm, settings)
+        async with metering(store, settings, device_id, device, "template"):
+            template = await run_template_graph(profile, llm, settings)
     except (TemplateGenerationError, LLMError) as exc:
         raise HTTPException(
             status.HTTP_502_BAD_GATEWAY,
@@ -198,7 +200,8 @@ async def analyze(
         return await take_llm_call(store, device, settings, reserve=reserve)
 
     # Si el LLM falla, responde agent_unavailable (200): el teléfono sigue con su bloqueo local.
-    return await run_agent_graph(body, device_id, llm, store, settings, quota)
+    async with metering(store, settings, device_id, device, "agent", body.request_id):
+        return await run_agent_graph(body, device_id, llm, store, settings, quota)
 
 
 @router.post("/agent/interventions/{event_id}/result")
@@ -230,7 +233,8 @@ async def judge_excuse(
         return await take_llm_call(store, device, settings, judge=True)
 
     try:
-        verdict = await run_judge_graph(body, llm, settings, quota)
+        async with metering(store, settings, device_id, device, "judge"):
+            verdict = await run_judge_graph(body, llm, settings, quota)
     except JudgeUnavailableError as exc:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE,

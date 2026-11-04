@@ -245,6 +245,7 @@ async def analizar_perfil(
         system=ANALYSIS_SYSTEM,
         user=analysis_request(state["profile"]),
         timeout=_call_timeout(context),
+        node="analizar_perfil",
     )
     return {
         "analysis": analysis,
@@ -290,6 +291,7 @@ async def generar_mensajes(
                 with_verdicts=first_run and index == 0,
             ),
             timeout=timeout,
+            node="generar_mensajes",
         )
         for index, size in enumerate(counts)
     ]

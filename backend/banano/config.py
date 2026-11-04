@@ -1,10 +1,17 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 StructuredMethod = Literal["json_schema", "function_calling", "json_mode"]
+
+
+class ModelPrice(BaseModel):
+    """En dólares por millón de tokens."""
+
+    input_per_million: float
+    output_per_million: float
 
 
 class Settings(BaseSettings):
@@ -28,7 +35,7 @@ class Settings(BaseSettings):
     llm_structured_method: StructuredMethod = "json_schema"
     generate_llm_timeout_s: float = 120.0
     # El teléfono espera 8 s en total: el juez debe contestar antes.
-    judge_llm_timeout_s: float = 6.0
+    judge_llm_timeout_s: float = 5.5
 
     # Registro de dispositivos. Con ENROLLMENT_CODE definido, el registro exige el código:
     # sirve para cerrarlo si hay abuso. Vacío, el registro es abierto.
@@ -63,7 +70,8 @@ class Settings(BaseSettings):
     # Neon Free suspende la base sin uso; despertarla toma uno o dos segundos.
     db_timeout_s: float = 5.0
     # Para consultas en el camino del juez: el teléfono espera 8 s en total.
-    gate_db_timeout_s: float = 0.6
+    gate_db_timeout_s: float = 0.5
+    usage_write_timeout_s: float = 0.8
     rate_limit_agent_per_hour: int = 12
     agent_llm_timeout_s: float = 6.0
     agent_total_timeout_s: float = 20.0
@@ -83,6 +91,10 @@ class Settings(BaseSettings):
     agent_reserved_for_judge: int = 1
     # Colombia no cambia de hora, así que basta un desfase fijo.
     quota_utc_offset_hours: int = -5
+
+    # Precio por modelo para calcular cost_usd, en JSON. Un modelo sin precio guarda sus tokens
+    # con el costo vacío.
+    llm_prices: dict[str, ModelPrice] = {}
 
     enable_docs: bool = False
 
