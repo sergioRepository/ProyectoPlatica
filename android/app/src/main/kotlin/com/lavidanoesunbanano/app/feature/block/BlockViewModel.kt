@@ -11,9 +11,12 @@ import com.lavidanoesunbanano.app.data.repository.DeviceRepository
 import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.ProtectionRepository
+import com.lavidanoesunbanano.app.data.system.CrisisLinesSource
+import com.lavidanoesunbanano.app.domain.excuse.CrisisLine
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
 import com.lavidanoesunbanano.app.domain.model.Verdict
+import com.lavidanoesunbanano.app.domain.model.VerdictReason
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import com.lavidanoesunbanano.app.service.notify.Notifier
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -87,6 +90,8 @@ sealed interface BlockStep {
         val type: ExcuseType,
         val verdict: Verdict,
         val unlockedUntil: Instant?,
+        /** Líneas de ayuda verificadas, si el juez vio una crisis. */
+        val helpLines: List<CrisisLine> = emptyList(),
     ) : BlockStep
 }
 
@@ -117,6 +122,7 @@ class BlockViewModel @Inject constructor(
     private val deviceRepository: DeviceRepository,
     private val protection: ProtectionRepository,
     private val settings: SettingsStore,
+    private val crisisLines: CrisisLinesSource,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -207,12 +213,13 @@ class BlockViewModel @Inject constructor(
         updateStep { step.copy(judging = true) }
         viewModelScope.launch {
             val result = excuses.judge(current, step.type, step.reason)
+            val help = if (result.verdict.reason == VerdictReason.CRISIS) crisisLines.lines() else emptyList()
             drafts.remove(step.type)
             // El tiempo corre desde el veredicto, se abra o no la app enseguida.
             result.unlockedUntil?.let { notifier.showUnlock(current.app, it) }
             // Si mientras tanto llegó otro intento, el veredicto solo queda en el historial.
             if (session?.attemptId == current.attemptId) {
-                updateStep { BlockStep.Decided(step.type, result.verdict, result.unlockedUntil) }
+                updateStep { BlockStep.Decided(step.type, result.verdict, result.unlockedUntil, help) }
             }
         }
     }

@@ -231,6 +231,9 @@
     <string name="settings_quota_value">%1$d al día</string>
     <string name="settings_quotas_hint">Lo máximo que el juez aprueba en un día, sumando todas las apps.</string>
     <string name="settings_sarcasm">Sarcasmo</string>
+    <string name="settings_sarcasm_hint">Bájalo cuando quieras: aplica de inmediato, sin regenerar los mensajes.</string>
+    <string name="settings_kind_mode">Modo amable</string>
+    <string name="settings_kind_mode_desc">Para los días difíciles: sin sarcasmo en la pantalla de bloqueo ni en el juez.</string>
     <string name="settings_profanity">Groserías</string>
     <string name="settings_country">Jerga</string>
     <string name="settings_forbidden">Temas vetados</string>
@@ -362,7 +365,10 @@
     <string name="verdict_reason_plan_quota">sin llamadas de IA hoy</string>
     <string name="verdict_reason_rejection_cap">demasiados rechazos hoy</string>
     <string name="verdict_offline_emergency">Esta vez no hay juez, así que te creo. Tienes %1$d minutos y queda anotado para revisarlo después.</string>
-    <string name="verdict_offline_rejected">Sin juez no hay minutos extra. Vuelve cuando tengas conexión, o mejor no vuelvas.</string>
+    <string name="verdict_offline_rejected">Sin juez no hay minutos extra. Vuelve cuando haya conexión.</string>
+    <string name="verdict_crisis">Ve. Lo importante es que tú y los tuyos estén bien. Tienes %1$d minutos.</string>
+    <string name="crisis_lines_title">Si necesitas ayuda, aquí hay personas que pueden escucharte:</string>
+    <string name="crisis_no_lines">Si tú o alguien más está en peligro, busca ayuda ya: llama a los servicios de emergencia de tu ciudad o habla con alguien de confianza.</string>
     <string name="verdict_open_app">Abrir %1$s</string>
     <string name="verdict_back">Volver</string>
 

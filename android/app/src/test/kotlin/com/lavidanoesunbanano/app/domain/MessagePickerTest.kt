@@ -103,4 +103,21 @@ class MessagePickerTest {
     fun `an empty template gives nothing`() {
         assertNull(MessagePicker.pick(emptyList(), situation()))
     }
+
+    @Test
+    fun `lowering the sarcasm applies to the messages already generated`() {
+        val soft = message("suave").copy(intensity = 2)
+        val harsh = message("duro").copy(intensity = 5)
+
+        val picked = MessagePicker.pick(listOf(soft, harsh), situation().copy(maxIntensity = 2))
+
+        assertEquals(soft, picked)
+    }
+
+    @Test
+    fun `nothing soft enough means no message instead of a harsh one`() {
+        val harsh = message("duro").copy(intensity = 5)
+
+        assertNull(MessagePicker.pick(listOf(harsh), situation().copy(maxIntensity = 1)))
+    }
 }

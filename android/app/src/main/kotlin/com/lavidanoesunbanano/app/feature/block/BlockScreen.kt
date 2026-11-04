@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -45,10 +46,12 @@ import com.lavidanoesunbanano.app.core.designsystem.FadeOut
 import com.lavidanoesunbanano.app.core.designsystem.GhostButton
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTextField
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
+import com.lavidanoesunbanano.app.core.designsystem.LinkRow
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
 import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
 import com.lavidanoesunbanano.app.core.designsystem.StatusLine
+import com.lavidanoesunbanano.app.domain.excuse.CrisisLine
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
 import com.lavidanoesunbanano.app.domain.model.Verdict
 import com.lavidanoesunbanano.app.domain.model.VerdictReason
@@ -239,8 +242,12 @@ private fun ColumnScope.DecidedStep(state: BlockUiState, step: BlockStep.Decided
         contentAlignment = Alignment.CenterStart,
     ) {
         Column(Modifier.verticalScroll(rememberScrollState())) {
-            Mascot(happy = verdict.valid)
-            Spacer(Modifier.height(24.dp))
+            val crisis = verdict.reason == VerdictReason.CRISIS
+            // Un banano feliz no acompaña a alguien en crisis.
+            if (!crisis) {
+                Mascot(happy = verdict.valid)
+                Spacer(Modifier.height(24.dp))
+            }
             Text(
                 text = verdictMessage(verdict),
                 style = LaVidaTheme.type.display,
@@ -248,6 +255,10 @@ private fun ColumnScope.DecidedStep(state: BlockUiState, step: BlockStep.Decided
             )
             Spacer(Modifier.height(16.dp))
             Text(text = verdictLabel(verdict), style = LaVidaTheme.type.mono, color = verdictColor(verdict))
+            if (crisis) {
+                Spacer(Modifier.height(24.dp))
+                CrisisHelp(step.helpLines)
+            }
         }
     }
     Spacer(Modifier.height(24.dp))
@@ -271,6 +282,27 @@ private fun ColumnScope.DecidedStep(state: BlockUiState, step: BlockStep.Decided
             )
         }
         verdict.message?.let { ReportControl(it, ReportSource.VERDICT, state.reported, actions) }
+    }
+}
+
+/** Líneas de ayuda: un toque abre el marcador, sin llamar por el usuario. */
+@Composable
+private fun CrisisHelp(lines: List<CrisisLine>) {
+    val uriHandler = LocalUriHandler.current
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(if (lines.isEmpty()) R.string.crisis_no_lines else R.string.crisis_lines_title),
+            style = LaVidaTheme.type.body,
+            color = LaVidaTheme.colors.textPrimary,
+        )
+        lines.forEach { line ->
+            LinkRow(
+                title = line.name,
+                value = line.number,
+                monoValue = true,
+                onClick = { uriHandler.openUri("tel:${line.number}") },
+            )
+        }
     }
 }
 

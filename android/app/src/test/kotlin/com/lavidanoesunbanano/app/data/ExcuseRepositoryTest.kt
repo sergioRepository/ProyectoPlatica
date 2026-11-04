@@ -94,6 +94,7 @@ class ExcuseRepositoryTest {
             database.excuseDao(),
             database.templateDao(),
             database.profileDao(),
+            settings,
             clock,
         )
         events = EventRepository(database.eventDao(), settings, DeviceRepository(store, api, config, settings), api, clock)
@@ -286,5 +287,32 @@ class ExcuseRepositoryTest {
         assertEquals(listOf("emergency_requested"), tracked.map { it.name })
         assertTrue(tracked.single().props.contains("approved"))
         assertFalse(tracked.single().props.contains("psiquiatra"))
+    }
+
+    @Test
+    fun `kind mode travels to the judge without sarcasm`() = runBlocking {
+        settings.kindMode.value = true
+        server.enqueue(
+            MockResponse.Builder()
+                .body("""{"valid":false,"confidence":0.9,"granted_minutes":0,"message":"Hoy no.","reason_code":"boredom"}""")
+                .build(),
+        )
+
+        excuses.judge(session(), ExcuseType.EXTRA_TIME, "Quiero ver un rato el celular")
+
+        val body = server.takeRequest().body!!.utf8()
+        assertTrue(body.contains(""""kind_mode":true"""), body)
+        assertTrue(body.contains(""""sarcasm_level":1"""), body)
+        assertTrue(body.contains(""""profanity_allowed":false"""), body)
+    }
+
+    @Test
+    fun `kind mode leaves the sarcastic lines out of the offline rule`() = runBlocking {
+        settings.kindMode.value = true
+        settings.consents.value = settings.consents.value?.copy(excuses = false)
+
+        val result = excuses.judge(session(), ExcuseType.EXTRA_TIME, "Quiero ver un rato el celular")
+
+        assertNull(result.verdict.message)
     }
 }

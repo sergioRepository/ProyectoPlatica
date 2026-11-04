@@ -8,6 +8,7 @@ import com.lavidanoesunbanano.app.data.local.dao.ProfileDao
 import com.lavidanoesunbanano.app.data.local.dao.TemplateDao
 import com.lavidanoesunbanano.app.data.local.entity.AttemptEntity
 import com.lavidanoesunbanano.app.data.mapper.toDomain
+import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.TemplateMessage
 import com.lavidanoesunbanano.app.domain.template.MessagePicker
@@ -20,6 +21,7 @@ import java.time.LocalTime
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
 
 /** Un intento ya guardado, con el mensaje listo para mostrar. */
 data class BlockSession(
@@ -41,6 +43,7 @@ class BlockSessionRepository @Inject constructor(
     private val excuseDao: ExcuseDao,
     private val templateDao: TemplateDao,
     private val profileDao: ProfileDao,
+    private val settings: SettingsStore,
     private val clock: Clock,
 ) {
     /**
@@ -100,7 +103,7 @@ class BlockSessionRepository @Inject constructor(
         minutesToday: Int,
         at: ZonedDateTime,
         afterRejection: Boolean,
-    ): TemplateMessage? = MessagePicker.pick(
+    ): TemplateMessage? = if (settings.kindMode.first()) null else MessagePicker.pick(
         messages,
         PickSituation(
             attemptsToday = attemptNumber,
@@ -108,6 +111,7 @@ class BlockSessionRepository @Inject constructor(
             time = at.toLocalTime(),
             afterRejection = afterRejection,
             recentIds = attemptDao.recentMessageIds(MessagePicker.RECENT_WINDOW),
+            maxIntensity = profileDao.get()?.sarcasmLevel ?: MessagePicker.MAX_INTENSITY,
         ),
     )
 

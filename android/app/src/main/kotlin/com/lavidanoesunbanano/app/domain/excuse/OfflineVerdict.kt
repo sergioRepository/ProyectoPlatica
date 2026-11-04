@@ -9,7 +9,7 @@ import kotlin.random.Random
 /**
  * Regla del spec cuando el juez no contesta (sin red, más de 8 s o error del servidor):
  * una emergencia se aprueba siempre y queda para revisar; "10 minutos" se rechaza con una
- * frase de la plantilla.
+ * frase de la plantilla. Una crisis se aprueba sea cual sea el tipo de excusa.
  */
 object OfflineVerdict {
 
@@ -17,9 +17,18 @@ object OfflineVerdict {
         type: ExcuseType,
         limits: UnlockLimits,
         rejectedLines: List<String>,
+        reason: String = "",
         random: Random = Random.Default,
-    ): Verdict = when (type) {
-        ExcuseType.EMERGENCY -> Verdict(
+    ): Verdict = when {
+        CrisisDetector.isCrisis(reason) -> Verdict(
+            valid = true,
+            grantedMinutes = limits.emergencyMinutes,
+            message = null,
+            reason = VerdictReason.CRISIS,
+            confidence = null,
+            offline = true,
+        )
+        type == ExcuseType.EMERGENCY -> Verdict(
             valid = true,
             grantedMinutes = limits.emergencyMinutes,
             message = null,
@@ -27,7 +36,7 @@ object OfflineVerdict {
             confidence = null,
             offline = true,
         )
-        ExcuseType.EXTRA_TIME -> Verdict(
+        else -> Verdict(
             valid = false,
             grantedMinutes = 0,
             message = rejectedLines.randomOrNull(random),

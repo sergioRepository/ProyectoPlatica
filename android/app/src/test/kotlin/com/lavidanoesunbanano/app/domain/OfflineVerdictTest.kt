@@ -55,4 +55,14 @@ class OfflineVerdictTest {
         assertTrue(OfflineVerdict.needsReview(ExcuseType.EMERGENCY, verdict))
         assertFalse(OfflineVerdict.needsReview(ExcuseType.EMERGENCY, verdict.copy(reason = VerdictReason.LEGIT_WORK)))
     }
+
+    @Test
+    fun `a crisis is approved without the judge whatever the type`() {
+        val verdict = OfflineVerdict.decide(ExcuseType.EXTRA_TIME, limits, listOf("No."), "Ya no quiero vivir")
+
+        assertTrue(verdict.valid)
+        assertEquals(VerdictReason.CRISIS, verdict.reason)
+        assertEquals(limits.emergencyMinutes, verdict.grantedMinutes)
+        assertNull(verdict.message)
+    }
 }

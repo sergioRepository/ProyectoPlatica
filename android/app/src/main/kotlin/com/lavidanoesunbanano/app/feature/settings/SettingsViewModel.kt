@@ -63,6 +63,7 @@ data class SettingsUiState(
     /** Plan y llamadas de IA de hoy; `null` sin conexión. */
     val device: DeviceStatusDto? = null,
     val consents: Consents? = null,
+    val kindMode: Boolean = false,
     val eraseFailed: Boolean = false,
     val template: TemplateInfo = TemplateInfo(),
     val preview: String? = null,
@@ -132,7 +133,7 @@ class SettingsViewModel @Inject constructor(
         Preferences(limits, protection, pending, device)
     }
 
-    private val privacyState = combine(settings.consents, eraseFailed) { consents, failed -> consents to failed }
+    private val privacyState = combine(settings.consents, eraseFailed, settings.kindMode, ::Triple)
 
     val state: StateFlow<SettingsUiState> = combine(rules, preferences, template, preview, privacyState) { rules, prefs, template, preview, privacyState ->
         val (profile, apps, ranges) = rules
@@ -146,8 +147,10 @@ class SettingsViewModel @Inject constructor(
             device = prefs.device,
             consents = privacyState.first,
             eraseFailed = privacyState.second,
+            kindMode = privacyState.third,
             template = template,
-            preview = preview?.text,
+            // Los mensajes de la plantilla son sarcásticos: el modo amable no los muestra.
+            preview = preview?.text?.takeUnless { privacyState.third },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
@@ -159,6 +162,10 @@ class SettingsViewModel @Inject constructor(
     fun refreshSetup() {
         setupPending.value = SetupChecklist.pending(SetupChecklist.items(setupSource.current()))
         viewModelScope.launch { device.value = deviceRepository.status() }
+    }
+
+    fun setKindMode(enabled: Boolean) {
+        viewModelScope.launch { settings.setKindMode(enabled) }
     }
 
     fun setExcusesConsent(granted: Boolean) {

@@ -13,6 +13,7 @@ class FakeSettingsStore(
     override val antiSabotage = MutableStateFlow(false)
     override val antiSabotageOffAt = MutableStateFlow<Long?>(null)
     override val blockerSetUp = MutableStateFlow(false)
+    override val kindMode = MutableStateFlow(false)
     override val consents = MutableStateFlow<Consents?>(
         Consents(excuses = true, phoneUsage = true, crossBorder = true, analytics = true),
     )
@@ -41,6 +42,10 @@ class FakeSettingsStore(
 
     override suspend fun markBlockerSetUp() {
         blockerSetUp.value = true
+    }
+
+    override suspend fun setKindMode(enabled: Boolean) {
+        kindMode.value = enabled
     }
 
     override suspend fun setConsents(consents: Consents) {

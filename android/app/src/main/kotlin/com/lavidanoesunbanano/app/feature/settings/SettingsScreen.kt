@@ -72,6 +72,7 @@ fun SettingsScreen(
             onWouldPay = viewModel::answerWouldPay,
             onExcusesConsent = viewModel::setExcusesConsent,
             onAnalyticsConsent = viewModel::setAnalyticsConsent,
+            onKindMode = viewModel::setKindMode,
             onErase = { viewModel.eraseEverything(onErased) },
             onDisableProtection = viewModel::disableProtectionNow,
             onScheduleProtectionOff = viewModel::scheduleProtectionOff,
@@ -92,6 +93,7 @@ private class SettingsActions(
     val onWouldPay: (String) -> Unit,
     val onExcusesConsent: (Boolean) -> Unit,
     val onAnalyticsConsent: (Boolean) -> Unit,
+    val onKindMode: (Boolean) -> Unit,
     val onErase: () -> Unit,
     val onDisableProtection: (String) -> Unit,
     val onScheduleProtectionOff: () -> Unit,
@@ -182,10 +184,22 @@ private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
         }
 
         Section(R.string.settings_section_tone) {
+            SelectableRow(
+                title = stringResource(R.string.settings_kind_mode),
+                subtitle = stringResource(R.string.settings_kind_mode_desc),
+                selected = state.kindMode,
+                onClick = { actions.onKindMode(!state.kindMode) },
+                multiple = true,
+            )
             LinkRow(
                 title = stringResource(R.string.settings_sarcasm),
                 value = profile?.let { stringResource(sarcasmLabel(it.sarcasmLevel)) },
                 onClick = { onEditStep(OnboardingStep.SARCASM) },
+            )
+            Text(
+                text = stringResource(R.string.settings_sarcasm_hint),
+                style = LaVidaTheme.type.small,
+                color = colors.textSecondary,
             )
             LinkRow(
                 title = stringResource(R.string.settings_profanity),

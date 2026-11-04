@@ -37,6 +37,7 @@ class BlockSessionRepositoryTest {
 
     private val instagram = AppInfo("com.instagram.android", "Instagram")
     private val tiktok = AppInfo("com.zhiliaoapp.musically", "TikTok")
+    private val settings = FakeSettingsStore()
     private val profile = Profile(
         name = "Alex",
         mainGoal = "ser el mejor programador del mundo",
@@ -66,6 +67,7 @@ class BlockSessionRepositoryTest {
             database.excuseDao(),
             database.templateDao(),
             database.profileDao(),
+            settings,
             Clock.fixed(at(), ZoneOffset.UTC),
         )
     }
@@ -189,5 +191,15 @@ class BlockSessionRepositoryTest {
         assertNull(session.message)
         assertEquals(1, session.attemptNumber)
         assertTrue(session.attemptId > 0)
+    }
+
+    @Test
+    fun `kind mode shows no message from the template`() = runTest {
+        saveTemplate(3)
+        settings.kindMode.value = true
+
+        val session = sessions.open(AppInfo("com.instagram.android", "Instagram"), at())
+
+        assertNull(session.message)
     }
 }

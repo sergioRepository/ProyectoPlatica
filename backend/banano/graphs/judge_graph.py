@@ -32,7 +32,7 @@ from banano.llm.prompts import judge_request_text, judge_system
 from banano.quota import QuotaReason
 from banano.safety.crisis import CrisisKind, detect_crisis
 from banano.safety.similarity import is_near_duplicate
-from banano.safety.text import clean_text, normalize_for_matching
+from banano.safety.text import clean_text
 from banano.schemas.judge import ExcuseType, JudgeRequest, JudgeResponse, ReasonCode
 
 logger = logging.getLogger(__name__)
@@ -107,15 +107,13 @@ def prefilter_rejection(request: JudgeRequest, settings: Settings) -> ReasonCode
     return None
 
 
-def crisis_message(kind: CrisisKind | None, country: str, minutes: int) -> str:
+def crisis_message(kind: CrisisKind | None, minutes: int) -> str:
+    # Los números no van aquí: la app los muestra de android/.../assets/crisis_lines.json.
     if kind == "self_harm":
-        line = (
-            "Lo que escribiste importa más que cualquier app. "
-            "Si estás pensando en hacerte daño, llama ya "
+        return (
+            "Lo que escribiste importa más que cualquier app. Si estás pensando en hacerte "
+            "daño, busca ayuda ya: mira las líneas de abajo o habla con alguien de confianza."
         )
-        colombia = normalize_for_matching(country) == "colombia"
-        number = "a la línea 123" if colombia else "a la línea de emergencias"
-        return f"{line}{number} o habla con alguien de confianza."
     return (
         "Ve. Lo importante es que tú y los tuyos estén bien. "
         f"Tienes {minutes} minutos; si necesitas más, vuelve a pedirlo."
@@ -157,7 +155,7 @@ def compose_verdict(state: JudgeState, settings: Settings) -> JudgeResponse:
             valid=True,
             confidence=1.0 if crisis or evaluation is None else _clamp(evaluation.confidence),
             granted_minutes=settings.emergency_minutes,
-            message=crisis_message(crisis, request.country, settings.emergency_minutes),
+            message=crisis_message(crisis, settings.emergency_minutes),
             reason_code="crisis",
         )
     rejection = state.get("rejection")

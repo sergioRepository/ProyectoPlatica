@@ -165,12 +165,21 @@ PERSON_ALLOWED = (
 )
 
 
+KIND_MODE = (
+    "Modo amable: responde con calidez y respeto, sin sarcasmo, burla, ironía ni regaños, "
+    "también cuando rechaces."
+)
+
+
 def judge_system(request: JudgeRequest) -> str:
+    high_sarcasm = request.sarcasm_level >= INSULTS_FROM_LEVEL
     return JUDGE_SYSTEM.format(
-        nivel=request.sarcasm_level,
+        nivel=1 if request.kind_mode else request.sarcasm_level,
         pais=request.country,
-        si_no=_yes_no(request.profanity_allowed),
-        trato=PERSON_ALLOWED if request.sarcasm_level >= INSULTS_FROM_LEVEL else PERSON_OFF_LIMITS,
+        si_no=_yes_no(request.profanity_allowed and not request.kind_mode),
+        trato=KIND_MODE
+        if request.kind_mode
+        else (PERSON_ALLOWED if high_sarcasm else PERSON_OFF_LIMITS),
     )
 
 

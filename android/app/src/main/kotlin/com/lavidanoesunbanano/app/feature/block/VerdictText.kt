@@ -10,10 +10,10 @@ import com.lavidanoesunbanano.app.domain.model.VerdictReason
 
 /** La frase del veredicto, o la local cuando no hubo juez y la plantilla no tenía una. */
 @Composable
-internal fun verdictMessage(verdict: Verdict): String = verdict.message ?: if (verdict.valid) {
-    stringResource(R.string.verdict_offline_emergency, verdict.grantedMinutes)
-} else {
-    stringResource(R.string.verdict_offline_rejected)
+internal fun verdictMessage(verdict: Verdict): String = verdict.message ?: when {
+    verdict.reason == VerdictReason.CRISIS -> stringResource(R.string.verdict_crisis, verdict.grantedMinutes)
+    verdict.valid -> stringResource(R.string.verdict_offline_emergency, verdict.grantedMinutes)
+    else -> stringResource(R.string.verdict_offline_rejected)
 }
 
 /** `APROBADO · 10 min` o `RECHAZADO · excusa repetida`. */

@@ -1,0 +1,8 @@
+{
+  "_todo": "TODO(sergio): verificar cada número con la fuente oficial, completar la lista y poner verified en true. La app solo muestra las líneas verificadas: sin ninguna, muestra un texto sin números.",
+  "lines": [
+    { "name": "Línea de emergencias", "number": "123", "verified": false },
+    { "name": "TODO(sergio): línea nacional de salud mental", "number": "", "verified": false },
+    { "name": "TODO(sergio): línea de salud mental de tu ciudad", "number": "", "verified": false }
+  ]
+}

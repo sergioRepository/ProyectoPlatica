@@ -14,6 +14,8 @@ data class PickSituation(
     val afterRejection: Boolean = false,
     /** Ids de los últimos mensajes mostrados, del más reciente al más viejo. */
     val recentIds: List<String> = emptyList(),
+    /** El nivel de sarcasmo actual: bajarlo aplica ya, sin regenerar la plantilla. */
+    val maxIntensity: Int = MessagePicker.MAX_INTENSITY,
 )
 
 /**
@@ -24,6 +26,7 @@ data class PickSituation(
 object MessagePicker {
     const val RECENT_WINDOW = 10
     const val REPEAT_FROM_ATTEMPT = 3
+    const val MAX_INTENSITY = 5
 
     /** Parte de las veces que sale un mensaje del contexto que aplica en vez de uno general. */
     private const val SPECIFIC_SHARE = 0.6
@@ -46,7 +49,8 @@ object MessagePicker {
         situation: PickSituation,
         random: Random = Random.Default,
     ): TemplateMessage? {
-        val usable = messages.filter { it.fits(situation) }.ifEmpty { messages }
+        val allowed = messages.filter { it.intensity <= situation.maxIntensity }
+        val usable = allowed.filter { it.fits(situation) }.ifEmpty { allowed }
         if (usable.isEmpty()) return null
         val applicable = applicableContexts(situation)
         val specific = usable.filter { it.context in applicable }

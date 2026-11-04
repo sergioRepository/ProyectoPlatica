@@ -20,6 +20,7 @@ data class JudgeRequestDto(
     @SerialName("sarcasm_level") val sarcasmLevel: Int,
     @SerialName("profanity_allowed") val profanityAllowed: Boolean,
     val country: String,
+    @SerialName("kind_mode") val kindMode: Boolean,
 )
 
 @Serializable

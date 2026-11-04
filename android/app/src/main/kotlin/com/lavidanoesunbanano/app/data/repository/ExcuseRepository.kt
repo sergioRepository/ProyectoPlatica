@@ -74,7 +74,9 @@ class ExcuseRepository @Inject constructor(
             ?: OfflineVerdict.decide(
                 type,
                 limits,
-                templateDao.getVerdictLines(VerdictLineEntity.REJECTED).map { it.text },
+                // Las frases de la plantilla son sarcásticas: el modo amable usa la local.
+                if (settings.kindMode.first()) emptyList() else templateDao.getVerdictLines(VerdictLineEntity.REJECTED).map { it.text },
+                text,
             )
         // El tiempo corre desde el veredicto.
         val decidedAt = clock.instant()
@@ -131,6 +133,7 @@ class ExcuseRepository @Inject constructor(
         val now = clock.instant().atZone(clock.zone)
         val dayStart = now.toLocalDate().atStartOfDay(clock.zone).toInstant().toEpochMilli()
         val profile = profileDao.get()
+        val kind = settings.kindMode.first()
         return JudgeRequestDto(
             type = type.wire,
             reason = reason,
@@ -144,9 +147,10 @@ class ExcuseRepository @Inject constructor(
             emergenciesGrantedToday = excuseDao.countGrantedSince(ExcuseType.EMERGENCY.wire, dayStart),
             extraTimeDailyLimit = limits.extraTimeDaily,
             emergencyDailyLimit = limits.emergencyDaily,
-            sarcasmLevel = profile?.sarcasmLevel ?: DEFAULT_SARCASM,
-            profanityAllowed = profile?.profanityAllowed ?: false,
+            sarcasmLevel = if (kind) MIN_SARCASM else profile?.sarcasmLevel ?: DEFAULT_SARCASM,
+            profanityAllowed = !kind && profile?.profanityAllowed ?: false,
             country = profile?.country.orEmpty().take(MAX_COUNTRY_CHARS),
+            kindMode = kind,
         )
     }
 
@@ -188,5 +192,6 @@ class ExcuseRepository @Inject constructor(
         const val MAX_COUNTRY_CHARS = 40
         const val RECENT_EXCUSES = 10
         const val DEFAULT_SARCASM = 3
+        const val MIN_SARCASM = 1
     }
 }

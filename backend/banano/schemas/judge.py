@@ -37,6 +37,8 @@ class JudgeRequest(BaseModel):
     sarcasm_level: int = Field(default=3, ge=1, le=5)
     profanity_allowed: bool = False
     country: str = Field(default="Colombia", max_length=40)
+    # Modo amable en Ajustes: sin sarcasmo ni burla, aunque rechace.
+    kind_mode: bool = False
 
 
 class JudgeResponse(BaseModel):
