@@ -124,6 +124,7 @@
     <string name="generation_failed_server">El servidor no pudo escribir los mensajes. Intenta otra vez en un momento.</string>
     <string name="generation_failed_not_configured">Esta compilación no tiene servidor configurado.</string>
     <string name="generation_failed_missing_profile">Faltan tus respuestas del inicio.</string>
+    <string name="generation_failed_daily_limit">Ya generaste tus mensajes hace poco. Intenta más tarde.</string>
     <string name="generation_failed_closed">El registro de teléfonos está cerrado por ahora. Intenta más tarde.</string>
     <string name="generation_edit_answers">Revisar respuestas</string>
 
@@ -196,6 +197,18 @@
     <string name="settings_label">ajustes</string>
     <string name="settings_section_rules">reglas</string>
     <string name="settings_section_quotas">cupos por día</string>
+    <string name="settings_section_plan">plan</string>
+    <string name="ai_calls_label">llamadas de IA hoy</string>
+    <string name="ai_calls_value">%1$d de %2$d</string>
+    <string name="plan_free">Gratis</string>
+    <string name="plan_monthly">Mensual</string>
+    <string name="plan_semester">Semestral</string>
+    <string name="settings_plan_hint">Por ahora ningún plan tiene costo. Cada juicio o análisis del agente usa una llamada. Sin llamadas, las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
+    <string name="settings_plan_offline">Conéctate para ver tu plan y tus llamadas de hoy.</string>
+    <string name="settings_would_pay">¿Pagarías por este plan?</string>
+    <string name="would_pay_yes">Sí</string>
+    <string name="would_pay_no">No</string>
+    <string name="would_pay_maybe">Tal vez</string>
     <string name="settings_section_tone">tono</string>
     <string name="settings_section_profile">perfil</string>
     <string name="settings_section_template">plantilla</string>
@@ -255,6 +268,7 @@
     <string name="agent_decision_no_action">no hace falta</string>
     <string name="agent_decision_insufficient">faltan datos</string>
     <string name="agent_decision_unavailable">sin análisis</string>
+    <string name="agent_decision_plan_quota">sin llamadas de IA hoy</string>
     <string name="agent_focus_label">Enfoque de %1$d min</string>
     <string name="notify_focus_title">Enfoque en %1$s hasta las %2$s</string>
     <string name="setup_usage_title">Acceso a datos de uso</string>
@@ -326,6 +340,8 @@
     <string name="verdict_reason_too_short">muy corta</string>
     <string name="verdict_reason_boredom">aburrimiento</string>
     <string name="verdict_reason_offline">sin juez</string>
+    <string name="verdict_reason_plan_quota">sin llamadas de IA hoy</string>
+    <string name="verdict_reason_rejection_cap">demasiados rechazos hoy</string>
     <string name="verdict_offline_emergency">Esta vez no hay juez, así que te creo. Tienes %1$d minutos y queda anotado para revisarlo después.</string>
     <string name="verdict_offline_rejected">Sin juez no hay minutos extra. Vuelve cuando tengas conexión, o mejor no vuelvas.</string>
     <string name="verdict_open_app">Abrir %1$s</string>

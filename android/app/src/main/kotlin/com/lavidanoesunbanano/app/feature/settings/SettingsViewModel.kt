@@ -3,6 +3,8 @@ package com.lavidanoesunbanano.app.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lavidanoesunbanano.app.data.prefs.SettingsStore
+import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
+import com.lavidanoesunbanano.app.data.repository.DeviceRepository
 import com.lavidanoesunbanano.app.data.repository.MessagePreview
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.data.repository.TemplatePreviewer
@@ -48,6 +50,8 @@ data class SettingsUiState(
     val protection: Protection = Protection(),
     /** Pasos de la guía que faltan; `null` antes de revisar. */
     val setupPending: Int? = null,
+    /** Plan y llamadas de IA de hoy; `null` sin conexión. */
+    val device: DeviceStatusDto? = null,
     val template: TemplateInfo = TemplateInfo(),
     val preview: String? = null,
 )
@@ -59,11 +63,13 @@ class SettingsViewModel @Inject constructor(
     private val settings: SettingsStore,
     private val previewer: TemplatePreviewer,
     private val setupSource: SetupStatusSource,
+    private val deviceRepository: DeviceRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
     private val preview = MutableStateFlow<MessagePreview?>(null)
     private val setupPending = MutableStateFlow<Int?>(null)
+    private val device = MutableStateFlow<DeviceStatusDto?>(null)
 
     private val template = combine(
         templateRepository.observeMessageCount(),
@@ -95,8 +101,8 @@ class SettingsViewModel @Inject constructor(
         Protection(on = on, locked = SabotageGuard.rulesLocked(on, ranges, now))
     }
 
-    private val preferences = combine(settings.limits, protection, setupPending) { limits, protection, pending ->
-        Preferences(limits, protection, pending)
+    private val preferences = combine(settings.limits, protection, setupPending, device) { limits, protection, pending, device ->
+        Preferences(limits, protection, pending, device)
     }
 
     val state: StateFlow<SettingsUiState> = combine(rules, preferences, template, preview) { rules, prefs, template, preview ->
@@ -108,6 +114,7 @@ class SettingsViewModel @Inject constructor(
             limits = prefs.limits,
             protection = prefs.protection,
             setupPending = prefs.setupPending,
+            device = prefs.device,
             template = template,
             preview = preview?.text,
         )
@@ -120,6 +127,17 @@ class SettingsViewModel @Inject constructor(
     /** Al volver a la pantalla: los permisos se cambian fuera de la app. */
     fun refreshSetup() {
         setupPending.value = SetupChecklist.pending(SetupChecklist.items(setupSource.current()))
+        viewModelScope.launch { device.value = deviceRepository.status() }
+    }
+
+    fun selectPlan(plan: String) {
+        // La respuesta a "¿pagarías?" es sobre un plan: al cambiarlo se vuelve a preguntar.
+        viewModelScope.launch { deviceRepository.setPlan(plan, null)?.let { device.value = it } }
+    }
+
+    fun answerWouldPay(answer: String) {
+        val current = device.value ?: return
+        viewModelScope.launch { deviceRepository.setPlan(current.plan, answer)?.let { device.value = it } }
     }
 
     fun changeExtraTimeDaily(delta: Int) = unlessLocked {
@@ -149,6 +167,7 @@ class SettingsViewModel @Inject constructor(
         val limits: UnlockLimits,
         val protection: Protection,
         val setupPending: Int?,
+        val device: DeviceStatusDto?,
     )
 
     private companion object {

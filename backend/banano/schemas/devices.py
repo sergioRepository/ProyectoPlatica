@@ -1,4 +1,4 @@
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -21,6 +21,26 @@ class Consents(Strict):
         if not (self.phone_usage and self.cross_border):
             raise ValueError("Faltan las autorizaciones obligatorias.")
         return self
+
+
+Plan = Literal["free", "monthly", "semester"]
+WouldPay = Literal["yes", "no", "maybe"]
+
+
+class PlanRequest(Strict):
+    plan: Plan
+    # La respuesta es sobre este plan: al cambiar de plan sin responder, queda vacía.
+    would_pay: WouldPay | None = None
+
+
+class DeviceStatus(BaseModel):
+    plan: Plan
+    would_pay: WouldPay | None
+    daily_limit: int
+    used_today: int
+    remaining_today: int
+    consent_excuses: bool
+    consent_analytics: bool
 
 
 class RegisterRequest(BaseModel):

@@ -1,6 +1,6 @@
 import math
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, Header, HTTPException, Request, status
 
@@ -15,6 +15,7 @@ from banano.llm.client import (
     build_generate_llm,
     build_judge_llm,
 )
+from banano.quota import quota_day
 from banano.ratelimit import RateLimiter
 
 HOUR_S = 3600.0
@@ -133,12 +134,14 @@ StoreDep = Annotated[Store, Depends(get_store)]
 
 async def require_consent(
     store: Store, device_id: str, settings: Settings, *, excuses: bool = False
-) -> None:
-    """Sin fila no hay autorización guardada: APK viejo o datos ya borrados. Si la base no
-    responde se deja pasar: el límite por hora sigue acotando el gasto."""
+) -> dict[str, Any] | None:
+    """Devuelve el dispositivo con sus contadores de hoy. Sin fila no hay autorización
+    guardada: APK viejo o datos ya borrados. Si la base no responde devuelve None y se deja
+    pasar: el límite por hora sigue acotando el gasto."""
     try:
-        device = await store.get_device(device_id, settings.gate_db_timeout_s)
+        device = await store.get_device(device_id, quota_day(settings), settings.gate_db_timeout_s)
     except StoreError:
-        return
+        return None
     if device is None or (excuses and not device["consent_excuses"]):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Falta la autorización de datos.")
+    return device

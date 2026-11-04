@@ -113,6 +113,8 @@ def consented_store(*device_ids: str, **overrides: Any) -> MemoryStore:
             "device_id": device_id,
             "consent_excuses": True,
             "consent_analytics": True,
+            "plan": "free",
+            "would_pay": None,
             **overrides,
         }
     return store

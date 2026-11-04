@@ -3,6 +3,7 @@ package com.lavidanoesunbanano.app.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lavidanoesunbanano.app.data.remote.BackendConfig
+import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
 import com.lavidanoesunbanano.app.data.repository.AgentRepository
 import com.lavidanoesunbanano.app.data.repository.AgentRun
 import com.lavidanoesunbanano.app.data.repository.BackendRepository
@@ -42,6 +43,8 @@ data class HomeUiState(
     val setup: SetupStatus? = null,
     /** El servidor no conoce este teléfono: sin juez ni agente hasta que se reconecte. */
     val disconnected: Boolean = false,
+    /** Plan y llamadas de IA de hoy; `null` sin conexión. */
+    val device: DeviceStatusDto? = null,
     val today: Stats? = null,
     val unlocks: List<ActiveUnlock> = emptyList(),
     /** Último análisis del agente en esta sesión; `null` si no ha corrido. */
@@ -65,6 +68,7 @@ class HomeViewModel @Inject constructor(
     private val backend = MutableStateFlow<BackendStatus?>(null)
     private val setup = MutableStateFlow<SetupStatus?>(null)
     private val disconnected = MutableStateFlow(false)
+    private val device = MutableStateFlow<DeviceStatusDto?>(null)
 
     private val today: Flow<Stats> = history.observe(days = 1).map {
         StatsCalculator.compute(it.attempts, it.excuses, it.today, days = 1, zone = it.zone)
@@ -96,11 +100,12 @@ class HomeViewModel @Inject constructor(
 
     val state: StateFlow<HomeUiState> = combine(
         combine(backend, setup, disconnected, today, unlocks) { backend, setup, disconnected, today, unlocks ->
-            HomeUiState(backend, setup, disconnected, today, unlocks)
+            HomeUiState(backend, setup, disconnected, today = today, unlocks = unlocks)
         },
         agentRepository.lastRun,
         analyzing,
-    ) { state, agent, busy -> state.copy(agent = agent, analyzing = busy) }
+        device,
+    ) { state, agent, busy, device -> state.copy(agent = agent, analyzing = busy, device = device) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     fun analyzeNow() {
@@ -112,6 +117,7 @@ class HomeViewModel @Inject constructor(
             } finally {
                 analyzing.value = false
             }
+            device.value = deviceRepository.status()
         }
     }
 
@@ -134,6 +140,7 @@ class HomeViewModel @Inject constructor(
         setup.value = setupSource.current()
         viewModelScope.launch {
             disconnected.value = backendConfig.isConfigured && !deviceRepository.sync()
+            device.value = deviceRepository.status()
         }
     }
 

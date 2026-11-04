@@ -5,9 +5,11 @@ import com.lavidanoesunbanano.app.data.remote.dto.AnalyzeResponseDto
 import com.lavidanoesunbanano.app.data.remote.dto.ConfirmRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.ConfirmResponseDto
 import com.lavidanoesunbanano.app.data.remote.dto.ConsentsDto
+import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
 import com.lavidanoesunbanano.app.data.remote.dto.HealthDto
 import com.lavidanoesunbanano.app.data.remote.dto.JudgeRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.JudgeResponseDto
+import com.lavidanoesunbanano.app.data.remote.dto.PlanRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.ProfileDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterResponseDto
@@ -31,6 +33,15 @@ interface LaVidaApi {
         @Header("Authorization") authorization: String,
         @Body body: ConsentsDto,
     ): ConsentsDto
+
+    @GET("devices/me")
+    suspend fun deviceStatus(@Header("Authorization") authorization: String): DeviceStatusDto
+
+    @PUT("devices/me/plan")
+    suspend fun updatePlan(
+        @Header("Authorization") authorization: String,
+        @Body body: PlanRequestDto,
+    ): DeviceStatusDto
 
     @POST("templates/generate")
     suspend fun generateTemplate(

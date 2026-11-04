@@ -1,10 +1,10 @@
 """Historial del agente en PostgreSQL. Vercel no tiene disco: la base es la memoria."""
 
 import asyncio
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from functools import cache
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 from uuid import UUID
 
 import psycopg
@@ -41,6 +41,8 @@ class StoreError(Exception):
     """La base no respondió o falló: el agente no debe fingir que consultó o guardó."""
 
 
+DailyCounter = Literal["llm_calls", "rejections", "templates"]
+DAILY_COUNTERS: tuple[DailyCounter, ...] = ("llm_calls", "rejections", "templates")
 CONSENT_FIELDS = ("excuses", "phone_usage", "cross_border", "analytics", "text_version")
 
 
@@ -60,10 +62,25 @@ class InterventionStore(Protocol):
 
 class DeviceStore(Protocol):
     async def get_device(
-        self, device_id: str, timeout: float | None = None
-    ) -> dict[str, Any] | None: ...
+        self, device_id: str, day: date, timeout: float | None = None
+    ) -> dict[str, Any] | None:
+        """El dispositivo con sus contadores de `day`."""
+        ...
 
     async def save_consents(self, device_id: str, consents: dict[str, Any]) -> None: ...
+
+    async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool: ...
+
+    async def increment(
+        self,
+        device_id: str,
+        day: date,
+        counter: DailyCounter,
+        limit: int,
+        timeout: float | None = None,
+    ) -> bool:
+        """Suma 1 al contador si sigue por debajo de `limit`. Atómico."""
+        ...
 
 
 class Store(InterventionStore, DeviceStore, Protocol):
@@ -84,7 +101,7 @@ class UnconfiguredStore:
         raise StoreError("not_configured")
 
     get_by_request = recent = count_interventions_since = save = confirm = _fail
-    get_device = save_consents = _fail
+    get_device = save_consents = set_plan = increment = _fail
 
 
 class MemoryStore:
@@ -95,6 +112,7 @@ class MemoryStore:
         self.events: list[dict[str, Any]] = []
         self.devices: dict[str, dict[str, Any]] = {}
         self.consents: list[dict[str, Any]] = []
+        self.daily: dict[tuple[str, date], dict[str, int]] = {}
         self.fail = False
 
     def _check(self) -> None:
@@ -145,18 +163,44 @@ class MemoryStore:
         return None
 
     async def get_device(
-        self, device_id: str, timeout: float | None = None
+        self, device_id: str, day: date, timeout: float | None = None
     ) -> dict[str, Any] | None:
         self._check()
         device = self.devices.get(device_id)
-        return dict(device) if device else None
+        if device is None:
+            return None
+        counters = self.daily.get((device_id, day), {})
+        return {**device, **{name: counters.get(name, 0) for name in DAILY_COUNTERS}}
 
     async def save_consents(self, device_id: str, consents: dict[str, Any]) -> None:
         self._check()
-        self.devices.setdefault(device_id, {"device_id": device_id}).update(
+        blank = {"device_id": device_id, "plan": "free", "would_pay": None}
+        self.devices.setdefault(device_id, blank).update(
             consent_excuses=consents["excuses"], consent_analytics=consents["analytics"]
         )
         self.consents.append({"device_id": device_id, **consents})
+
+    async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool:
+        self._check()
+        if device_id not in self.devices:
+            return False
+        self.devices[device_id].update(plan=plan, would_pay=would_pay)
+        return True
+
+    async def increment(
+        self,
+        device_id: str,
+        day: date,
+        counter: DailyCounter,
+        limit: int,
+        timeout: float | None = None,
+    ) -> bool:
+        self._check()
+        counters = self.daily.setdefault((device_id, day), {})
+        if counters.get(counter, 0) >= limit:
+            return False
+        counters[counter] = counters.get(counter, 0) + 1
+        return True
 
 
 class PostgresStore:
@@ -240,10 +284,14 @@ class PostgresStore:
         return rows[0] if rows else None
 
     async def get_device(
-        self, device_id: str, timeout: float | None = None
+        self, device_id: str, day: date, timeout: float | None = None
     ) -> dict[str, Any] | None:
+        counters = ", ".join(f"coalesce(u.{name}, 0) AS {name}" for name in DAILY_COUNTERS)
         rows = await self._fetch(
-            "SELECT * FROM devices WHERE device_id = %s", (device_id,), timeout
+            f"SELECT d.*, {counters} FROM devices d LEFT JOIN device_daily_usage u "
+            "ON u.device_id = d.device_id AND u.day = %s WHERE d.device_id = %s",
+            (day, device_id),
+            timeout,
         )
         return rows[0] if rows else None
 
@@ -264,6 +312,33 @@ class PostgresStore:
                 *(consents[field] for field in CONSENT_FIELDS),
             ),
         )
+
+    async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool:
+        rows = await self._fetch(
+            "UPDATE devices SET plan = %s, would_pay = %s, updated_at = now() "
+            "WHERE device_id = %s RETURNING device_id",
+            (plan, would_pay, device_id),
+        )
+        return bool(rows)
+
+    async def increment(
+        self,
+        device_id: str,
+        day: date,
+        counter: DailyCounter,
+        limit: int,
+        timeout: float | None = None,
+    ) -> bool:
+        if limit <= 0:
+            return False
+        rows = await self._fetch(
+            f"INSERT INTO device_daily_usage AS u (device_id, day, {counter}) VALUES (%s, %s, 1) "
+            f"ON CONFLICT (device_id, day) DO UPDATE SET {counter} = u.{counter} + 1 "
+            f"WHERE u.{counter} < %s RETURNING device_id",
+            (device_id, day, limit),
+            timeout,
+        )
+        return bool(rows)
 
 
 def utcnow() -> datetime:

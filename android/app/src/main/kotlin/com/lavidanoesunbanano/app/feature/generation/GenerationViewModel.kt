@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class GenerationFailure { UNREACHABLE, SERVER, NOT_CONFIGURED, MISSING_PROFILE, REGISTRATION_CLOSED }
+enum class GenerationFailure { UNREACHABLE, SERVER, NOT_CONFIGURED, MISSING_PROFILE, REGISTRATION_CLOSED, DAILY_LIMIT }
 
 sealed interface GenerationUiState {
     /** `status` rota entre frases mientras el backend trabaja. */
@@ -55,6 +55,7 @@ class GenerationViewModel @Inject constructor(
                 GenerationResult.NotConfigured -> GenerationUiState.Failed(GenerationFailure.NOT_CONFIGURED)
                 GenerationResult.Unreachable -> GenerationUiState.Failed(GenerationFailure.UNREACHABLE)
                 GenerationResult.RegistrationClosed -> GenerationUiState.Failed(GenerationFailure.REGISTRATION_CLOSED)
+                GenerationResult.DailyLimit -> GenerationUiState.Failed(GenerationFailure.DAILY_LIMIT)
                 is GenerationResult.ServerError -> GenerationUiState.Failed(GenerationFailure.SERVER)
             }
             statusJob?.cancel()

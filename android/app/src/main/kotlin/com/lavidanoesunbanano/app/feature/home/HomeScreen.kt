@@ -129,6 +129,10 @@ private fun HomeContent(state: HomeUiState, actions: HomeActions) {
                 label = stringResource(R.string.home_excuses_label),
                 value = today?.let { stringResource(R.string.excuses_tally, it.approved, it.rejected) } ?: "-",
             )
+            InfoRow(
+                label = stringResource(R.string.ai_calls_label),
+                value = state.device?.let { stringResource(R.string.ai_calls_value, it.remainingToday, it.dailyLimit) } ?: "-",
+            )
             state.unlocks.forEach { unlock ->
                 InfoRow(
                     label = stringResource(R.string.home_unlocked_label),
@@ -209,6 +213,7 @@ private fun decisionText(decision: String): String = stringResource(
         "intervene" -> R.string.agent_decision_intervene
         "no_action" -> R.string.agent_decision_no_action
         "insufficient_evidence" -> R.string.agent_decision_insufficient
+        "plan_quota" -> R.string.agent_decision_plan_quota
         else -> R.string.agent_decision_unavailable
     },
 )

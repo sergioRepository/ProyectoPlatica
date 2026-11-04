@@ -29,6 +29,8 @@ internal fun verdictLabel(verdict: Verdict): String = when {
                 VerdictReason.OVER_QUOTA -> R.string.verdict_reason_over_quota
                 VerdictReason.TOO_SHORT -> R.string.verdict_reason_too_short
                 VerdictReason.OFFLINE -> R.string.verdict_reason_offline
+                VerdictReason.PLAN_QUOTA -> R.string.verdict_reason_plan_quota
+                VerdictReason.REJECTION_CAP -> R.string.verdict_reason_rejection_cap
                 else -> R.string.verdict_reason_boredom
             },
         ),

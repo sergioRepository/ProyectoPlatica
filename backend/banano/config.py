@@ -72,6 +72,18 @@ class Settings(BaseSettings):
     # Un "sent" sin confirmar después de esto se lee como "unknown".
     agent_confirm_window_s: float = 120.0
 
+    # Planes sin cobro: llamadas de IA por día (un juicio o un análisis cuentan una).
+    plan_limit_free: int = 3
+    plan_limit_monthly: int = 20
+    plan_limit_semester: int = 20
+    # Después de esta cantidad de rechazos del día, el juez responde sin llamar a Grok.
+    daily_rejection_cap: int = 5
+    daily_template_cap: int = 2
+    # El análisis periódico nunca gasta estas últimas llamadas: son para el juez.
+    agent_reserved_for_judge: int = 1
+    # Colombia no cambia de hora, así que basta un desfase fijo.
+    quota_utc_offset_hours: int = -5
+
     enable_docs: bool = False
 
 

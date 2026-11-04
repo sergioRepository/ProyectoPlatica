@@ -11,6 +11,8 @@ ReasonCode = Literal[
     "over_quota",
     "crisis",
     "too_short",
+    "plan_quota",
+    "rejection_cap",
 ]
 
 Excuse = Annotated[str, Field(max_length=1000)]

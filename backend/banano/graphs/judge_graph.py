@@ -1,11 +1,15 @@
 """Grafo 2: el juez de excusas.
 
-detectar_crisis -> prefiltro -> evaluar -> redactar_veredicto.
+detectar_crisis -> prefiltro -> cuota -> evaluar -> redactar_veredicto.
 
 detectar_crisis (sin LLM) va antes del prefiltro, así una emergencia real corta, repetida o
 con el cupo agotado nunca se rechaza (ajuste aprobado en el plan). Si hay señal de crisis, se
 aprueba directo con tono humano, como dice el spec: en la prueba real el LLM rechazó
 "accidente" con sarcasmo, así que no decide en ese caso.
+
+cuota (sin LLM) va después de los dos filtros: una crisis o una excusa rechazada de entrada no
+gasta cupo. Sin cupo responde como la regla sin conexión del teléfono: la emergencia se aprueba
+y los 10 minutos se rechazan.
 
 El juez hace una sola llamada al LLM, que decide y redacta a la vez; redactar_veredicto
 limpia el texto y aplica las reglas de negocio sin LLM, para caber en los 8 s del teléfono.
@@ -13,7 +17,7 @@ limpia el texto y aplica las reglas de negocio sin LLM, para caber en los 8 s de
 
 import logging
 import zlib
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, TypedDict
 
@@ -25,6 +29,7 @@ from pydantic import BaseModel, Field
 from banano.config import Settings
 from banano.llm.client import LLMError, StructuredLLM
 from banano.llm.prompts import judge_request_text, judge_system
+from banano.quota import QuotaReason
 from banano.safety.crisis import CrisisKind, detect_crisis
 from banano.safety.similarity import is_near_duplicate
 from banano.safety.text import clean_text, normalize_for_matching
@@ -48,6 +53,11 @@ PREFILTER_LINES: dict[str, tuple[str, ...]] = {
         "Repetir la excusa no la vuelve verdad.",
     ),
 }
+QUOTA_LINES: dict[str, tuple[str, ...]] = {
+    "plan_quota": ("Por hoy no quedan llamadas al juez. Sin juez no hay minutos extra.",),
+    "rejection_cap": ("Ya fueron muchos rechazos por hoy. Sin juez no hay minutos extra.",),
+}
+QUOTA_APPROVED = "Por hoy no hay juez, así que te creo. Queda anotado para revisarlo después."
 APPROVED_FALLBACK = ("Aprobado. Que valga la pena.",)
 REJECTED_FALLBACK = ("Rechazado. Vuelve a lo tuyo.",)
 
@@ -68,12 +78,15 @@ class JudgeUnavailableError(Exception):
 class JudgeContext:
     llm: StructuredLLM
     settings: Settings
+    # Reserva una llamada del cupo diario. None: sin cupo que revisar (Studio y scripts).
+    quota: Callable[[], Awaitable[QuotaReason | None]] | None = None
 
 
 class JudgeState(TypedDict, total=False):
     request: JudgeRequest
     crisis: CrisisKind | None
     rejection: ReasonCode | None
+    over_limit: QuotaReason | None
     evaluation: JudgeEvaluation | None
     response: JudgeResponse
 
@@ -156,6 +169,16 @@ def compose_verdict(state: JudgeState, settings: Settings) -> JudgeResponse:
             message=_pick(PREFILTER_LINES[rejection], request.reason),
             reason_code=rejection,
         )
+    over_limit = state.get("over_limit")
+    if over_limit:
+        emergency = request.type == "emergency"
+        return JudgeResponse(
+            valid=emergency,
+            confidence=1.0,
+            granted_minutes=settings.emergency_minutes if emergency else 0,
+            message=QUOTA_APPROVED if emergency else _pick(QUOTA_LINES[over_limit], request.reason),
+            reason_code=over_limit,
+        )
     if evaluation is None:
         raise JudgeUnavailableError("El juez no respondió a tiempo")
 
@@ -180,6 +203,11 @@ def detectar_crisis(state: JudgeState) -> dict[str, Any]:
 
 def prefiltro(state: JudgeState, runtime: Runtime[JudgeContext]) -> dict[str, Any]:
     return {"rejection": prefilter_rejection(state["request"], runtime.context.settings)}
+
+
+async def cuota(_: JudgeState, runtime: Runtime[JudgeContext]) -> dict[str, Any]:
+    quota = runtime.context.quota
+    return {"over_limit": await quota() if quota else None}
 
 
 async def evaluar(state: JudgeState, runtime: Runtime[JudgeContext]) -> dict[str, Any]:
@@ -207,7 +235,11 @@ def _after_crisis_check(state: JudgeState) -> str:
 
 
 def _after_prefilter(state: JudgeState) -> str:
-    return "redactar_veredicto" if state.get("rejection") else "evaluar"
+    return "redactar_veredicto" if state.get("rejection") else "cuota"
+
+
+def _after_quota(state: JudgeState) -> str:
+    return "redactar_veredicto" if state.get("over_limit") else "evaluar"
 
 
 def build_graph(
@@ -217,13 +249,15 @@ def build_graph(
     builder = StateGraph(JudgeState, context_schema=context_schema)
     builder.add_node("detectar_crisis", wrap(detectar_crisis))
     builder.add_node("prefiltro", wrap(prefiltro))
+    builder.add_node("cuota", wrap(cuota))
     builder.add_node("evaluar", wrap(evaluar))
     builder.add_node("redactar_veredicto", wrap(redactar_veredicto))
     builder.add_edge(START, "detectar_crisis")
     builder.add_conditional_edges(
         "detectar_crisis", _after_crisis_check, ["prefiltro", "redactar_veredicto"]
     )
-    builder.add_conditional_edges("prefiltro", _after_prefilter, ["evaluar", "redactar_veredicto"])
+    builder.add_conditional_edges("prefiltro", _after_prefilter, ["cuota", "redactar_veredicto"])
+    builder.add_conditional_edges("cuota", _after_quota, ["evaluar", "redactar_veredicto"])
     builder.add_edge("evaluar", "redactar_veredicto")
     builder.add_edge("redactar_veredicto", END)
     return builder.compile()
@@ -233,9 +267,12 @@ JUDGE_GRAPH = build_graph()
 
 
 async def run_judge_graph(
-    request: JudgeRequest, llm: StructuredLLM, settings: Settings
+    request: JudgeRequest,
+    llm: StructuredLLM,
+    settings: Settings,
+    quota: Callable[[], Awaitable[QuotaReason | None]] | None = None,
 ) -> JudgeResponse:
     final = await JUDGE_GRAPH.ainvoke(
-        {"request": request}, context=JudgeContext(llm=llm, settings=settings)
+        {"request": request}, context=JudgeContext(llm=llm, settings=settings, quota=quota)
     )
     return final["response"]

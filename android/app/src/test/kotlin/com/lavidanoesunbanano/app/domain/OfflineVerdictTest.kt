@@ -3,6 +3,7 @@ package com.lavidanoesunbanano.app.domain
 import com.lavidanoesunbanano.app.domain.excuse.OfflineVerdict
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
+import com.lavidanoesunbanano.app.domain.model.Verdict
 import com.lavidanoesunbanano.app.domain.model.VerdictReason
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -45,5 +46,13 @@ class OfflineVerdictTest {
         val verdict = OfflineVerdict.decide(ExcuseType.EMERGENCY, limits.copy(emergencyMinutes = 20), emptyList())
 
         assertEquals(20, verdict.grantedMinutes)
+    }
+
+    @Test
+    fun `an emergency approved without quota is flagged for review`() {
+        val verdict = Verdict(true, 15, "Te creo.", VerdictReason.PLAN_QUOTA, 1.0, offline = false)
+
+        assertTrue(OfflineVerdict.needsReview(ExcuseType.EMERGENCY, verdict))
+        assertFalse(OfflineVerdict.needsReview(ExcuseType.EMERGENCY, verdict.copy(reason = VerdictReason.LEGIT_WORK)))
     }
 }

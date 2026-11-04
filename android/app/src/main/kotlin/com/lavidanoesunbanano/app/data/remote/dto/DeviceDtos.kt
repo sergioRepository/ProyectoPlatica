@@ -12,6 +12,21 @@ data class ConsentsDto(
     @SerialName("text_version") val textVersion: String,
 )
 
+/** Estado del dispositivo en el servidor: plan y llamadas de IA de hoy. */
+@Serializable
+data class DeviceStatusDto(
+    val plan: String,
+    @SerialName("would_pay") val wouldPay: String? = null,
+    @SerialName("daily_limit") val dailyLimit: Int,
+    @SerialName("remaining_today") val remainingToday: Int,
+)
+
+@Serializable
+data class PlanRequestDto(
+    val plan: String,
+    @SerialName("would_pay") val wouldPay: String?,
+)
+
 @Serializable
 data class RegisterRequestDto(
     val consents: ConsentsDto,

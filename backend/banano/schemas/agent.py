@@ -46,7 +46,9 @@ class AnalyzeRequest(Strict):
     usage: UsageSnapshot
 
 
-Decision = Literal["intervene", "no_action", "insufficient_evidence", "agent_unavailable"]
+Decision = Literal[
+    "intervene", "no_action", "insufficient_evidence", "agent_unavailable", "plan_quota"
+]
 StepStatus = Literal[
     "ok", "no_data", "permission_missing", "unavailable", "error", "sent", "rejected"
 ]

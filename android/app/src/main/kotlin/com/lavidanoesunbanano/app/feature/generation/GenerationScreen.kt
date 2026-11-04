@@ -146,6 +146,7 @@ private fun Failed(
                 GenerationFailure.NOT_CONFIGURED -> R.string.generation_failed_not_configured
                 GenerationFailure.MISSING_PROFILE -> R.string.generation_failed_missing_profile
                 GenerationFailure.REGISTRATION_CLOSED -> R.string.generation_failed_closed
+                GenerationFailure.DAILY_LIMIT -> R.string.generation_failed_daily_limit
             },
         ),
     )

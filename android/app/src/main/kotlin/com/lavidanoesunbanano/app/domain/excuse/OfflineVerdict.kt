@@ -37,7 +37,11 @@ object OfflineVerdict {
         )
     }
 
-    /** Las emergencias aprobadas sin juez quedan marcadas para revisarlas después. */
-    fun needsReview(type: ExcuseType, verdict: Verdict): Boolean =
-        verdict.offline && verdict.valid && type == ExcuseType.EMERGENCY
+    /** Las emergencias aprobadas sin juez, por falta de red o de cupo, quedan por revisar. */
+    fun needsReview(type: ExcuseType, verdict: Verdict): Boolean {
+        val noJudge = verdict.offline || verdict.reason in QUOTA_REASONS
+        return noJudge && verdict.valid && type == ExcuseType.EMERGENCY
+    }
+
+    private val QUOTA_REASONS = setOf(VerdictReason.PLAN_QUOTA, VerdictReason.REJECTION_CAP)
 }

@@ -20,6 +20,8 @@ enum class VerdictReason(val wire: String) {
     OVER_QUOTA("over_quota"),
     CRISIS("crisis"),
     TOO_SHORT("too_short"),
+    PLAN_QUOTA("plan_quota"),
+    REJECTION_CAP("rejection_cap"),
     OFFLINE("offline"),
     ;
 

@@ -38,6 +38,7 @@ import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SelectableRow
 import com.lavidanoesunbanano.app.core.designsystem.StepperRow
+import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingRules
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingStep
@@ -58,6 +59,8 @@ fun SettingsScreen(
             onExtraTimeChange = viewModel::changeExtraTimeDaily,
             onEmergencyChange = viewModel::changeEmergencyDaily,
             onAntiSabotageChange = viewModel::setAntiSabotage,
+            onSelectPlan = viewModel::selectPlan,
+            onWouldPay = viewModel::answerWouldPay,
             onOpenSetup = onOpenSetup,
             onNextPreview = viewModel::nextPreview,
             onRegenerate = onRegenerate,
@@ -70,6 +73,8 @@ private class SettingsActions(
     val onExtraTimeChange: (Int) -> Unit,
     val onEmergencyChange: (Int) -> Unit,
     val onAntiSabotageChange: (Boolean) -> Unit,
+    val onSelectPlan: (String) -> Unit,
+    val onWouldPay: (String) -> Unit,
     val onOpenSetup: () -> Unit,
     val onNextPreview: () -> Unit,
     val onRegenerate: () -> Unit,
@@ -134,6 +139,10 @@ private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
                 style = LaVidaTheme.type.small,
                 color = colors.textSecondary,
             )
+        }
+
+        Section(R.string.settings_section_plan) {
+            PlanSection(state.device, actions)
         }
 
         Section(R.string.settings_section_protection) {
@@ -250,6 +259,50 @@ private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+private val PLANS = listOf(
+    "free" to R.string.plan_free,
+    "monthly" to R.string.plan_monthly,
+    "semester" to R.string.plan_semester,
+)
+
+private val WOULD_PAY = listOf(
+    "yes" to R.string.would_pay_yes,
+    "no" to R.string.would_pay_no,
+    "maybe" to R.string.would_pay_maybe,
+)
+
+@Composable
+private fun PlanSection(device: DeviceStatusDto?, actions: SettingsActions) {
+    val colors = LaVidaTheme.colors
+    if (device == null) {
+        Text(text = stringResource(R.string.settings_plan_offline), style = LaVidaTheme.type.small, color = colors.textSecondary)
+        return
+    }
+    Panel {
+        InfoRow(
+            label = stringResource(R.string.ai_calls_label),
+            value = stringResource(R.string.ai_calls_value, device.remainingToday, device.dailyLimit),
+        )
+    }
+    PLANS.forEach { (plan, label) ->
+        SelectableRow(
+            title = stringResource(label),
+            selected = device.plan == plan,
+            onClick = { actions.onSelectPlan(plan) },
+        )
+    }
+    Text(text = stringResource(R.string.settings_plan_hint), style = LaVidaTheme.type.small, color = colors.textSecondary)
+    Spacer(Modifier.height(8.dp))
+    Text(text = stringResource(R.string.settings_would_pay), style = LaVidaTheme.type.body, color = colors.textPrimary)
+    WOULD_PAY.forEach { (answer, label) ->
+        SelectableRow(
+            title = stringResource(label),
+            selected = device.wouldPay == answer,
+            onClick = { actions.onWouldPay(answer) },
+        )
     }
 }
 

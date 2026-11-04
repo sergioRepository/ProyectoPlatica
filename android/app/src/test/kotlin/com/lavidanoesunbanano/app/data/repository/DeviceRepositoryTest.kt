@@ -114,4 +114,30 @@ class DeviceRepositoryTest {
         assertTrue(repository().sync())
         assertEquals("v1.nuevo.firma", store.token)
     }
+
+    @Test
+    fun `status and plan travel with the token`() = runTest {
+        store.token = "v1.abc.firma"
+        val status = """{"plan":"monthly","would_pay":"maybe","daily_limit":20,"used_today":1,"remaining_today":19}"""
+        server.enqueue(MockResponse.Builder().body(status).build())
+
+        val result = repository().setPlan("monthly", "maybe")
+
+        assertEquals(19, result?.remainingToday)
+        val request = server.takeRequest()
+        assertEquals("Bearer v1.abc.firma", request.headers["Authorization"])
+        assertTrue(request.body!!.utf8().contains(""""would_pay":"maybe""""))
+    }
+
+    @Test
+    fun `status is null without a token and an expired token is forgotten`() = runTest {
+        assertNull(repository().status())
+        assertEquals(0, server.requestCount)
+
+        store.token = "v1.abc.firma"
+        server.enqueue(MockResponse.Builder().code(401).build())
+
+        assertNull(repository().status())
+        assertNull(store.token)
+    }
 }

@@ -6,7 +6,7 @@ Para correrlo contra Postgres (el del compose):
 
 import asyncio
 import os
-from datetime import timedelta
+from datetime import date, timedelta
 from uuid import uuid4
 
 import psycopg
@@ -58,7 +58,8 @@ async def contract(store) -> None:
     assert again is not None and again["status"] == "executed"
     assert await store.confirm(other, first["id"], "executed", None) is None
 
-    assert await store.get_device(device) is None
+    today = date(2026, 11, 4)
+    assert await store.get_device(device, today) is None
     consents = {
         "excuses": False,
         "phone_usage": True,
@@ -68,9 +69,23 @@ async def contract(store) -> None:
     }
     await store.save_consents(device, consents)
     await store.save_consents(device, {**consents, "excuses": True, "analytics": False})
-    saved = await store.get_device(device)
+    saved = await store.get_device(device, today)
     assert saved is not None and saved["consent_excuses"] is True
     assert saved["consent_analytics"] is False
+    assert (saved["plan"], saved["would_pay"], saved["llm_calls"]) == ("free", None, 0)
+
+    assert await store.set_plan(device, "monthly", "maybe") is True
+    assert await store.set_plan(other, "monthly", None) is False
+
+    assert await store.increment(device, today, "llm_calls", 2) is True
+    assert await store.increment(device, today, "llm_calls", 2) is True
+    assert await store.increment(device, today, "llm_calls", 2) is False
+    assert await store.increment(device, today, "rejections", 2) is True
+    tomorrow = today + timedelta(days=1)
+    assert await store.increment(device, tomorrow, "llm_calls", 2) is True
+    saved = await store.get_device(device, today)
+    assert saved is not None and saved["plan"] == "monthly" and saved["would_pay"] == "maybe"
+    assert (saved["llm_calls"], saved["rejections"], saved["templates"]) == (2, 1, 0)
 
 
 async def test_memory_store_contract():

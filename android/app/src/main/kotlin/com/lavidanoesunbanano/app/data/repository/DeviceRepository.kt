@@ -5,6 +5,8 @@ import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.data.remote.BackendConfig
 import com.lavidanoesunbanano.app.data.remote.LaVidaApi
 import com.lavidanoesunbanano.app.data.remote.dto.ConsentsDto
+import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
+import com.lavidanoesunbanano.app.data.remote.dto.PlanRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
 import com.lavidanoesunbanano.app.domain.model.Consents
 import java.io.IOException
@@ -68,19 +70,30 @@ class DeviceRepository @Inject constructor(
      */
     suspend fun sync(): Boolean {
         val consents = settings.consents.first() ?: return false
-        val authorization = authorization() ?: return register() == RegistrationResult.Success
+        if (authorization() == null) return register() == RegistrationResult.Success
         if (settings.consentsSynced.first()) return true
+        val saved = authorized { api.updateConsents(it, consents.toDto()) } != null
+        if (saved) settings.markConsentsSynced()
+        return saved
+    }
+
+    /** Plan y llamadas de hoy; `null` sin red o sin registro. */
+    suspend fun status(): DeviceStatusDto? = authorized { api.deviceStatus(it) }
+
+    suspend fun setPlan(plan: String, wouldPay: String?): DeviceStatusDto? =
+        authorized { api.updatePlan(it, PlanRequestDto(plan, wouldPay)) }
+
+    private suspend fun <T : Any> authorized(call: suspend (String) -> T): T? {
+        val authorization = authorization() ?: return null
         return try {
-            api.updateConsents(authorization, consents.toDto())
-            settings.markConsentsSynced()
-            true
+            call(authorization)
         } catch (e: HttpException) {
             if (e.code() == 401) forgetToken()
-            false
+            null
         } catch (e: IOException) {
-            false
+            null
         } catch (e: SerializationException) {
-            false
+            null
         }
     }
 

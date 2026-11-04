@@ -11,7 +11,7 @@ import json
 import logging
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, TypedDict
@@ -37,6 +37,7 @@ from banano.agent.tools import (
 from banano.config import Settings
 from banano.llm.client import LLMError, ToolLLM
 from banano.llm.prompts import AGENT_SYSTEM, agent_request_text
+from banano.quota import QuotaReason
 from banano.safety.text import clean_text
 from banano.schemas.agent import AgentStepOut, AnalyzeRequest, AnalyzeResponse, InterventionOut
 
@@ -294,6 +295,7 @@ async def run_agent_graph(
     llm: ToolLLM,
     store: InterventionStore,
     settings: Settings,
+    quota: Callable[[], Awaitable[QuotaReason | None]] | None = None,
 ) -> AnalyzeResponse:
     try:
         previous = await store.get_by_request(device_id, request.request_id)
@@ -301,6 +303,8 @@ async def run_agent_graph(
         previous = None
     if previous is not None:
         return replay(previous, timedelta(seconds=settings.agent_confirm_window_s))
+    if quota and await quota():
+        return AnalyzeResponse(decision="plan_quota", reason="", steps=[], persisted=False)
     final = await AGENT_GRAPH.ainvoke(
         {"request": request, "device_id": device_id},
         context=AgentContext(llm=llm, store=store, settings=settings),

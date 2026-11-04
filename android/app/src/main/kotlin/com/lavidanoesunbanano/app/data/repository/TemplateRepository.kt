@@ -19,6 +19,7 @@ sealed interface GenerationResult {
     data class Success(val messageCount: Int) : GenerationResult
     data object NeedsRegistration : GenerationResult
     data object RegistrationClosed : GenerationResult
+    data object DailyLimit : GenerationResult
     data object MissingProfile : GenerationResult
     data object NotConfigured : GenerationResult
     data object Unreachable : GenerationResult
@@ -55,11 +56,13 @@ class TemplateRepository @Inject constructor(
             templateDao.replaceTemplate(rows.messages, rows.verdictLines, rows.meta)
             GenerationResult.Success(rows.messages.size)
         } catch (e: HttpException) {
-            if (e.code() == 401) {
-                deviceRepository.forgetToken()
-                GenerationResult.NeedsRegistration
-            } else {
-                GenerationResult.ServerError(e.code())
+            when (e.code()) {
+                401 -> {
+                    deviceRepository.forgetToken()
+                    GenerationResult.NeedsRegistration
+                }
+                429 -> GenerationResult.DailyLimit
+                else -> GenerationResult.ServerError(e.code())
             }
         } catch (e: IOException) {
             GenerationResult.Unreachable
