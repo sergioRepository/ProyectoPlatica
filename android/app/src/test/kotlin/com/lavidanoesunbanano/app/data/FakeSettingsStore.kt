@@ -45,4 +45,9 @@ class FakeSettingsStore(
     override suspend fun markConsentsSynced() {
         consentsSynced.value = true
     }
+
+    override suspend fun eraseAll() {
+        consents.value = null
+        consentsSynced.value = false
+    }
 }

@@ -1,12 +1,13 @@
 import hmac
+from datetime import timedelta
 from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel
 
 from banano import __version__
-from banano.agent.store import Store, StoreError
+from banano.agent.store import Store, StoreError, utcnow
 from banano.api.deps import (
     DeviceDep,
     RateLimiterDep,
@@ -165,6 +166,40 @@ async def receive_events(
             status.HTTP_503_SERVICE_UNAVAILABLE, detail="No se pudieron guardar los eventos."
         ) from exc
     return EventsAccepted(accepted=len(body.events))
+
+
+@router.delete("/devices/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_device(device_id: ManagedDevice, store: StoreDep) -> None:
+    try:
+        await store.delete_device(device_id)
+    except StoreError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail="No se pudieron borrar los datos."
+        ) from exc
+
+
+@router.get("/internal/retention", include_in_schema=False)
+async def apply_retention(
+    settings: SettingsDep,
+    store: StoreDep,
+    authorization: Annotated[str | None, Header()] = None,
+) -> dict[str, bool]:
+    """Lo llama a diario el cron de Vercel, que envía CRON_SECRET como token."""
+    if settings.cron_secret is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="Falta CRON_SECRET.")
+    expected = f"Bearer {settings.cron_secret.get_secret_value()}".encode()
+    if not hmac.compare_digest((authorization or "").encode(), expected):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="No autorizado.")
+    daily = timedelta(days=settings.retention_daily_usage_days)
+    try:
+        await store.purge(
+            utcnow() - timedelta(days=settings.retention_days), quota_day(settings) - daily
+        )
+    except StoreError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail="No se aplicó la retención."
+        ) from exc
+    return {"ok": True}
 
 
 GenerateDevice = Annotated[

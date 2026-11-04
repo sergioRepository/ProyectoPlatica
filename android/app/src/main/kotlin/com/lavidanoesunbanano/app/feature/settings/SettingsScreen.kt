@@ -15,9 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -34,6 +39,7 @@ import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
 import com.lavidanoesunbanano.app.core.designsystem.LinkRow
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
 import com.lavidanoesunbanano.app.core.designsystem.Panel
+import com.lavidanoesunbanano.app.core.designsystem.PolicyLink
 import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SelectableRow
@@ -48,6 +54,7 @@ fun SettingsScreen(
     onEditStep: (OnboardingStep) -> Unit,
     onRegenerate: () -> Unit,
     onOpenSetup: () -> Unit,
+    onErased: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -61,6 +68,9 @@ fun SettingsScreen(
             onAntiSabotageChange = viewModel::setAntiSabotage,
             onSelectPlan = viewModel::selectPlan,
             onWouldPay = viewModel::answerWouldPay,
+            onExcusesConsent = viewModel::setExcusesConsent,
+            onAnalyticsConsent = viewModel::setAnalyticsConsent,
+            onErase = { viewModel.eraseEverything(onErased) },
             onOpenSetup = onOpenSetup,
             onNextPreview = viewModel::nextPreview,
             onRegenerate = onRegenerate,
@@ -75,6 +85,9 @@ private class SettingsActions(
     val onAntiSabotageChange: (Boolean) -> Unit,
     val onSelectPlan: (String) -> Unit,
     val onWouldPay: (String) -> Unit,
+    val onExcusesConsent: (Boolean) -> Unit,
+    val onAnalyticsConsent: (Boolean) -> Unit,
+    val onErase: () -> Unit,
     val onOpenSetup: () -> Unit,
     val onNextPreview: () -> Unit,
     val onRegenerate: () -> Unit,
@@ -220,6 +233,10 @@ private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
             )
         }
 
+        Section(R.string.settings_section_privacy) {
+            PrivacySection(state, actions)
+        }
+
         Section(R.string.settings_section_template) {
             Panel {
                 InfoRow(label = stringResource(R.string.home_messages_label), value = state.template.messageCount.toString())
@@ -259,6 +276,55 @@ private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+@Composable
+private fun PrivacySection(state: SettingsUiState, actions: SettingsActions) {
+    val colors = LaVidaTheme.colors
+    var confirming by rememberSaveable { mutableStateOf(false) }
+    state.consents?.let { consents ->
+        SelectableRow(
+            title = stringResource(R.string.settings_consent_excuses),
+            subtitle = stringResource(R.string.settings_consent_excuses_desc),
+            selected = consents.excuses,
+            onClick = { actions.onExcusesConsent(!consents.excuses) },
+            multiple = true,
+        )
+        SelectableRow(
+            title = stringResource(R.string.settings_consent_analytics),
+            subtitle = stringResource(R.string.settings_consent_analytics_desc),
+            selected = consents.analytics,
+            onClick = { actions.onAnalyticsConsent(!consents.analytics) },
+            multiple = true,
+        )
+    }
+    PolicyLink()
+    SecondaryButton(
+        text = stringResource(R.string.settings_erase),
+        onClick = { confirming = true },
+        modifier = Modifier.fillMaxWidth(),
+    )
+    if (state.eraseFailed) {
+        Text(text = stringResource(R.string.settings_erase_failed), style = LaVidaTheme.type.small, color = colors.rejected)
+    }
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text(stringResource(R.string.settings_erase_title)) },
+            text = { Text(stringResource(R.string.settings_erase_warning)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirming = false
+                        actions.onErase()
+                    },
+                ) { Text(stringResource(R.string.settings_erase_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.action_cancel)) }
+            },
+        )
     }
 }
 

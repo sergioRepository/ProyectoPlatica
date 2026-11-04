@@ -96,6 +96,11 @@ class Settings(BaseSettings):
     # con el costo vacío.
     llm_prices: dict[str, ModelPrice] = {}
 
+    # Retención, en días. La aplica el cron de vercel.json, que se autentica con CRON_SECRET.
+    retention_days: int = 90
+    retention_daily_usage_days: int = 7
+    cron_secret: SecretStr | None = None
+
     enable_docs: bool = False
 
 

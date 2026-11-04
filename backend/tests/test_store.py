@@ -87,6 +87,9 @@ async def contract(store) -> None:
     await store.save_events(device, [app_event])
     await store.save_events(device, [app_event])
 
+    await store.purge(utcnow() - timedelta(days=90), date(2020, 1, 1))
+    assert await store.recent(device, 10)
+
     today = date(2026, 11, 4)
     assert await store.get_device(device, today) is None
     consents = {
@@ -115,6 +118,15 @@ async def contract(store) -> None:
     saved = await store.get_device(device, today)
     assert saved is not None and saved["plan"] == "monthly" and saved["would_pay"] == "maybe"
     assert (saved["llm_calls"], saved["rejections"], saved["templates"]) == (2, 1, 0)
+
+    await store.delete_device(device)
+    assert await store.get_device(device, today) is None
+    assert await store.recent(device, 10) == []
+    assert len(await store.recent(other, 10)) == 1
+    await store.delete_device(device)
+
+    await store.purge(utcnow() + timedelta(days=1), tomorrow)
+    assert await store.recent(other, 10) == []
 
 
 async def test_memory_store_contract():

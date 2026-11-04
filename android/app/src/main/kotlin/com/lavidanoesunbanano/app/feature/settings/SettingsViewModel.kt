@@ -8,12 +8,14 @@ import com.lavidanoesunbanano.app.data.repository.AppEvents
 import com.lavidanoesunbanano.app.data.repository.DeviceRepository
 import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.MessagePreview
+import com.lavidanoesunbanano.app.data.repository.PrivacyRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.data.repository.TemplatePreviewer
 import com.lavidanoesunbanano.app.data.repository.TemplateRepository
 import com.lavidanoesunbanano.app.data.system.SetupStatusSource
 import com.lavidanoesunbanano.app.domain.blocking.SabotageGuard
 import com.lavidanoesunbanano.app.domain.model.AppInfo
+import com.lavidanoesunbanano.app.domain.model.Consents
 import com.lavidanoesunbanano.app.domain.model.Profile
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
@@ -55,6 +57,8 @@ data class SettingsUiState(
     val setupPending: Int? = null,
     /** Plan y llamadas de IA de hoy; `null` sin conexión. */
     val device: DeviceStatusDto? = null,
+    val consents: Consents? = null,
+    val eraseFailed: Boolean = false,
     val template: TemplateInfo = TemplateInfo(),
     val preview: String? = null,
 )
@@ -68,12 +72,14 @@ class SettingsViewModel @Inject constructor(
     private val setupSource: SetupStatusSource,
     private val deviceRepository: DeviceRepository,
     private val events: EventRepository,
+    private val privacy: PrivacyRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
     private val preview = MutableStateFlow<MessagePreview?>(null)
     private val setupPending = MutableStateFlow<Int?>(null)
     private val device = MutableStateFlow<DeviceStatusDto?>(null)
+    private val eraseFailed = MutableStateFlow(false)
 
     private val template = combine(
         templateRepository.observeMessageCount(),
@@ -109,7 +115,9 @@ class SettingsViewModel @Inject constructor(
         Preferences(limits, protection, pending, device)
     }
 
-    val state: StateFlow<SettingsUiState> = combine(rules, preferences, template, preview) { rules, prefs, template, preview ->
+    private val privacyState = combine(settings.consents, eraseFailed) { consents, failed -> consents to failed }
+
+    val state: StateFlow<SettingsUiState> = combine(rules, preferences, template, preview, privacyState) { rules, prefs, template, preview, privacyState ->
         val (profile, apps, ranges) = rules
         SettingsUiState(
             profile = profile,
@@ -119,6 +127,8 @@ class SettingsViewModel @Inject constructor(
             protection = prefs.protection,
             setupPending = prefs.setupPending,
             device = prefs.device,
+            consents = privacyState.first,
+            eraseFailed = privacyState.second,
             template = template,
             preview = preview?.text,
         )
@@ -132,6 +142,22 @@ class SettingsViewModel @Inject constructor(
     fun refreshSetup() {
         setupPending.value = SetupChecklist.pending(SetupChecklist.items(setupSource.current()))
         viewModelScope.launch { device.value = deviceRepository.status() }
+    }
+
+    fun setExcusesConsent(granted: Boolean) {
+        viewModelScope.launch { privacy.update { it.copy(excuses = granted) } }
+    }
+
+    fun setAnalyticsConsent(granted: Boolean) {
+        viewModelScope.launch { privacy.update { it.copy(analytics = granted) } }
+    }
+
+    fun eraseEverything(onDone: () -> Unit) {
+        viewModelScope.launch {
+            val erased = privacy.eraseEverything()
+            eraseFailed.value = !erased
+            if (erased) onDone()
+        }
     }
 
     fun selectPlan(plan: String) {

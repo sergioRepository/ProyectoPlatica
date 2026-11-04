@@ -22,6 +22,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
+import com.lavidanoesunbanano.app.core.designsystem.PolicyLink
 import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SelectableRow
 
@@ -49,6 +50,8 @@ fun ConsentScreen(onDone: (Any) -> Unit, viewModel: ConsentViewModel = hiltViewM
             Item(R.string.consent_excuses_title, R.string.consent_excuses_desc, state.excuses, viewModel::toggleExcuses)
             Item(R.string.consent_analytics_title, R.string.consent_analytics_desc, state.analytics, viewModel::toggleAnalytics)
         }
+        Spacer(Modifier.height(12.dp))
+        PolicyLink()
         Spacer(Modifier.height(16.dp))
         Text(text = stringResource(R.string.consent_age), style = LaVidaTheme.type.small, color = colors.textSecondary)
         if (!state.phoneUsage || !state.crossBorder) {

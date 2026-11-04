@@ -123,6 +123,11 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false) {
                 onEditStep = { step -> navController.navigate(EditAnswerRoute(step.name)) },
                 onRegenerate = { navController.navigate(GenerationRoute(regenerate = true)) },
                 onOpenSetup = { navController.navigate(SetupRoute) },
+                onErased = {
+                    navController.navigate(ConsentRoute) {
+                        popUpTo(navController.graph.id) { inclusive = true }
+                    }
+                },
             )
         }
         composable<SetupRoute> { SetupScreen() }

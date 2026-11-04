@@ -41,6 +41,9 @@ interface SettingsStore {
     suspend fun markBlockerSetUp()
     suspend fun setConsents(consents: Consents)
     suspend fun markConsentsSynced()
+
+    /** Deja las preferencias como recién instalada la app, incluida la identidad del teléfono. */
+    suspend fun eraseAll()
 }
 
 @Singleton
@@ -109,6 +112,10 @@ class DataStoreSettingsStore @Inject constructor(
 
     override suspend fun markConsentsSynced() {
         dataStore.edit { it[CONSENTS_SYNCED] = true }
+    }
+
+    override suspend fun eraseAll() {
+        dataStore.edit { it.clear() }
     }
 
     private companion object {

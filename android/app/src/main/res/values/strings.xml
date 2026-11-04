@@ -23,6 +23,8 @@
     <string name="consent_excuses_desc">Lo que escribes para pedir una emergencia o 10 minutos va al juez de IA, y puede contener datos de salud, que son datos sensibles. No estás obligado a autorizarlo: si no lo haces, la app funciona igual y decide en el teléfono, sin juez. El servidor no guarda ese texto.</string>
     <string name="consent_analytics_title">Analítica de uso de la app (opcional)</string>
     <string name="consent_analytics_desc">Eventos como bloqueos mostrados o salidas, nunca el texto de tus excusas. Puedes desactivarla en Ajustes.</string>
+    <string name="policy_link">Política de tratamiento de datos</string>
+    <string name="policy_url" translatable="false">https://github.com/sergioRepository/ProyectoPlatica/blob/production/docs/politica-de-datos.md</string>
     <string name="consent_age">Al continuar declaras tener 18 años o más.</string>
     <string name="consent_required_hint">Marca las dos autorizaciones necesarias para continuar: sin ellas la app no puede conectarse a su servidor.</string>
     <string name="consent_continue">Continuar</string>
@@ -212,6 +214,16 @@
     <string name="settings_section_tone">tono</string>
     <string name="settings_section_profile">perfil</string>
     <string name="settings_section_template">plantilla</string>
+    <string name="settings_section_privacy">privacidad</string>
+    <string name="settings_consent_excuses">Enviar mis excusas al juez de IA</string>
+    <string name="settings_consent_excuses_desc">Pueden contener datos de salud. Apagado, el texto no sale del teléfono: las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
+    <string name="settings_consent_analytics">Analítica de uso de la app</string>
+    <string name="settings_consent_analytics_desc">Eventos como bloqueos y salidas, nunca el texto de tus excusas. Apagada, se descarta lo que estaba por enviarse.</string>
+    <string name="settings_erase">Borrar mis datos</string>
+    <string name="settings_erase_title">¿Borrar tus datos?</string>
+    <string name="settings_erase_warning">Se borra todo lo tuyo en el servidor y en este teléfono: perfil, mensajes, historial, plan y autorizaciones. La app queda como recién instalada y no se puede deshacer.</string>
+    <string name="settings_erase_confirm">Borrar todo</string>
+    <string name="settings_erase_failed">No se pudieron borrar tus datos del servidor. Nada se borró; revisa tu conexión e intenta otra vez.</string>
     <string name="settings_apps">Apps bloqueadas</string>
     <string name="settings_schedule">Horario</string>
     <string name="settings_extra_time">10 minutos más</string>

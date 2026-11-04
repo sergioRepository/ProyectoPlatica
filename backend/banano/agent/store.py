@@ -55,6 +55,15 @@ USAGE_COLUMNS = (
     "status",
     "request_id",
 )
+# Todo lo que el servidor guarda de un dispositivo.
+DEVICE_TABLES = (
+    "agent_events",
+    "llm_usage",
+    "app_events",
+    "device_daily_usage",
+    "device_consents",
+    "devices",
+)
 DailyCounter = Literal["llm_calls", "rejections", "templates"]
 DAILY_COUNTERS: tuple[DailyCounter, ...] = ("llm_calls", "rejections", "templates")
 CONSENT_FIELDS = ("excuses", "phone_usage", "cross_border", "analytics", "text_version")
@@ -91,6 +100,14 @@ class DeviceStore(Protocol):
         """Un evento repetido (mismo id) se ignora."""
         ...
 
+    async def delete_device(self, device_id: str) -> None:
+        """Borra todo lo del dispositivo, o nada si falla."""
+        ...
+
+    async def purge(self, before: datetime, daily_before: date) -> None:
+        """Aplica la retención."""
+        ...
+
     async def increment(
         self,
         device_id: str,
@@ -122,6 +139,7 @@ class UnconfiguredStore:
 
     get_by_request = recent = count_interventions_since = save = confirm = _fail
     get_device = save_consents = set_plan = increment = record_usage = save_events = _fail
+    delete_device = purge = _fail
 
 
 class MemoryStore:
@@ -204,12 +222,33 @@ class MemoryStore:
 
     async def record_usage(self, rows: list[dict[str, Any]]) -> None:
         self._check()
-        self.usage.extend(rows)
+        self.usage.extend({"created_at": utcnow(), **row} for row in rows)
 
     async def save_events(self, device_id: str, events: list[dict[str, Any]]) -> None:
         self._check()
         for event in events:
-            self.app_events.setdefault(event["id"], {"device_id": device_id, **event})
+            row = {"device_id": device_id, "received_at": utcnow(), **event}
+            self.app_events.setdefault(event["id"], row)
+
+    async def delete_device(self, device_id: str) -> None:
+        self._check()
+        self.events = [e for e in self.events if e["device_id"] != device_id]
+        self.usage = [u for u in self.usage if u["device_id"] != device_id]
+        self.consents = [c for c in self.consents if c["device_id"] != device_id]
+        self.app_events = {
+            key: e for key, e in self.app_events.items() if e["device_id"] != device_id
+        }
+        self.daily = {key: v for key, v in self.daily.items() if key[0] != device_id}
+        self.devices.pop(device_id, None)
+
+    async def purge(self, before: datetime, daily_before: date) -> None:
+        self._check()
+        self.events = [e for e in self.events if e["created_at"] >= before]
+        self.usage = [u for u in self.usage if u["created_at"] >= before]
+        self.app_events = {
+            key: e for key, e in self.app_events.items() if e["received_at"] >= before
+        }
+        self.daily = {key: v for key, v in self.daily.items() if key[1] >= daily_before}
 
     async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool:
         self._check()
@@ -369,6 +408,23 @@ class PostgresStore:
                     Jsonb(e["props"]),
                 )
             ),
+        )
+
+    async def delete_device(self, device_id: str) -> None:
+        # Una sola sentencia: se borra todo o no se borra nada.
+        deletes = ", ".join(
+            f"d{i} AS (DELETE FROM {table} WHERE device_id = %s)"
+            for i, table in enumerate(DEVICE_TABLES)
+        )
+        await self._fetch(f"WITH {deletes} SELECT 1", (device_id,) * len(DEVICE_TABLES))
+
+    async def purge(self, before: datetime, daily_before: date) -> None:
+        await self._fetch(
+            "WITH a AS (DELETE FROM agent_events WHERE created_at < %s), "
+            "b AS (DELETE FROM llm_usage WHERE created_at < %s), "
+            "c AS (DELETE FROM app_events WHERE received_at < %s), "
+            "d AS (DELETE FROM device_daily_usage WHERE day < %s) SELECT 1",
+            (before, before, before, daily_before),
         )
 
     async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool:

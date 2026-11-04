@@ -48,16 +48,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.lavidanoesunbanano.app.R
 
 /** Campos de texto: redondeados pero no en píldora, porque pueden tener varias líneas. */
 private val FieldShape = RoundedCornerShape(16.dp)
@@ -481,4 +484,12 @@ fun DayToggle(label: String, selected: Boolean, onToggle: () -> Unit, modifier: 
             color = if (selected) colors.textPrimary else colors.textSecondary,
         )
     }
+}
+
+/** Abre la política de tratamiento de datos en el navegador. */
+@Composable
+fun PolicyLink() {
+    val uriHandler = LocalUriHandler.current
+    val url = stringResource(R.string.policy_url)
+    LinkRow(title = stringResource(R.string.policy_link), onClick = { uriHandler.openUri(url) })
 }

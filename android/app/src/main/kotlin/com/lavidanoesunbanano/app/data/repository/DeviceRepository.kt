@@ -83,6 +83,13 @@ class DeviceRepository @Inject constructor(
     suspend fun setPlan(plan: String, wouldPay: String?): DeviceStatusDto? =
         authorized { api.updatePlan(it, PlanRequestDto(plan, wouldPay)) }
 
+    /** Borra todo lo del dispositivo en el servidor. `false` si no se pudo. */
+    suspend fun deleteRemoteData(): Boolean {
+        val deleted = authorized { api.deleteDevice(it).isSuccessful } == true
+        if (deleted) store.setToken(null)
+        return deleted
+    }
+
     private suspend fun <T : Any> authorized(call: suspend (String) -> T): T? {
         val authorization = authorization() ?: return null
         return try {
