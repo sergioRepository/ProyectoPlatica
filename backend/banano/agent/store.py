@@ -41,6 +41,9 @@ class StoreError(Exception):
     """La base no respondió o falló: el agente no debe fingir que consultó o guardó."""
 
 
+CONSENT_FIELDS = ("excuses", "phone_usage", "cross_border", "analytics", "text_version")
+
+
 class InterventionStore(Protocol):
     async def get_by_request(self, device_id: str, request_id: UUID) -> dict[str, Any] | None: ...
 
@@ -53,6 +56,18 @@ class InterventionStore(Protocol):
     async def confirm(
         self, device_id: str, event_id: UUID, status: str, error_code: str | None
     ) -> dict[str, Any] | None: ...
+
+
+class DeviceStore(Protocol):
+    async def get_device(
+        self, device_id: str, timeout: float | None = None
+    ) -> dict[str, Any] | None: ...
+
+    async def save_consents(self, device_id: str, consents: dict[str, Any]) -> None: ...
+
+
+class Store(InterventionStore, DeviceStore, Protocol):
+    """Lo que necesita la API."""
 
 
 def effective_status(event: dict[str, Any], now: datetime, window: timedelta) -> str | None:
@@ -69,6 +84,7 @@ class UnconfiguredStore:
         raise StoreError("not_configured")
 
     get_by_request = recent = count_interventions_since = save = confirm = _fail
+    get_device = save_consents = _fail
 
 
 class MemoryStore:
@@ -77,6 +93,8 @@ class MemoryStore:
 
     def __init__(self) -> None:
         self.events: list[dict[str, Any]] = []
+        self.devices: dict[str, dict[str, Any]] = {}
+        self.consents: list[dict[str, Any]] = []
         self.fail = False
 
     def _check(self) -> None:
@@ -126,6 +144,20 @@ class MemoryStore:
                 return dict(e)
         return None
 
+    async def get_device(
+        self, device_id: str, timeout: float | None = None
+    ) -> dict[str, Any] | None:
+        self._check()
+        device = self.devices.get(device_id)
+        return dict(device) if device else None
+
+    async def save_consents(self, device_id: str, consents: dict[str, Any]) -> None:
+        self._check()
+        self.devices.setdefault(device_id, {"device_id": device_id}).update(
+            consent_excuses=consents["excuses"], consent_analytics=consents["analytics"]
+        )
+        self.consents.append({"device_id": device_id, **consents})
+
 
 class PostgresStore:
     # shortcut: una conexión por consulta (3 a 4 por análisis), cambiar a un pool si la latencia de
@@ -135,11 +167,13 @@ class PostgresStore:
         self._timeout_s = timeout_s
         self._schema_ready = False
 
-    async def _fetch(self, sql: str, params: tuple[Any, ...]) -> list[dict[str, Any]]:
+    async def _fetch(
+        self, sql: str, params: tuple[Any, ...], timeout: float | None = None
+    ) -> list[dict[str, Any]]:
         try:
             # El límite va aquí y no en `options=-c statement_timeout`: el pooler de Neon
             # (PgBouncer) rechaza ese parámetro de arranque.
-            return await asyncio.wait_for(self._run(sql, params), self._timeout_s)
+            return await asyncio.wait_for(self._run(sql, params), timeout or self._timeout_s)
         except (psycopg.Error, OSError, TimeoutError) as exc:
             raise StoreError(type(exc).__name__) from exc
 
@@ -204,6 +238,32 @@ class PostgresStore:
             "SELECT * FROM agent_events WHERE id = %s AND device_id = %s", (event_id, device_id)
         )
         return rows[0] if rows else None
+
+    async def get_device(
+        self, device_id: str, timeout: float | None = None
+    ) -> dict[str, Any] | None:
+        rows = await self._fetch(
+            "SELECT * FROM devices WHERE device_id = %s", (device_id,), timeout
+        )
+        return rows[0] if rows else None
+
+    async def save_consents(self, device_id: str, consents: dict[str, Any]) -> None:
+        # Una sola sentencia: el estado vigente y su prueba se guardan juntos o no se guardan.
+        await self._fetch(
+            "WITH d AS (INSERT INTO devices (device_id, consent_excuses, consent_analytics) "
+            "VALUES (%s, %s, %s) ON CONFLICT (device_id) DO UPDATE SET "
+            "consent_excuses = EXCLUDED.consent_excuses, "
+            "consent_analytics = EXCLUDED.consent_analytics, updated_at = now() "
+            "RETURNING device_id) "
+            f"INSERT INTO device_consents (device_id, {', '.join(CONSENT_FIELDS)}) "
+            "SELECT d.device_id, %s, %s, %s, %s, %s FROM d",
+            (
+                device_id,
+                consents["excuses"],
+                consents["analytics"],
+                *(consents[field] for field in CONSENT_FIELDS),
+            ),
+        )
 
 
 def utcnow() -> datetime:

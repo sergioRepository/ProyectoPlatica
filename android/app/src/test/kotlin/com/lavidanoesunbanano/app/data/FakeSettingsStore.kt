@@ -1,6 +1,7 @@
 package com.lavidanoesunbanano.app.data
 
 import com.lavidanoesunbanano.app.data.prefs.SettingsStore
+import com.lavidanoesunbanano.app.domain.model.Consents
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -11,6 +12,10 @@ class FakeSettingsStore(
     override val profileChangedAt = MutableStateFlow<Long?>(null)
     override val antiSabotage = MutableStateFlow(false)
     override val blockerSetUp = MutableStateFlow(false)
+    override val consents = MutableStateFlow<Consents?>(
+        Consents(excuses = true, phoneUsage = true, crossBorder = true, analytics = true),
+    )
+    override val consentsSynced = MutableStateFlow(false)
 
     override suspend fun setExtraTimeDaily(value: Int) {
         limits.value = limits.value.copy(extraTimeDaily = value)
@@ -30,5 +35,14 @@ class FakeSettingsStore(
 
     override suspend fun markBlockerSetUp() {
         blockerSetUp.value = true
+    }
+
+    override suspend fun setConsents(consents: Consents) {
+        this.consents.value = consents
+        consentsSynced.value = false
+    }
+
+    override suspend fun markConsentsSynced() {
+        consentsSynced.value = true
     }
 }

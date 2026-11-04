@@ -1,15 +1,22 @@
+from uuid import UUID
+
+import pytest
+
 from banano.auth import verify_device_token
 from banano.graphs.judge_graph import JudgeEvaluation
 from banano.graphs.template_graph import DraftBatch, ProfileAnalysis
 from banano.llm.client import LLMError
 from tests.fakes import (
     GOOD_MESSAGES,
+    TEST_CONSENTS,
     TEST_DEVICE_ID,
     TEST_ENROLLMENT_CODE,
     TEST_SECRET,
     FakeLLM,
+    MemoryStore,
     auth_headers,
     batch,
+    consented_store,
     evaluation,
     judge_request,
     make_settings,
@@ -26,50 +33,155 @@ def profile_body() -> dict:
     return sample_profile().model_dump()
 
 
-def test_register_returns_a_signed_token(make_client) -> None:
-    response = make_client().post(
-        "/devices/register",
-        json={"device_id": TEST_DEVICE_ID, "enrollment_code": TEST_ENROLLMENT_CODE},
-    )
+def register_body(**consents) -> dict:
+    return {"consents": {**TEST_CONSENTS, **consents}}
+
+
+def test_register_needs_no_code_and_saves_the_consents(make_client) -> None:
+    store = MemoryStore()
+    response = make_client(store=store).post("/devices/register", json=register_body())
 
     assert response.status_code == 200
-    assert verify_device_token(response.json()["device_token"], TEST_SECRET) == TEST_DEVICE_ID
+    device_id = response.json()["device_id"]
+    assert str(UUID(device_id)) == device_id
+    assert verify_device_token(response.json()["device_token"], TEST_SECRET) == device_id
+    assert store.devices[device_id]["consent_excuses"] is True
+    assert store.consents == [{"device_id": device_id, **TEST_CONSENTS}]
 
 
-def test_register_rejects_a_wrong_code(make_client) -> None:
-    response = make_client().post(
-        "/devices/register", json={"device_id": TEST_DEVICE_ID, "enrollment_code": "otro"}
+def test_register_ignores_a_device_id_from_the_client(make_client) -> None:
+    client = make_client(store=MemoryStore())
+
+    response = client.post("/devices/register", json={**register_body(), "device_id": "ajeno"})
+
+    assert response.json()["device_id"] != "ajeno"
+
+
+@pytest.mark.parametrize("missing", ["phone_usage", "cross_border"])
+def test_register_requires_the_mandatory_consents(make_client, missing: str) -> None:
+    store = MemoryStore()
+    client = make_client(store=store)
+
+    response = client.post("/devices/register", json=register_body(**{missing: False}))
+
+    assert response.status_code == 422
+    assert store.devices == {}
+
+
+def test_register_works_without_the_optional_consents(make_client) -> None:
+    client = make_client(store=MemoryStore())
+
+    response = client.post("/devices/register", json=register_body(excuses=False, analytics=False))
+
+    assert response.status_code == 200
+
+
+def test_register_without_consents_is_rejected(make_client) -> None:
+    client = make_client(store=MemoryStore())
+
+    response = client.post("/devices/register", json={"device_id": TEST_DEVICE_ID})
+
+    assert response.status_code == 422
+
+
+def test_enrollment_code_closes_the_registration(make_client) -> None:
+    client = make_client(make_settings(enrollment_code=TEST_ENROLLMENT_CODE), store=MemoryStore())
+
+    closed = client.post("/devices/register", json=register_body())
+    wrong = client.post("/devices/register", json={**register_body(), "enrollment_code": "otro"})
+    right = client.post(
+        "/devices/register", json={**register_body(), "enrollment_code": TEST_ENROLLMENT_CODE}
     )
 
-    assert response.status_code == 403
+    assert closed.status_code == wrong.status_code == 403
+    assert right.status_code == 200
 
 
-def test_register_needs_configuration(make_client) -> None:
-    client = make_client(make_settings(enrollment_code=None))
+def test_register_needs_the_token_secret(make_client) -> None:
+    client = make_client(make_settings(device_token_secret=None), store=MemoryStore())
 
-    response = client.post(
-        "/devices/register",
-        json={"device_id": TEST_DEVICE_ID, "enrollment_code": TEST_ENROLLMENT_CODE},
-    )
+    assert client.post("/devices/register", json=register_body()).status_code == 503
+
+
+def test_register_fails_if_the_consents_cannot_be_saved(make_client) -> None:
+    store = MemoryStore()
+    store.fail = True
+
+    response = make_client(store=store).post("/devices/register", json=register_body())
 
     assert response.status_code == 503
 
 
-def test_register_validates_the_device_id(make_client) -> None:
-    response = make_client().post(
-        "/devices/register", json={"device_id": "corto", "enrollment_code": TEST_ENROLLMENT_CODE}
+def test_register_is_rate_limited_per_ip(make_client) -> None:
+    client = make_client(make_settings(rate_limit_register_per_hour=2), store=MemoryStore())
+
+    codes = [client.post("/devices/register", json=register_body()).status_code for _ in range(3)]
+
+    assert codes == [200, 200, 429]
+
+
+def test_consents_can_be_updated_and_keep_their_history(make_client) -> None:
+    store = consented_store()
+    client = make_client(store=store)
+
+    response = client.put(
+        "/devices/me/consents",
+        json={**TEST_CONSENTS, "analytics": False},
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200
+    assert store.devices[TEST_DEVICE_ID]["consent_analytics"] is False
+    assert [row["analytics"] for row in store.consents] == [False]
+
+
+def test_mandatory_consents_cannot_be_revoked_by_update(make_client) -> None:
+    client = make_client(store=consented_store())
+
+    response = client.put(
+        "/devices/me/consents",
+        json={**TEST_CONSENTS, "cross_border": False},
+        headers=auth_headers(),
     )
 
     assert response.status_code == 422
 
 
-def test_register_is_rate_limited_per_ip(make_client) -> None:
-    client = make_client(make_settings(rate_limit_register_per_hour=2))
-    body = {"device_id": TEST_DEVICE_ID, "enrollment_code": "otro"}
+def test_device_without_consents_cannot_use_the_llm(make_client) -> None:
+    llm = FakeLLM({})
+    client = make_client(judge_llm=llm, store=MemoryStore())
 
-    codes = [client.post("/devices/register", json=body).status_code for _ in range(3)]
+    response = client.post("/excuses/judge", json=judge_body(), headers=auth_headers())
 
-    assert codes == [403, 403, 429]
+    assert response.status_code == 403
+    assert llm.calls == []
+
+
+def test_judge_refuses_without_the_excuses_consent(make_client) -> None:
+    store = consented_store(consent_excuses=False)
+    client = make_client(judge_llm=FakeLLM({}), store=store)
+
+    response = client.post("/excuses/judge", json=judge_body(), headers=auth_headers())
+
+    assert response.status_code == 403
+
+
+def test_generate_refuses_a_device_without_consents(make_client) -> None:
+    client = make_client(generate_llm=FakeLLM({}), store=MemoryStore())
+
+    response = client.post("/templates/generate", json=profile_body(), headers=auth_headers())
+
+    assert response.status_code == 403
+
+
+def test_a_store_outage_does_not_stop_the_judge(make_client) -> None:
+    store = consented_store()
+    store.fail = True
+    client = make_client(judge_llm=FakeLLM({JudgeEvaluation: evaluation()}), store=store)
+
+    response = client.post("/excuses/judge", json=judge_body(), headers=auth_headers())
+
+    assert response.status_code == 200
 
 
 def test_judge_requires_a_valid_token(make_client) -> None:

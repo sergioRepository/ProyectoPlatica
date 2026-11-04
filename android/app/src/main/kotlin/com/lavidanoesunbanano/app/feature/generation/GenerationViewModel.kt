@@ -17,17 +17,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class CodeError { WRONG, UNREACHABLE, SERVER }
-
-enum class GenerationFailure { UNREACHABLE, SERVER, NOT_CONFIGURED, MISSING_PROFILE }
+enum class GenerationFailure { UNREACHABLE, SERVER, NOT_CONFIGURED, MISSING_PROFILE, REGISTRATION_CLOSED }
 
 sealed interface GenerationUiState {
-    data class NeedsCode(
-        val code: String = "",
-        val error: CodeError? = null,
-        val submitting: Boolean = false,
-    ) : GenerationUiState
-
     /** `status` rota entre frases mientras el backend trabaja. */
     data class Working(val status: Int = 0) : GenerationUiState
 
@@ -56,12 +48,13 @@ class GenerationViewModel @Inject constructor(
         _state.value = GenerationUiState.Working()
         startStatusRotation()
         viewModelScope.launch {
-            val next = when (val result = templateRepository.generate()) {
+            val next = when (val result = generateRegistering()) {
                 is GenerationResult.Success -> GenerationUiState.Done(result.messageCount, previewer.random()?.text)
-                GenerationResult.NeedsRegistration -> GenerationUiState.NeedsCode()
+                GenerationResult.NeedsRegistration -> GenerationUiState.Failed(GenerationFailure.SERVER)
                 GenerationResult.MissingProfile -> GenerationUiState.Failed(GenerationFailure.MISSING_PROFILE)
                 GenerationResult.NotConfigured -> GenerationUiState.Failed(GenerationFailure.NOT_CONFIGURED)
                 GenerationResult.Unreachable -> GenerationUiState.Failed(GenerationFailure.UNREACHABLE)
+                GenerationResult.RegistrationClosed -> GenerationUiState.Failed(GenerationFailure.REGISTRATION_CLOSED)
                 is GenerationResult.ServerError -> GenerationUiState.Failed(GenerationFailure.SERVER)
             }
             statusJob?.cancel()
@@ -69,22 +62,17 @@ class GenerationViewModel @Inject constructor(
         }
     }
 
-    fun onCodeChange(code: String) {
-        _state.update { if (it is GenerationUiState.NeedsCode) it.copy(code = code, error = null) else it }
-    }
-
-    fun submitCode() {
-        val current = _state.value as? GenerationUiState.NeedsCode ?: return
-        if (current.code.isBlank() || current.submitting) return
-        _state.value = current.copy(submitting = true, error = null)
-        viewModelScope.launch {
-            val error = when (deviceRepository.register(current.code)) {
-                RegistrationResult.Success -> null
-                RegistrationResult.WrongCode -> CodeError.WRONG
-                RegistrationResult.Unreachable -> CodeError.UNREACHABLE
-                RegistrationResult.NotConfigured, is RegistrationResult.ServerError -> CodeError.SERVER
-            }
-            if (error == null) generate() else _state.value = current.copy(submitting = false, error = error)
+    /** El primer registro pasa aquí, sin pedirle nada al usuario. */
+    private suspend fun generateRegistering(): GenerationResult {
+        val first = templateRepository.generate()
+        if (first != GenerationResult.NeedsRegistration) return first
+        return when (val registration = deviceRepository.register()) {
+            RegistrationResult.Success -> templateRepository.generate()
+            RegistrationResult.Closed -> GenerationResult.RegistrationClosed
+            RegistrationResult.Unreachable -> GenerationResult.Unreachable
+            RegistrationResult.NotConfigured -> GenerationResult.NotConfigured
+            RegistrationResult.NeedsConsent -> GenerationResult.ServerError(null)
+            is RegistrationResult.ServerError -> GenerationResult.ServerError(registration.code)
         }
     }
 

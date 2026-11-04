@@ -1,9 +1,11 @@
 package com.lavidanoesunbanano.app.data.repository
 
 import com.lavidanoesunbanano.app.data.FakeDeviceStore
+import com.lavidanoesunbanano.app.data.FakeSettingsStore
 import com.lavidanoesunbanano.app.data.remote.BackendConfig
 import com.lavidanoesunbanano.app.di.NetworkModule
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
@@ -19,6 +21,7 @@ class DeviceRepositoryTest {
 
     private val server = MockWebServer()
     private val store = FakeDeviceStore()
+    private val settings = FakeSettingsStore()
 
     @Before
     fun setUp() {
@@ -33,38 +36,37 @@ class DeviceRepositoryTest {
     private fun repository(baseUrl: String = server.url("/").toString()): DeviceRepository {
         val config = BackendConfig(baseUrl)
         val retrofit = NetworkModule.provideRetrofit(OkHttpClient(), NetworkModule.provideJson(), config)
-        return DeviceRepository(store, retrofit.create(), config)
+        return DeviceRepository(store, retrofit.create(), config, settings)
     }
 
     @Test
-    fun `device id is created once`() = runTest {
-        val repository = repository()
+    fun `registration needs no code and stores what the server generated`() = runTest {
+        server.enqueue(MockResponse.Builder().body("""{"device_id":"id-del-servidor","device_token":"v1.abc.firma"}""").build())
 
-        val first = repository.ensureDeviceId()
-
-        assertEquals(first, repository.ensureDeviceId())
-        assertTrue(first.matches(Regex("[0-9a-f]{32}")), first)
-    }
-
-    @Test
-    fun `registration stores the signed token`() = runTest {
-        server.enqueue(MockResponse.Builder().body("""{"device_token":"v1.abc.firma"}""").build())
-
-        val result = repository().register("  codigo  ")
+        val result = repository().register()
 
         assertEquals(RegistrationResult.Success, result)
-        assertEquals("v1.abc.firma", store.token)
+        assertEquals("id-del-servidor", store.id)
         assertEquals("Bearer v1.abc.firma", repository().authorization())
+        assertTrue(settings.consentsSynced.value)
         val body = server.takeRequest().body!!.utf8()
-        assertTrue(body.contains(""""enrollment_code":"codigo""""), body)
-        assertTrue(body.contains(""""device_id":"${store.id}""""), body)
+        assertTrue(body.contains(""""phone_usage":true"""), body)
+        assertFalse(body.contains("enrollment_code"), body)
     }
 
     @Test
-    fun `wrong code is reported and nothing is stored`() = runTest {
+    fun `without consents the phone does not register`() = runTest {
+        settings.consents.value = null
+
+        assertEquals(RegistrationResult.NeedsConsent, repository().register())
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `closed registration is reported and nothing is stored`() = runTest {
         server.enqueue(MockResponse.Builder().code(403).build())
 
-        assertEquals(RegistrationResult.WrongCode, repository().register("otro"))
+        assertEquals(RegistrationResult.Closed, repository().register())
         assertNull(store.token)
     }
 
@@ -72,7 +74,7 @@ class DeviceRepositoryTest {
     fun `server without registration configured`() = runTest {
         server.enqueue(MockResponse.Builder().code(503).build())
 
-        assertEquals(RegistrationResult.NotConfigured, repository().register("codigo"))
+        assertEquals(RegistrationResult.NotConfigured, repository().register())
     }
 
     @Test
@@ -80,12 +82,36 @@ class DeviceRepositoryTest {
         val repository = repository()
         server.close()
 
-        assertEquals(RegistrationResult.Unreachable, repository.register("codigo"))
+        assertEquals(RegistrationResult.Unreachable, repository.register())
     }
 
     @Test
     fun `blank backend url never calls the network`() = runTest {
-        assertEquals(RegistrationResult.NotConfigured, repository(baseUrl = "").register("codigo"))
+        assertEquals(RegistrationResult.NotConfigured, repository(baseUrl = "").register())
         assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `sync sends pending consents once`() = runTest {
+        store.token = "v1.abc.firma"
+        server.enqueue(
+            MockResponse.Builder()
+                .body("""{"excuses":true,"phone_usage":true,"cross_border":true,"analytics":true,"text_version":"v"}""")
+                .build(),
+        )
+        val repository = repository()
+
+        assertTrue(repository.sync())
+        assertTrue(repository.sync())
+        assertEquals(1, server.requestCount)
+        assertEquals("PUT", server.takeRequest().method)
+    }
+
+    @Test
+    fun `sync registers again after losing the token`() = runTest {
+        server.enqueue(MockResponse.Builder().body("""{"device_id":"nuevo","device_token":"v1.nuevo.firma"}""").build())
+
+        assertTrue(repository().sync())
+        assertEquals("v1.nuevo.firma", store.token)
     }
 }

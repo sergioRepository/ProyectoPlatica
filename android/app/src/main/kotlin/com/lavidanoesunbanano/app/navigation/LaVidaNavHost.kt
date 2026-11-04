@@ -9,6 +9,7 @@ import androidx.navigation.toRoute
 import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.FadeIn
 import com.lavidanoesunbanano.app.core.designsystem.FadeOut
+import com.lavidanoesunbanano.app.feature.consent.ConsentScreen
 import com.lavidanoesunbanano.app.feature.generation.GenerationScreen
 import com.lavidanoesunbanano.app.feature.history.HistoryScreen
 import com.lavidanoesunbanano.app.feature.home.HomeScreen
@@ -19,6 +20,9 @@ import com.lavidanoesunbanano.app.feature.settings.SettingsScreen
 import com.lavidanoesunbanano.app.feature.setup.SetupScreen
 import com.lavidanoesunbanano.app.feature.stats.StatsScreen
 import kotlinx.serialization.Serializable
+
+@Serializable
+data object ConsentRoute
 
 @Serializable
 data object OnboardingRoute
@@ -62,6 +66,15 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false) {
         popEnterTransition = { FadeIn },
         popExitTransition = { FadeOut },
     ) {
+        composable<ConsentRoute> {
+            ConsentScreen(
+                onDone = { next ->
+                    navController.navigate(next) {
+                        popUpTo<ConsentRoute> { inclusive = true }
+                    }
+                },
+            )
+        }
         composable<OnboardingRoute> {
             OnboardingScreen(
                 onFinished = {

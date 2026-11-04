@@ -1,50 +1,57 @@
 package com.lavidanoesunbanano.app.data.repository
 
 import com.lavidanoesunbanano.app.data.prefs.DeviceStore
+import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.data.remote.BackendConfig
 import com.lavidanoesunbanano.app.data.remote.LaVidaApi
+import com.lavidanoesunbanano.app.data.remote.dto.ConsentsDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
+import com.lavidanoesunbanano.app.domain.model.Consents
 import java.io.IOException
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
 
 sealed interface RegistrationResult {
     data object Success : RegistrationResult
-    data object WrongCode : RegistrationResult
+
+    /** El servidor cerró el registro con ENROLLMENT_CODE. */
+    data object Closed : RegistrationResult
+    data object NeedsConsent : RegistrationResult
     data object NotConfigured : RegistrationResult
     data object Unreachable : RegistrationResult
     data class ServerError(val code: Int?) : RegistrationResult
 }
 
 /**
- * El teléfono genera su id en el primer arranque. El backend lo firma al registrarlo con el
- * código de registro, y desde ahí cada petición lleva ese token.
+ * El teléfono se registra solo con las autorizaciones que dio el usuario. El backend genera
+ * el id y lo firma, y desde ahí cada petición lleva ese token.
  */
 @Singleton
 class DeviceRepository @Inject constructor(
     private val store: DeviceStore,
     private val api: LaVidaApi,
     private val config: BackendConfig,
+    private val settings: SettingsStore,
 ) {
-    suspend fun ensureDeviceId(): String =
-        store.deviceId() ?: UUID.randomUUID().toString().replace("-", "").also { store.setDeviceId(it) }
-
     suspend fun authorization(): String? = store.token()?.let { "Bearer $it" }
 
     suspend fun forgetToken() = store.setToken(null)
 
-    suspend fun register(enrollmentCode: String): RegistrationResult {
+    suspend fun register(): RegistrationResult {
         if (!config.isConfigured) return RegistrationResult.NotConfigured
+        val consents = settings.consents.first() ?: return RegistrationResult.NeedsConsent
         return try {
-            val response = api.register(RegisterRequestDto(ensureDeviceId(), enrollmentCode.trim()))
+            val response = api.register(RegisterRequestDto(consents.toDto()))
+            store.setDeviceId(response.deviceId)
             store.setToken(response.deviceToken)
+            settings.markConsentsSynced()
             RegistrationResult.Success
         } catch (e: HttpException) {
             when (e.code()) {
-                403 -> RegistrationResult.WrongCode
+                403 -> RegistrationResult.Closed
                 503 -> RegistrationResult.NotConfigured
                 else -> RegistrationResult.ServerError(e.code())
             }
@@ -54,4 +61,28 @@ class DeviceRepository @Inject constructor(
             RegistrationResult.ServerError(null)
         }
     }
+
+    /**
+     * Deja al servidor al día: registra el teléfono si perdió el token (por ejemplo, si cambió
+     * el secreto del servidor) y le envía las autorizaciones pendientes. `false` si no pudo.
+     */
+    suspend fun sync(): Boolean {
+        val consents = settings.consents.first() ?: return false
+        val authorization = authorization() ?: return register() == RegistrationResult.Success
+        if (settings.consentsSynced.first()) return true
+        return try {
+            api.updateConsents(authorization, consents.toDto())
+            settings.markConsentsSynced()
+            true
+        } catch (e: HttpException) {
+            if (e.code() == 401) forgetToken()
+            false
+        } catch (e: IOException) {
+            false
+        } catch (e: SerializationException) {
+            false
+        }
+    }
+
+    private fun Consents.toDto() = ConsentsDto(excuses, phoneUsage, crossBorder, analytics, version)
 }

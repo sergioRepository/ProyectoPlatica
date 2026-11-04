@@ -19,7 +19,6 @@ La prueba de conectividad equivale al curl del spec (bash), con el modelo del .e
 
 import argparse
 import asyncio
-import secrets
 import sys
 import time
 import uuid
@@ -294,22 +293,25 @@ async def check_tools(settings: Settings) -> None:
     print(f"  {valid}/{TOOL_TRIES} con tool_calls válidos")
 
 
+SMOKE_CONSENTS = {
+    "excuses": True,
+    "phone_usage": True,
+    "cross_border": True,
+    "analytics": False,
+    "text_version": "smoke",
+}
+
+
 async def check_api(settings: Settings, base_url: str) -> bool:
     print(f"\nAPI en {base_url}")
-    if settings.enrollment_code is None:
-        print("  Falta ENROLLMENT_CODE en backend/.env (debe ser el mismo del backend).")
-        return False
     base = base_url.rstrip("/")
-    device_id = f"smoke-{secrets.token_hex(8)}"
+    code = settings.enrollment_code.get_secret_value() if settings.enrollment_code else None
     async with httpx.AsyncClient(timeout=30) as client:
         health = await client.get(f"{base}/health")
         print(f"  /health             HTTP {health.status_code} {health.text[:80]}")
         register = await client.post(
             f"{base}/devices/register",
-            json={
-                "device_id": device_id,
-                "enrollment_code": settings.enrollment_code.get_secret_value(),
-            },
+            json={"consents": SMOKE_CONSENTS, "enrollment_code": code},
         )
         if register.status_code != 200:
             print(f"  /devices/register   HTTP {register.status_code} {register.text[:200]}")

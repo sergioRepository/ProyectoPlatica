@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Request, status
 
-from banano.agent.store import InterventionStore, PostgresStore, UnconfiguredStore
+from banano.agent.store import PostgresStore, Store, StoreError, UnconfiguredStore
 from banano.auth import verify_device_token
 from banano.config import Settings
 from banano.llm.client import (
@@ -115,7 +115,7 @@ def get_agent_llm(request: Request) -> ToolLLM:
     return _llm_from_state(request, "agent_llm", build_agent_llm)  # type: ignore[return-value]
 
 
-def get_store(request: Request) -> InterventionStore:
+def get_store(request: Request) -> Store:
     store = request.app.state.store
     if store is None:
         settings: Settings = request.app.state.settings
@@ -126,3 +126,19 @@ def get_store(request: Request) -> InterventionStore:
         )
         request.app.state.store = store
     return store
+
+
+StoreDep = Annotated[Store, Depends(get_store)]
+
+
+async def require_consent(
+    store: Store, device_id: str, settings: Settings, *, excuses: bool = False
+) -> None:
+    """Sin fila no hay autorización guardada: APK viejo o datos ya borrados. Si la base no
+    responde se deja pasar: el límite por hora sigue acotando el gasto."""
+    try:
+        device = await store.get_device(device_id, settings.gate_db_timeout_s)
+    except StoreError:
+        return
+    if device is None or (excuses and not device["consent_excuses"]):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Falta la autorización de datos.")

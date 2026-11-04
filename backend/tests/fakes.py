@@ -16,6 +16,13 @@ from banano.schemas.profile import Profile
 
 TEST_SECRET = "secreto-de-prueba-largo-y-aleatorio"
 TEST_ENROLLMENT_CODE = "codigo-de-prueba"
+TEST_CONSENTS = {
+    "excuses": True,
+    "phone_usage": True,
+    "cross_border": True,
+    "analytics": True,
+    "text_version": "prueba",
+}
 TEST_DEVICE_ID = "dispositivo-de-prueba-01"
 
 GOOD_MESSAGES = [
@@ -88,7 +95,6 @@ def make_settings(**overrides: Any) -> Settings:
         "xai_api_key": "pk_prueba",
         "grok_model_generate": "modelo-generador-de-prueba",
         "grok_model_judge": "modelo-juez-de-prueba",
-        "enrollment_code": TEST_ENROLLMENT_CODE,
         "device_token_secret": TEST_SECRET,
         "template_target_messages": 6,
         "template_min_messages": 4,
@@ -97,6 +103,19 @@ def make_settings(**overrides: Any) -> Settings:
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)
+
+
+def consented_store(*device_ids: str, **overrides: Any) -> MemoryStore:
+    """Una base con los dispositivos ya registrados y sus autorizaciones."""
+    store = MemoryStore()
+    for device_id in device_ids or (TEST_DEVICE_ID,):
+        store.devices[device_id] = {
+            "device_id": device_id,
+            "consent_excuses": True,
+            "consent_analytics": True,
+            **overrides,
+        }
+    return store
 
 
 def auth_headers(device_id: str = TEST_DEVICE_ID, secret: str = TEST_SECRET) -> dict[str, str]:

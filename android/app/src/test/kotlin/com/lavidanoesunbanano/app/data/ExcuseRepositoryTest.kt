@@ -100,7 +100,7 @@ class ExcuseRepositoryTest {
             database.attemptDao(),
             database.templateDao(),
             database.profileDao(),
-            DeviceRepository(store, api, config),
+            DeviceRepository(store, api, config, settings),
             api,
             config,
             JudgeConfig(timeoutMillis = 500),
@@ -258,5 +258,16 @@ class ExcuseRepositoryTest {
 
         assertTrue(result.verdict.offline)
         assertNull(store.token)
+    }
+
+    @Test
+    fun `without the excuses consent the text never leaves the phone`() = runBlocking {
+        settings.consents.value = settings.consents.value?.copy(excuses = false)
+
+        val result = excuses.judge(session(), ExcuseType.EMERGENCY, "Tengo que llamar al banco ya mismo")
+
+        assertTrue(result.verdict.offline)
+        assertTrue(result.verdict.valid)
+        assertEquals(0, server.requestCount)
     }
 }

@@ -66,7 +66,9 @@ class ExcuseRepository @Inject constructor(
     suspend fun judge(session: BlockSession, type: ExcuseType, reason: String): ExcuseResult {
         val text = reason.trim().take(MAX_REASON_CHARS)
         val limits = settings.limits.first()
-        val verdict = askJudge(request(session, type, text, limits), limits)
+        // Sin esa autorización, el texto no sale del teléfono.
+        val allowed = settings.consents.first()?.excuses == true
+        val verdict = (if (allowed) askJudge(request(session, type, text, limits), limits) else null)
             ?: OfflineVerdict.decide(
                 type,
                 limits,

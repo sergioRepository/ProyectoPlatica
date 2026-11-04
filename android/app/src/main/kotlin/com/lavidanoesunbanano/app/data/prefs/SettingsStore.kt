@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.lavidanoesunbanano.app.domain.model.Consents
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,11 +28,19 @@ interface SettingsStore {
     /** El servicio se conectó alguna vez: desde ahí, si se apaga, se avisa. */
     val blockerSetUp: Flow<Boolean>
 
+    /** Autorizaciones de datos; `null` si todavía no se han pedido. */
+    val consents: Flow<Consents?>
+
+    /** El servidor ya tiene las autorizaciones vigentes. */
+    val consentsSynced: Flow<Boolean>
+
     suspend fun setExtraTimeDaily(value: Int)
     suspend fun setEmergencyDaily(value: Int)
     suspend fun markProfileChanged(at: Long)
     suspend fun setAntiSabotage(enabled: Boolean)
     suspend fun markBlockerSetUp()
+    suspend fun setConsents(consents: Consents)
+    suspend fun markConsentsSynced()
 }
 
 @Singleton
@@ -52,6 +62,20 @@ class DataStoreSettingsStore @Inject constructor(
 
     override val blockerSetUp: Flow<Boolean> = dataStore.data.map { it[BLOCKER_SET_UP] ?: false }.distinctUntilChanged()
 
+    override val consents: Flow<Consents?> = dataStore.data.map { prefs ->
+        prefs[CONSENT_VERSION]?.let { version ->
+            Consents(
+                excuses = prefs[CONSENT_EXCUSES] ?: false,
+                phoneUsage = prefs[CONSENT_PHONE_USAGE] ?: false,
+                crossBorder = prefs[CONSENT_CROSS_BORDER] ?: false,
+                analytics = prefs[CONSENT_ANALYTICS] ?: false,
+                version = version,
+            )
+        }
+    }.distinctUntilChanged()
+
+    override val consentsSynced: Flow<Boolean> = dataStore.data.map { it[CONSENTS_SYNCED] ?: false }.distinctUntilChanged()
+
     override suspend fun setExtraTimeDaily(value: Int) {
         dataStore.edit { it[EXTRA_TIME_DAILY] = value.coerceIn(0, UnlockLimits.MAX_EXTRA_TIME_DAILY) }
     }
@@ -72,11 +96,32 @@ class DataStoreSettingsStore @Inject constructor(
         dataStore.edit { it[BLOCKER_SET_UP] = true }
     }
 
+    override suspend fun setConsents(consents: Consents) {
+        dataStore.edit {
+            it[CONSENT_EXCUSES] = consents.excuses
+            it[CONSENT_PHONE_USAGE] = consents.phoneUsage
+            it[CONSENT_CROSS_BORDER] = consents.crossBorder
+            it[CONSENT_ANALYTICS] = consents.analytics
+            it[CONSENT_VERSION] = consents.version
+            it[CONSENTS_SYNCED] = false
+        }
+    }
+
+    override suspend fun markConsentsSynced() {
+        dataStore.edit { it[CONSENTS_SYNCED] = true }
+    }
+
     private companion object {
         val EXTRA_TIME_DAILY = intPreferencesKey("extra_time_daily")
         val EMERGENCY_DAILY = intPreferencesKey("emergency_daily")
         val PROFILE_CHANGED_AT = longPreferencesKey("profile_changed_at")
         val ANTI_SABOTAGE = booleanPreferencesKey("anti_sabotage")
         val BLOCKER_SET_UP = booleanPreferencesKey("blocker_set_up")
+        val CONSENT_EXCUSES = booleanPreferencesKey("consent_excuses")
+        val CONSENT_PHONE_USAGE = booleanPreferencesKey("consent_phone_usage")
+        val CONSENT_CROSS_BORDER = booleanPreferencesKey("consent_cross_border")
+        val CONSENT_ANALYTICS = booleanPreferencesKey("consent_analytics")
+        val CONSENT_VERSION = stringPreferencesKey("consent_version")
+        val CONSENTS_SYNCED = booleanPreferencesKey("consents_synced")
     }
 }

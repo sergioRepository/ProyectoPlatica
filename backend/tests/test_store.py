@@ -58,6 +58,20 @@ async def contract(store) -> None:
     assert again is not None and again["status"] == "executed"
     assert await store.confirm(other, first["id"], "executed", None) is None
 
+    assert await store.get_device(device) is None
+    consents = {
+        "excuses": False,
+        "phone_usage": True,
+        "cross_border": True,
+        "analytics": True,
+        "text_version": "v1",
+    }
+    await store.save_consents(device, consents)
+    await store.save_consents(device, {**consents, "excuses": True, "analytics": False})
+    saved = await store.get_device(device)
+    assert saved is not None and saved["consent_excuses"] is True
+    assert saved["consent_analytics"] is False
+
 
 async def test_memory_store_contract():
     await contract(MemoryStore())

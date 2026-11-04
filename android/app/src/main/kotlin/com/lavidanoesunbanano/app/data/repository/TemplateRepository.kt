@@ -18,6 +18,7 @@ import retrofit2.HttpException
 sealed interface GenerationResult {
     data class Success(val messageCount: Int) : GenerationResult
     data object NeedsRegistration : GenerationResult
+    data object RegistrationClosed : GenerationResult
     data object MissingProfile : GenerationResult
     data object NotConfigured : GenerationResult
     data object Unreachable : GenerationResult

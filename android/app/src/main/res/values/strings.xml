@@ -11,6 +11,22 @@
     <string name="action_save">Guardar</string>
     <string name="action_accept">Aceptar</string>
 
+    <!-- Autorizaciones de datos. TODO(sergio): revisión legal del texto; si cambia, sube
+         Consents.CURRENT_VERSION para volver a pedirlas. -->
+    <string name="consent_title">Antes de empezar</string>
+    <string name="consent_intro">Esta app te ayuda a reducir el uso del celular; no es un servicio médico ni de salud mental. Para funcionar envía algunos datos a servidores. Responsable: Sergio Daniel Flórez López. Elige qué autorizas.</string>
+    <string name="consent_phone_usage_title">Uso del teléfono (necesaria)</string>
+    <string name="consent_phone_usage_desc">Qué apps usas y cuántos minutos en las últimas 24 horas, para que el agente decida si intervenir. No se lee lo que hay dentro de las apps.</string>
+    <string name="consent_cross_border_title">Servidores fuera de Colombia (necesaria)</string>
+    <string name="consent_cross_border_desc">Tu perfil (nombre, metas, excusas típicas, apps y horarios) y tu uso se procesan fuera de Colombia en Vercel, Neon, el gateway del Reto Agente de PLATICA MX y xAI (Grok).</string>
+    <string name="consent_excuses_title">Texto de tus excusas (opcional)</string>
+    <string name="consent_excuses_desc">Lo que escribes para pedir una emergencia o 10 minutos va al juez de IA, y puede contener datos de salud, que son datos sensibles. No estás obligado a autorizarlo: si no lo haces, la app funciona igual y decide en el teléfono, sin juez. El servidor no guarda ese texto.</string>
+    <string name="consent_analytics_title">Analítica de uso de la app (opcional)</string>
+    <string name="consent_analytics_desc">Eventos como bloqueos mostrados o salidas, nunca el texto de tus excusas. Puedes desactivarla en Ajustes.</string>
+    <string name="consent_age">Al continuar declaras tener 18 años o más.</string>
+    <string name="consent_required_hint">Marca las dos autorizaciones necesarias para continuar: sin ellas la app no puede conectarse a su servidor.</string>
+    <string name="consent_continue">Continuar</string>
+
     <!-- Onboarding -->
     <string name="onboarding_name_title">¿Cómo te llamamos?</string>
     <string name="onboarding_name_hint">Nombre o apodo. Lo vamos a usar en tu contra.</string>
@@ -88,13 +104,6 @@
     <string name="onboarding_finish">Generar mensajes</string>
 
     <!-- Generación de la plantilla -->
-    <string name="generation_code_title">Conecta con tu servidor</string>
-    <string name="generation_code_hint">Escribe el código de registro del backend. Solo se pide una vez.</string>
-    <string name="generation_code_placeholder">código de registro</string>
-    <string name="generation_code_action">Conectar</string>
-    <string name="generation_code_wrong">Ese código no es.</string>
-    <string name="generation_code_unreachable">No hay conexión con el servidor.</string>
-    <string name="generation_code_server">El servidor no está listo para registrar teléfonos.</string>
     <string name="generation_working_title">Escribiendo tus mensajes</string>
     <string name="generation_working_hint">Puede tardar un minuto. Menos de lo que se te va en un solo scroll.</string>
     <string name="generation_status_1">analizando tu perfil...</string>
@@ -115,6 +124,7 @@
     <string name="generation_failed_server">El servidor no pudo escribir los mensajes. Intenta otra vez en un momento.</string>
     <string name="generation_failed_not_configured">Esta compilación no tiene servidor configurado.</string>
     <string name="generation_failed_missing_profile">Faltan tus respuestas del inicio.</string>
+    <string name="generation_failed_closed">El registro de teléfonos está cerrado por ahora. Intenta más tarde.</string>
     <string name="generation_edit_answers">Revisar respuestas</string>
 
     <!-- Inicio -->
@@ -122,9 +132,9 @@
     <string name="home_backend_label">servidor</string>
     <string name="home_preview_label">vista previa</string>
     <string name="home_preview_next">Otro mensaje</string>
+    <string name="home_disconnected_title">Sin conexión con el juez</string>
+    <string name="home_disconnected_hint">El servidor no reconoce este teléfono todavía. Mientras tanto, las emergencias se aprueban sin juez y los 10 minutos se rechazan. Se reintenta solo.</string>
     <string name="home_blocker_label">bloqueo</string>
-    <string name="home_judge_code_title">Conecta el juez</string>
-    <string name="home_judge_code_hint">El servidor ya no reconoce este teléfono. Sin el código, las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
 
     <string name="home_today">hoy</string>
     <string name="home_attempts_label">intentos</string>
@@ -309,14 +319,14 @@
     <string name="excuse_submit">Enviar</string>
     <string name="excuse_judging">evaluando...</string>
     <string name="verdict_approved">APROBADO · %1$d min</string>
-    <string name="verdict_approved_offline">APROBADO · %1$d min · sin conexión</string>
+    <string name="verdict_approved_offline">APROBADO · %1$d min · sin juez</string>
     <string name="verdict_rejected">RECHAZADO · %1$s</string>
     <string name="verdict_reason_repeated">excusa repetida</string>
     <string name="verdict_reason_over_quota">sin cupo hoy</string>
     <string name="verdict_reason_too_short">muy corta</string>
     <string name="verdict_reason_boredom">aburrimiento</string>
-    <string name="verdict_reason_offline">sin conexión</string>
-    <string name="verdict_offline_emergency">No hay conexión con el juez, así que te creo. Tienes %1$d minutos y queda anotado para revisarlo después.</string>
+    <string name="verdict_reason_offline">sin juez</string>
+    <string name="verdict_offline_emergency">Esta vez no hay juez, así que te creo. Tienes %1$d minutos y queda anotado para revisarlo después.</string>
     <string name="verdict_offline_rejected">Sin juez no hay minutos extra. Vuelve cuando tengas conexión, o mejor no vuelvas.</string>
     <string name="verdict_open_app">Abrir %1$s</string>
     <string name="verdict_back">Volver</string>

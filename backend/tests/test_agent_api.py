@@ -1,10 +1,12 @@
 from uuid import uuid4
 
 from tests.fakes import (
+    TEST_DEVICE_ID,
     FakeToolLLM,
     MemoryStore,
     analyze_request,
     auth_headers,
+    consented_store,
     make_settings,
     tool_call,
 )
@@ -32,7 +34,7 @@ def sent_intervention(make_client, store: MemoryStore) -> tuple:
 
 
 def test_analyze_needs_a_device_token(make_client) -> None:
-    response = make_client(agent_llm=FakeToolLLM(), store=MemoryStore()).post(
+    response = make_client(agent_llm=FakeToolLLM(), store=consented_store()).post(
         "/agent/analyze", json=body()
     )
 
@@ -40,7 +42,7 @@ def test_analyze_needs_a_device_token(make_client) -> None:
 
 
 def test_analyze_rejects_unknown_fields(make_client) -> None:
-    client = make_client(agent_llm=FakeToolLLM(), store=MemoryStore())
+    client = make_client(agent_llm=FakeToolLLM(), store=consented_store())
 
     response = client.post(
         "/agent/analyze", json={**body(), "extra_time_daily_limit": 99}, headers=auth_headers()
@@ -50,7 +52,7 @@ def test_analyze_rejects_unknown_fields(make_client) -> None:
 
 
 def test_analyze_then_confirm_executed(make_client) -> None:
-    store = MemoryStore()
+    store = consented_store(TEST_DEVICE_ID, "otro-dispositivo")
     client, response = sent_intervention(make_client, store)
     assert response.status_code == 200
     intervention = response.json()["intervention"]
@@ -68,7 +70,7 @@ def test_analyze_then_confirm_executed(make_client) -> None:
 
 
 def test_another_device_cannot_confirm(make_client) -> None:
-    store = MemoryStore()
+    store = consented_store(TEST_DEVICE_ID, "otro-dispositivo")
     client, response = sent_intervention(make_client, store)
     event_id = response.json()["intervention"]["id"]
 
@@ -112,7 +114,7 @@ def test_agent_has_its_own_rate_limit(make_client) -> None:
     client = make_client(
         make_settings(rate_limit_agent_per_hour=1),
         agent_llm=FakeToolLLM(*turns),
-        store=MemoryStore(),
+        store=consented_store(),
     )
 
     first = client.post("/agent/analyze", json=body(), headers=auth_headers())

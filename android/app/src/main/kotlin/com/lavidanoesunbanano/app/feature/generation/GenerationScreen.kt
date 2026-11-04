@@ -12,16 +12,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -30,7 +26,6 @@ import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.FadeIn
 import com.lavidanoesunbanano.app.core.designsystem.FadeOut
 import com.lavidanoesunbanano.app.core.designsystem.GhostButton
-import com.lavidanoesunbanano.app.core.designsystem.LaVidaTextField
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
 import com.lavidanoesunbanano.app.core.designsystem.Panel
@@ -56,8 +51,6 @@ fun GenerationScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     GenerationContent(
         state = state,
-        onCodeChange = viewModel::onCodeChange,
-        onSubmitCode = viewModel::submitCode,
         onRetry = viewModel::generate,
         onDone = onDone,
         onEditAnswers = onEditAnswers,
@@ -69,8 +62,6 @@ fun GenerationScreen(
 @Composable
 private fun GenerationContent(
     state: GenerationUiState,
-    onCodeChange: (String) -> Unit,
-    onSubmitCode: () -> Unit,
     onRetry: () -> Unit,
     onDone: () -> Unit,
     onEditAnswers: () -> Unit,
@@ -94,7 +85,6 @@ private fun GenerationContent(
         ) { current ->
             Column(Modifier.fillMaxWidth()) {
                 when (current) {
-                    is GenerationUiState.NeedsCode -> CodeForm(current, onCodeChange, onSubmitCode)
                     is GenerationUiState.Working -> Working(current)
                     is GenerationUiState.Done -> Done(current, onDone, doneLabel)
                     is GenerationUiState.Failed -> Failed(current, onRetry, onEditAnswers, editAnswersLabel)
@@ -112,47 +102,6 @@ private fun Title(text: String) {
 @Composable
 private fun Hint(text: String) {
     Text(text = text, style = LaVidaTheme.type.small, color = LaVidaTheme.colors.textSecondary)
-}
-
-@Composable
-private fun CodeForm(state: GenerationUiState.NeedsCode, onCodeChange: (String) -> Unit, onSubmit: () -> Unit) {
-    Title(stringResource(R.string.generation_code_title))
-    Spacer(Modifier.height(8.dp))
-    Hint(stringResource(R.string.generation_code_hint))
-    Spacer(Modifier.height(24.dp))
-    LaVidaTextField(
-        value = state.code,
-        onValueChange = onCodeChange,
-        placeholder = stringResource(R.string.generation_code_placeholder),
-        maxLength = 200,
-        mono = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Go),
-        keyboardActions = KeyboardActions(onGo = { onSubmit() }),
-    )
-    state.error?.let { error ->
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = stringResource(
-                when (error) {
-                    CodeError.WRONG -> R.string.generation_code_wrong
-                    CodeError.UNREACHABLE -> R.string.generation_code_unreachable
-                    CodeError.SERVER -> R.string.generation_code_server
-                },
-            ),
-            style = LaVidaTheme.type.mono,
-            color = LaVidaTheme.colors.rejected,
-        )
-    }
-    Spacer(Modifier.height(24.dp))
-    if (state.submitting) {
-        StatusLine(stringResource(R.string.status_checking))
-    } else {
-        PrimaryButton(
-            text = stringResource(R.string.generation_code_action),
-            onClick = onSubmit,
-            enabled = state.code.isNotBlank(),
-        )
-    }
 }
 
 @Composable
@@ -196,6 +145,7 @@ private fun Failed(
                 GenerationFailure.SERVER -> R.string.generation_failed_server
                 GenerationFailure.NOT_CONFIGURED -> R.string.generation_failed_not_configured
                 GenerationFailure.MISSING_PROFILE -> R.string.generation_failed_missing_profile
+                GenerationFailure.REGISTRATION_CLOSED -> R.string.generation_failed_closed
             },
         ),
     )
@@ -216,8 +166,6 @@ private fun GenerationDonePreview() {
                 count = 53,
                 sample = "Son las 23:40 y sigues en Instagram. Mañana vas a programar con sueño.",
             ),
-            onCodeChange = {},
-            onSubmitCode = {},
             onRetry = {},
             onDone = {},
             onEditAnswers = {},

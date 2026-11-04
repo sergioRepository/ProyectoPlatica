@@ -4,6 +4,7 @@ import com.lavidanoesunbanano.app.data.remote.dto.AnalyzeRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.AnalyzeResponseDto
 import com.lavidanoesunbanano.app.data.remote.dto.ConfirmRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.ConfirmResponseDto
+import com.lavidanoesunbanano.app.data.remote.dto.ConsentsDto
 import com.lavidanoesunbanano.app.data.remote.dto.HealthDto
 import com.lavidanoesunbanano.app.data.remote.dto.JudgeRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.JudgeResponseDto
@@ -15,6 +16,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface LaVidaApi {
@@ -23,6 +25,12 @@ interface LaVidaApi {
 
     @POST("devices/register")
     suspend fun register(@Body body: RegisterRequestDto): RegisterResponseDto
+
+    @PUT("devices/me/consents")
+    suspend fun updateConsents(
+        @Header("Authorization") authorization: String,
+        @Body body: ConsentsDto,
+    ): ConsentsDto
 
     @POST("templates/generate")
     suspend fun generateTemplate(

@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,8 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -29,7 +25,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.InfoRow
-import com.lavidanoesunbanano.app.core.designsystem.LaVidaTextField
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
 import com.lavidanoesunbanano.app.core.designsystem.LinkRow
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
@@ -41,7 +36,6 @@ import com.lavidanoesunbanano.app.data.repository.AgentRun
 import com.lavidanoesunbanano.app.domain.model.BackendStatus
 import com.lavidanoesunbanano.app.domain.setup.ServiceHealth
 import com.lavidanoesunbanano.app.domain.setup.SetupChecklist
-import com.lavidanoesunbanano.app.feature.generation.CodeError
 
 @Composable
 fun HomeScreen(
@@ -57,8 +51,6 @@ fun HomeScreen(
         state = state,
         actions = HomeActions(
             onOpenSetup = onOpenSetup,
-            onCodeChange = viewModel::onCodeChange,
-            onSubmitCode = viewModel::submitCode,
             onOpenStats = onOpenStats,
             onOpenHistory = onOpenHistory,
             onOpenSettings = onOpenSettings,
@@ -69,8 +61,6 @@ fun HomeScreen(
 
 private class HomeActions(
     val onOpenSetup: () -> Unit,
-    val onCodeChange: (String) -> Unit,
-    val onSubmitCode: () -> Unit,
     val onOpenStats: () -> Unit,
     val onOpenHistory: () -> Unit,
     val onOpenSettings: () -> Unit,
@@ -118,9 +108,11 @@ private fun HomeContent(state: HomeUiState, actions: HomeActions) {
                 )
             }
         }
-        state.codeEntry?.let { entry ->
+        if (state.disconnected) {
             Spacer(Modifier.height(24.dp))
-            CodeForm(entry, actions.onCodeChange, actions.onSubmitCode)
+            Text(text = stringResource(R.string.home_disconnected_title), style = LaVidaTheme.type.body, color = colors.textPrimary)
+            Spacer(Modifier.height(6.dp))
+            Text(text = stringResource(R.string.home_disconnected_hint), style = LaVidaTheme.type.small, color = colors.textSecondary)
         }
 
         Spacer(Modifier.height(32.dp))
@@ -221,50 +213,6 @@ private fun decisionText(decision: String): String = stringResource(
     },
 )
 
-/** El juez perdió el token: se vuelve a registrar el teléfono sin regenerar la plantilla. */
-@Composable
-private fun CodeForm(entry: CodeEntry, onCodeChange: (String) -> Unit, onSubmit: () -> Unit) {
-    val colors = LaVidaTheme.colors
-    Text(text = stringResource(R.string.home_judge_code_title), style = LaVidaTheme.type.body, color = colors.textPrimary)
-    Spacer(Modifier.height(6.dp))
-    Text(text = stringResource(R.string.home_judge_code_hint), style = LaVidaTheme.type.small, color = colors.textSecondary)
-    Spacer(Modifier.height(12.dp))
-    LaVidaTextField(
-        value = entry.code,
-        onValueChange = onCodeChange,
-        placeholder = stringResource(R.string.generation_code_placeholder),
-        maxLength = 200,
-        mono = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Go),
-        keyboardActions = KeyboardActions(onGo = { onSubmit() }),
-    )
-    entry.error?.let { error ->
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = stringResource(
-                when (error) {
-                    CodeError.WRONG -> R.string.generation_code_wrong
-                    CodeError.UNREACHABLE -> R.string.generation_code_unreachable
-                    CodeError.SERVER -> R.string.generation_code_server
-                },
-            ),
-            style = LaVidaTheme.type.mono,
-            color = colors.rejected,
-        )
-    }
-    Spacer(Modifier.height(12.dp))
-    if (entry.submitting) {
-        StatusLine(stringResource(R.string.status_checking))
-    } else {
-        PrimaryButton(
-            text = stringResource(R.string.generation_code_action),
-            onClick = onSubmit,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = entry.code.isNotBlank(),
-        )
-    }
-}
-
 @Composable
 private fun blockerText(health: ServiceHealth?): String = when (health) {
     null -> stringResource(R.string.status_checking)
@@ -291,7 +239,7 @@ private fun HomePreview() {
                 backend = BackendStatus.Online("0.1.0"),
                 unlocks = listOf(ActiveUnlock("Instagram", "21:55")),
             ),
-            actions = HomeActions({}, {}, {}, {}, {}, {}, {}),
+            actions = HomeActions({}, {}, {}, {}, {}),
         )
     }
 }

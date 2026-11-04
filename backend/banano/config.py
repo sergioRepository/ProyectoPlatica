@@ -30,7 +30,8 @@ class Settings(BaseSettings):
     # El teléfono espera 8 s en total: el juez debe contestar antes.
     judge_llm_timeout_s: float = 6.0
 
-    # Registro de dispositivos
+    # Registro de dispositivos. Con ENROLLMENT_CODE definido, el registro exige el código:
+    # sirve para cerrarlo si hay abuso. Vacío, el registro es abierto.
     enrollment_code: SecretStr | None = None
     device_token_secret: SecretStr | None = None
 
@@ -38,6 +39,7 @@ class Settings(BaseSettings):
     rate_limit_judge_per_hour: int = 30
     rate_limit_generate_per_hour: int = 5
     rate_limit_register_per_hour: int = 10
+    rate_limit_device_per_hour: int = 60
 
     # Plantilla de mensajes
     template_target_messages: int = 60
@@ -60,6 +62,8 @@ class Settings(BaseSettings):
     database_url: SecretStr | None = None
     # Neon Free suspende la base sin uso; despertarla toma uno o dos segundos.
     db_timeout_s: float = 5.0
+    # Para consultas en el camino del juez: el teléfono espera 8 s en total.
+    gate_db_timeout_s: float = 0.6
     rate_limit_agent_per_hour: int = 12
     agent_llm_timeout_s: float = 6.0
     agent_total_timeout_s: float = 20.0

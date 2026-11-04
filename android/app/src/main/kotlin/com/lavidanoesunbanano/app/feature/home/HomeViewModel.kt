@@ -10,14 +10,12 @@ import com.lavidanoesunbanano.app.data.repository.DeviceRepository
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.HistoryRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
-import com.lavidanoesunbanano.app.data.repository.RegistrationResult
 import com.lavidanoesunbanano.app.data.system.SetupStatusSource
 import com.lavidanoesunbanano.app.domain.model.BackendStatus
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import com.lavidanoesunbanano.app.domain.setup.SetupStatus
 import com.lavidanoesunbanano.app.domain.stats.Stats
 import com.lavidanoesunbanano.app.domain.stats.StatsCalculator
-import com.lavidanoesunbanano.app.feature.generation.CodeError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Instant
@@ -32,7 +30,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Una app desbloqueada ahora mismo y la hora a la que se vuelve a bloquear. */
@@ -43,19 +40,13 @@ data class HomeUiState(
     val backend: BackendStatus? = null,
     /** Estado del teléfono para el bloqueo; `null` antes de revisar. */
     val setup: SetupStatus? = null,
-    /** Sin token el juez no puede responder; se pide otra vez el código de registro. */
-    val codeEntry: CodeEntry? = null,
+    /** El servidor no conoce este teléfono: sin juez ni agente hasta que se reconecte. */
+    val disconnected: Boolean = false,
     val today: Stats? = null,
     val unlocks: List<ActiveUnlock> = emptyList(),
     /** Último análisis del agente en esta sesión; `null` si no ha corrido. */
     val agent: AgentRun? = null,
     val analyzing: Boolean = false,
-)
-
-data class CodeEntry(
-    val code: String = "",
-    val error: CodeError? = null,
-    val submitting: Boolean = false,
 )
 
 @HiltViewModel
@@ -73,7 +64,7 @@ class HomeViewModel @Inject constructor(
 
     private val backend = MutableStateFlow<BackendStatus?>(null)
     private val setup = MutableStateFlow<SetupStatus?>(null)
-    private val codeEntry = MutableStateFlow<CodeEntry?>(null)
+    private val disconnected = MutableStateFlow(false)
 
     private val today: Flow<Stats> = history.observe(days = 1).map {
         StatsCalculator.compute(it.attempts, it.excuses, it.today, days = 1, zone = it.zone)
@@ -104,8 +95,8 @@ class HomeViewModel @Inject constructor(
     private val analyzing = MutableStateFlow(false)
 
     val state: StateFlow<HomeUiState> = combine(
-        combine(backend, setup, codeEntry, today, unlocks) { backend, setup, codeEntry, today, unlocks ->
-            HomeUiState(backend, setup, codeEntry, today, unlocks)
+        combine(backend, setup, disconnected, today, unlocks) { backend, setup, disconnected, today, unlocks ->
+            HomeUiState(backend, setup, disconnected, today, unlocks)
         },
         agentRepository.lastRun,
         analyzing,
@@ -142,26 +133,7 @@ class HomeViewModel @Inject constructor(
     fun refreshOnResume() {
         setup.value = setupSource.current()
         viewModelScope.launch {
-            val missing = backendConfig.isConfigured && deviceRepository.authorization() == null
-            codeEntry.update { current -> if (missing) current ?: CodeEntry() else null }
-        }
-    }
-
-    fun onCodeChange(code: String) {
-        codeEntry.update { it?.copy(code = code, error = null) }
-    }
-
-    fun submitCode() {
-        val current = codeEntry.value ?: return
-        if (current.code.isBlank() || current.submitting) return
-        codeEntry.value = current.copy(submitting = true, error = null)
-        viewModelScope.launch {
-            codeEntry.value = when (deviceRepository.register(current.code)) {
-                RegistrationResult.Success -> null
-                RegistrationResult.WrongCode -> current.copy(error = CodeError.WRONG)
-                RegistrationResult.Unreachable -> current.copy(error = CodeError.UNREACHABLE)
-                RegistrationResult.NotConfigured, is RegistrationResult.ServerError -> current.copy(error = CodeError.SERVER)
-            }
+            disconnected.value = backendConfig.isConfigured && !deviceRepository.sync()
         }
     }
 
