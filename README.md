@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="La vida no es un banano: agente de IA para reducir el uso compulsivo del celular" width="100%">
+  <img src="docs/assets/banner.svg" alt="La vida no es un banano: agente de IA que te ayuda a reducir el uso del celular" width="100%">
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <b>LaVidaNoEsUnBanano</b>: agente para reducir la adicción al celular.<br>
+  <b>LaVidaNoEsUnBanano</b>: un agente que te ayuda a reducir el uso del celular.<br>
   Proyecto de Sergio Daniel Flórez López para el <a href="https://reto.pltk.mx/">Reto Agente 2026 de PLATICA MX</a>.
 </p>
 
@@ -40,7 +40,7 @@ La idea central: la vida es mucho más que estar en el celular. La app no compit
 - [Conexión con el gateway del reto](#conexión-con-el-gateway-del-reto)
 - [Instalar en el teléfono](#instalar-en-el-teléfono)
 - [Cómo probar](#cómo-probar)
-- [Privacidad](#privacidad)
+- [Ética y privacidad](#ética-y-privacidad)
 - [Créditos](#créditos)
 
 ## El problema
@@ -56,7 +56,10 @@ Abrir TikTok o Instagram "solo un ratito" es un gesto automático. Los bloqueado
 | **Juez de excusas** | Decide si una emergencia o un "10 minutos más" se justifica, con cupos diarios y una regla sin conexión. | `POST /excuses/judge` y `OfflineVerdict` |
 | **Agente de intervención** | Revisa el uso real de las últimas 24 h y el historial, y puede iniciar una sesión de enfoque dentro de límites fijos, o decidir no actuar. | `POST /agent/analyze` y `AgentCheckWorker` |
 | **Estadísticas e historial** | Intentos por app, excusas aprobadas y rechazadas, e historial de bloqueos. | `feature/stats` y `feature/history` |
-| **Anti-autosabotaje** | Muestra la pantalla de bloqueo también cuando intentas desactivar el bloqueador desde Ajustes. | `SabotageGuard` |
+| **Anti-autosabotaje** | Pone una pausa cuando intentas desactivar el bloqueador desde Ajustes. Siempre puedes salir: ya mismo escribiendo por qué, o programándolo para dentro de 24 horas. | `SabotageGuard` y `ProtectionRepository` |
+| **Planes sin cobro** | Gratis, Mensual y Semestral, con topes diarios de llamadas de IA y la pregunta opcional "¿Pagarías por este plan?". Por ahora ningún plan tiene costo. | `PUT /devices/me/plan` y `banano/quota.py` |
+| **Medición** | Tokens, costo y latencia de cada llamada a Grok, y eventos de uso de la app si los autorizas. | `llm_usage`, `app_events` y `backend/sql/queries/` |
+| **Privacidad** | Autorizaciones por separado, borrado total de tus datos y reporte de mensajes de la IA. | `feature/consent`, `DELETE /devices/me` y `POST /reports` |
 
 ## Arquitectura
 
@@ -90,16 +93,24 @@ flowchart LR
   JG --> Grok
   AG --> Grok
   AG <--> PG
+  JG <-->|"cupos"| PG
 ```
 
-El bloqueo y los mensajes no dependen del backend: la plantilla vive en Room y la regla sin conexión del juez corre en el teléfono. El backend solo entra para generar la plantilla, juzgar excusas y analizar el uso. La llave del gateway nunca sale de él.
+El bloqueo y los mensajes no dependen del backend: la plantilla vive en Room y la regla sin conexión del juez corre en el teléfono. El backend solo entra para generar la plantilla, juzgar excusas, analizar el uso y guardar lo que el usuario autorizó. La llave del gateway nunca sale de él.
 
 ### Endpoints
 
 | Método | Ruta | Uso |
 |---|---|---|
 | `GET` | `/health` | Estado del servicio |
-| `POST` | `/devices/register` | Registro del teléfono con el código de registro; devuelve el token del dispositivo |
+| `POST` | `/devices/register` | Registro automático con las autorizaciones de datos; devuelve el id generado por el servidor y el token. Solo pide `enrollment_code` si el servidor define `ENROLLMENT_CODE`. |
+| `GET` | `/devices/me` | Plan, llamadas de IA de hoy y autorizaciones |
+| `PUT` | `/devices/me/plan` | Cambia el plan y guarda la respuesta a "¿Pagarías?" |
+| `PUT` | `/devices/me/consents` | Actualiza las autorizaciones; cada cambio queda como prueba |
+| `DELETE` | `/devices/me` | Borra todos los datos del dispositivo en el servidor |
+| `POST` | `/events` | Lote de hasta 100 eventos de comportamiento. Sin autorización de analítica no guarda nada. |
+| `POST` | `/reports` | Reporte de un mensaje de la IA |
+| `GET` | `/internal/retention` | Aplica la retención; lo llama el cron de Vercel con `CRON_SECRET` |
 | `POST` | `/templates/generate` | Generador de mensajes |
 | `POST` | `/excuses/judge` | Juez de excusas |
 | `POST` | `/agent/analyze` | Análisis del agente de intervención |
@@ -121,12 +132,13 @@ La plantilla se guarda en el teléfono, así que los bloqueos funcionan sin inte
 
 ### 2. Juez de excusas (`POST /excuses/judge`)
 
-Cuando pides "emergencia" o "10 minutos más", tienes que escribir por qué. El juez tiene cuatro nodos:
+Cuando pides "emergencia" o "10 minutos más", tienes que escribir por qué. El juez tiene cinco nodos, y solo uno llama a Grok:
 
-1. `prefiltro` (sin LLM): rechaza excusas de menos de 15 caracteres, repetidas o por encima del cupo diario.
-2. `detectar_crisis`: si el texto describe una emergencia real de salud o seguridad, apaga el sarcasmo y aprueba con tono humano.
-3. `evaluar`: Grok decide con criterio y se vuelve más estricto con cada intento del día.
-4. `redactar_veredicto`: responde en el tono que elegiste, por ejemplo `RECHAZADO · aburrimiento`.
+1. `detectar_crisis`: si el texto describe una emergencia real de salud o seguridad, apaga el sarcasmo, aprueba con tono humano y la app muestra líneas de ayuda.
+2. `prefiltro`: rechaza excusas de menos de 15 caracteres, repetidas o por encima del cupo diario.
+3. `cuota`: revisa el tope de llamadas del plan y el de rechazos del día. Sin cupo responde como la regla sin conexión, con `plan_quota` o `rejection_cap`: la emergencia se aprueba y los 10 minutos se rechazan.
+4. `evaluar`: Grok decide con criterio y se vuelve más estricto con cada intento del día.
+5. `redactar_veredicto`: responde en el tono que elegiste, por ejemplo `RECHAZADO · aburrimiento`.
 
 Reglas: máximo 3 aprobaciones de "10 minutos" y 2 emergencias (15 minutos) por día. Sin internet o con timeout de 8 segundos, la emergencia se aprueba y queda marcada para revisión, y el "10 minutos" se rechaza.
 
@@ -149,7 +161,7 @@ Teléfono:   valida, inserta la sesión de enfoque, notifica
 | `consultar_historial_intervenciones` | Hasta 10 intervenciones previas del mismo dispositivo. Distingue vacío (`no_data`) de caída (`unavailable`). | PostgreSQL (`agent_events`) |
 | `ejecutar_intervencion` | Propone iniciar una sesión de enfoque (5, 10, 15, 20 o 30 min). Pasa por la política antes de enviarse. | Política determinista y confirmación de Android |
 
-- **Decisiones posibles:** `intervene`, `no_action`, `insufficient_evidence` y `agent_unavailable` (fallo, timeout o turnos agotados del LLM: sin motivo ni acción).
+- **Decisiones posibles:** `intervene`, `no_action`, `insufficient_evidence`, `agent_unavailable` (fallo, timeout o turnos agotados del LLM: sin motivo ni acción) y `plan_quota` (sin llamadas de IA hoy, se responde sin llamar a Grok).
 - **Política determinista** (`backend/banano/agent/policy.py`): el modelo nunca tiene la última palabra. Códigos: `no_evidence`, `duration_not_allowed`, `target_not_allowed`, `focus_already_active`, `daily_cap` (4 en 24 h) y `store_unavailable`. Android vuelve a validar antes de aplicar.
 - **Estados de la intervención:** `sent`, `rejected`, `executed`, `failed` y `unknown`. Una intervención `sent` que no se confirma en 2 minutos se lee como `unknown`: nunca se da por ejecutada sin la confirmación del teléfono.
 - **Idempotencia:** un `request_id` repetido devuelve la respuesta guardada sin volver a llamar al LLM.
@@ -242,10 +254,13 @@ android/             App en Kotlin con Jetpack Compose, Room, Hilt y Accessibili
 backend/             FastAPI y LangGraph, desplegado en Vercel
   banano/graphs/     Grafos de plantilla, juez y agente
   banano/agent/      Herramientas, política y store de Postgres del agente
-  sql/               Esquema de agent_events
+  banano/quota.py    Topes diarios por plan
+  sql/               Migraciones numeradas; se aplican solas al conectar
+  sql/queries/       Consultas de análisis para Neon
+  scripts/           smoke_grok, init_db y usage_report
   tests/             Pruebas con pytest
 apk/                 APK de release
-docs/assets/         Recursos gráficos del README
+docs/                Política de datos y recursos gráficos del README
 docker-compose.yml   Backend y Postgres en local
 ```
 
@@ -261,9 +276,16 @@ El gateway es un espejo de la API de xAI: solo cambian la URL base y la llave. E
 | `XAI_API_KEY` | Llave del gateway |
 | `GROK_MODEL_GENERATE` | Modelo del generador de mensajes |
 | `GROK_MODEL_JUDGE` | Modelo del juez |
-| `ENROLLMENT_CODE` | Código para registrar el teléfono |
 | `DEVICE_TOKEN_SECRET` | Secreto para firmar los tokens de dispositivo |
-| `DATABASE_URL` | PostgreSQL del historial del agente. Sin ella el agente funciona, pero no ejecuta intervenciones. |
+| `DATABASE_URL` | PostgreSQL. Sin ella no se pueden registrar teléfonos ni guardar autorizaciones. |
+| `ENROLLMENT_CODE` | Déjala vacía: el registro es abierto. Definirla cierra el registro si hay abuso. |
+| `PLAN_LIMIT_FREE`, `PLAN_LIMIT_MONTHLY`, `PLAN_LIMIT_SEMESTER` | Llamadas de IA por día de cada plan: 3, 20 y 20 |
+| `DAILY_REJECTION_CAP` | Rechazos del día antes de que el juez responda sin Grok: 5 |
+| `DAILY_TEMPLATE_CAP` | Plantillas generadas por día y dispositivo: 2 |
+| `AGENT_RESERVED_FOR_JUDGE` | Últimas llamadas del día que el análisis automático deja para el juez: 1 |
+| `LLM_PRICES` | Precios por modelo en JSON para calcular `cost_usd`. Sin precio, el costo queda en NULL. |
+| `CRON_SECRET` | Secreto del cron diario de retención |
+| `RETENTION_DAYS` | Días que se guardan `llm_usage`, `app_events` y `agent_events`: 90 |
 
 En Vercel, las mismas variables van en Project Settings > Environment Variables.
 
@@ -275,9 +297,11 @@ No está en Play Store; se instala por APK.
 
 **[Descargar el APK](apk/la-vida-no-es-un-banano.apk)** (versión 0.3.0, con el agente de intervención, 11 MB). Usa el backend de producción en Vercel. La versión 0.2.0, sin el agente, sigue en [MediaFire](https://www.mediafire.com/file/t1x19xrl4jngmfi/la-vida-no-es-un-banano.apk/file).
 
+> La versión 0.4.0, con autorizaciones de datos y registro automático, se compila desde este repositorio y aún no está publicada aquí. Cuando el backend se actualice, la 0.3.0 dejará de usar el juez y el agente: seguirá bloqueando, pero con la regla sin conexión.
+
 1. Ábrelo en el teléfono. Android pide permitir instalar apps desde el navegador o el gestor de archivos.
 2. En Samsung, si el Bloqueador automático (Auto Blocker) está activo, apágalo para instalar y vuelve a encenderlo después.
-3. Abre la app y responde el onboarding. Al final pide el código de registro del servidor. *Pendiente de completar: cómo se consigue el código.*
+3. Abre la app, elige qué datos autorizas y responde el onboarding. El teléfono se registra solo: no hay código.
 4. En Inicio, toca **Configurar** y sigue la guía. Como se instaló desde un archivo, en Android 13 o más reciente el primer paso es Permitir ajustes restringidos. Para el agente, la guía también pide el "Acceso a datos de uso".
 
 Por USB: `adb install -r apk/la-vida-no-es-un-banano.apk`.
@@ -298,13 +322,22 @@ android\gradlew.bat -p android :app:assembleDebug       # APK debug (backend en 
 android\gradlew.bat -p android :app:assembleRelease     # APK contra el backend de producción
 ```
 
-Para correr el contrato del store contra Postgres real: `docker compose up -d db` y `$env:TEST_DATABASE_URL = "postgresql://banano:banano@localhost:5432/banano"`.
+Para correr el contrato del store y las consultas de análisis contra Postgres real: `docker compose up -d db` y `$env:TEST_DATABASE_URL = "postgresql://banano:banano@localhost:5432/banano"`.
 
-## Privacidad
+Para el resumen de consumo y comportamiento: `uv --directory backend run python -m scripts.usage_report --salida reporte-de-uso.md`. Solo lee.
 
-- El permiso de Accesibilidad solo detecta qué app pasa a primer plano. No lee la pantalla ni lo que escribes.
-- Perfil, plantilla e historial viven en el teléfono. Al servidor van el perfil (para generar la plantilla), cada excusa que pides juzgar y, para el agente, un resumen de uso de las últimas 24 h (qué apps y cuántos minutos, sin contenido).
-- El historial del agente se guarda en PostgreSQL aislado por dispositivo.
+## Ética y privacidad
+
+La app te ayuda a reducir el uso del celular. No es un servicio médico ni de salud mental, y no diagnostica ni reemplaza a un profesional. La versión completa está en la [política de tratamiento de datos](docs/politica-de-datos.md).
+
+- **Autorizaciones por separado (Ley 1581 de 2012 y Decreto 1377 de 2013).** Antes de registrar el teléfono se piden cuatro, sin marcar. Uso del teléfono y procesamiento fuera de Colombia son obligatorias. El texto de las excusas y la analítica son opcionales: las excusas pueden traer datos de salud, y ninguna función básica se condiciona a entregarlas. Sin esa autorización, el texto no sale del teléfono. El servidor guarda qué se autorizó, la versión del texto y la fecha.
+- **Qué se guarda.** Perfil, plantilla e historial viven en el teléfono. El servidor procesa el perfil, las excusas autorizadas y el uso de 24 h, pero no guarda el texto de las excusas. Sí guarda decisiones del agente, consumo de tokens, plan, autorizaciones, eventos autorizados y reportes. Quién más procesa esos datos, con Vercel, Neon, el gateway de PLATICA MX y xAI, está en la política.
+- **Retención y borrado.** `llm_usage`, `app_events` y `agent_events` se borran a los 90 días, y los reportes a los 180, con un cron diario. "Borrar mis datos" en Ajustes elimina todo en el servidor y en el teléfono.
+- **Reportar contenido de la IA.** Se puede reportar un mensaje desde la pantalla de bloqueo y desde el veredicto, sin salir de la app.
+- **Siempre se puede salir.** El anti-autosabotaje da fricción, no encierra: se desactiva ya escribiendo por qué, sin aprobación de nadie, o se programa para dentro de 24 horas.
+- **Crisis.** Si una excusa describe una emergencia o autolesión, se apaga el sarcasmo y se aprueba con tono humano, también sin internet, y aparecen líneas de ayuda de Colombia. Solo se muestran las verificadas en [`crisis_lines.json`](android/app/src/main/assets/crisis_lines.json).
+- **Tono bajo tu control.** Bajar el sarcasmo aplica de inmediato a los mensajes ya generados, y el modo amable lo apaga del todo.
+- **Permisos.** La Accesibilidad solo detecta qué app pasa a primer plano. No lee la pantalla ni lo que escribes.
 
 ## Créditos
 

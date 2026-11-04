@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="240" viewBox="0 0 960 240" role="img" aria-labelledby="t d">
   <title id="t">La vida no es un banano</title>
-  <desc id="d">Agente de IA para Android que interrumpe el uso compulsivo del celular con mensajes personalizados.</desc>
+  <desc id="d">Agente de IA para Android que te ayuda a reducir el uso del celular con mensajes personalizados.</desc>
   <style>
     .title { font: 800 44px 'Plus Jakarta Sans', 'Segoe UI', Helvetica, Arial, sans-serif; fill: #1E1E24; }
     .sub { font: 500 18px 'Plus Jakarta Sans', 'Segoe UI', Helvetica, Arial, sans-serif; fill: #4D4632; }
