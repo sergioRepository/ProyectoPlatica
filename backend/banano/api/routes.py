@@ -94,8 +94,9 @@ ManagedDevice = Annotated[
 ]
 
 
+# Sin límite por hora: revocar una autorización o borrar los datos nunca debe dar 429.
 @router.put("/devices/me/consents")
-async def update_consents(body: Consents, device_id: ManagedDevice, store: StoreDep) -> Consents:
+async def update_consents(body: Consents, device_id: DeviceDep, store: StoreDep) -> Consents:
     try:
         await store.save_consents(device_id, body.model_dump())
     except StoreError as exc:
@@ -180,7 +181,7 @@ async def report_content(body: ContentReport, device_id: ManagedDevice, store: S
 
 
 @router.delete("/devices/me", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_device(device_id: ManagedDevice, store: StoreDep) -> None:
+async def delete_device(device_id: DeviceDep, store: StoreDep) -> None:
     try:
         await store.delete_device(device_id)
     except StoreError as exc:

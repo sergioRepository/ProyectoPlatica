@@ -78,6 +78,11 @@ class DeviceRepository @Inject constructor(
         return saved
     }
 
+    /** Como [sync], pero sin registrar un teléfono que todavía no lo está. */
+    suspend fun syncIfRegistered() {
+        if (authorization() != null) sync()
+    }
+
     /** Plan y llamadas de hoy; `null` sin red o sin registro. */
     suspend fun status(): DeviceStatusDto? = authorized { api.deviceStatus(it) }
 

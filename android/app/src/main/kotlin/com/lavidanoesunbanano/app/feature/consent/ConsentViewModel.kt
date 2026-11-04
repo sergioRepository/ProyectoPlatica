@@ -49,8 +49,9 @@ class ConsentViewModel @Inject constructor(
         _state.update { it.copy(saving = true) }
         viewModelScope.launch {
             settings.setConsents(Consents(current.excuses, current.phoneUsage, current.crossBorder, current.analytics))
-            // Sin red queda pendiente: Inicio lo reintenta y mientras tanto decide la regla local.
-            deviceRepository.sync()
+            // Quien ya usaba la app lo avisa aquí. Sin red, Inicio lo reintenta. El teléfono nuevo
+            // no tiene token: se registra al final del onboarding, al generar la plantilla.
+            deviceRepository.syncIfRegistered()
             onDone(startResolver.afterConsent())
         }
     }

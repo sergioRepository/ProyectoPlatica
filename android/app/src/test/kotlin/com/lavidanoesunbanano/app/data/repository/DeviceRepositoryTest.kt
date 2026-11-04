@@ -160,4 +160,11 @@ class DeviceRepositoryTest {
 
         assertFalse(repository().report("Mensaje feo", "offensive", "verdict"))
     }
+
+    @Test
+    fun `a new phone does not register when it accepts the consents`() = runTest {
+        repository().syncIfRegistered()
+
+        assertEquals(0, server.requestCount)
+    }
 }

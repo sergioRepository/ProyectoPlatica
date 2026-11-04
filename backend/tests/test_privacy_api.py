@@ -6,6 +6,7 @@ import pytest
 from banano.agent.store import utcnow
 from banano.quota import quota_day
 from tests.fakes import (
+    TEST_CONSENTS,
     TEST_DEVICE_ID,
     FakeLLM,
     auth_headers,
@@ -201,3 +202,16 @@ def test_retention_is_closed_without_a_configured_secret(make_client) -> None:
     client = make_client(store=old_and_new_store())
 
     assert client.get("/internal/retention", headers=CRON).status_code == 503
+
+
+def test_privacy_actions_are_never_rate_limited(make_client) -> None:
+    settings = make_settings(rate_limit_device_per_hour=1)
+    client = make_client(settings, store=consented_store())
+    client.get("/devices/me", headers=auth_headers())
+
+    limited = client.get("/devices/me", headers=auth_headers())
+    revoked = client.put("/devices/me/consents", json=TEST_CONSENTS, headers=auth_headers())
+    deleted = client.delete("/devices/me", headers=auth_headers())
+
+    assert limited.status_code == 429
+    assert (revoked.status_code, deleted.status_code) == (200, 204)
