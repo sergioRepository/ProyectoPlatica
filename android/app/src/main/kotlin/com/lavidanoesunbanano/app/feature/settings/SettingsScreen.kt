@@ -4,47 +4,65 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lavidanoesunbanano.app.R
+import com.lavidanoesunbanano.app.core.designsystem.CheckRow
 import com.lavidanoesunbanano.app.core.designsystem.FadeIn
 import com.lavidanoesunbanano.app.core.designsystem.FadeOut
-import com.lavidanoesunbanano.app.core.designsystem.GhostButton
-import com.lavidanoesunbanano.app.core.designsystem.InfoRow
+import com.lavidanoesunbanano.app.core.designsystem.GroupedCard
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
 import com.lavidanoesunbanano.app.core.designsystem.LinkRow
+import com.lavidanoesunbanano.app.core.designsystem.MainScaffold
+import com.lavidanoesunbanano.app.core.designsystem.MainTab
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
+import com.lavidanoesunbanano.app.core.designsystem.Notice
+import com.lavidanoesunbanano.app.core.designsystem.NoticeTone
 import com.lavidanoesunbanano.app.core.designsystem.Panel
 import com.lavidanoesunbanano.app.core.designsystem.PolicyLink
 import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
-import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
+import com.lavidanoesunbanano.app.core.designsystem.RowDivider
 import com.lavidanoesunbanano.app.core.designsystem.SelectableRow
+import com.lavidanoesunbanano.app.core.designsystem.SmallButton
 import com.lavidanoesunbanano.app.core.designsystem.StepperRow
+import com.lavidanoesunbanano.app.core.designsystem.TextLink
+import com.lavidanoesunbanano.app.core.designsystem.UiIcon
+import com.lavidanoesunbanano.app.core.designsystem.dashed
 import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
 import com.lavidanoesunbanano.app.feature.block.SabotageExitForm
@@ -53,6 +71,7 @@ import com.lavidanoesunbanano.app.feature.onboarding.OnboardingStep
 
 @Composable
 fun SettingsScreen(
+    onTab: (MainTab) -> Unit,
     onEditStep: (OnboardingStep) -> Unit,
     onRegenerate: () -> Unit,
     onOpenSetup: () -> Unit,
@@ -60,28 +79,30 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshSetup() }
-    SettingsContent(
-        state = state,
-        actions = SettingsActions(
-            onEditStep = onEditStep,
-            onExtraTimeChange = viewModel::changeExtraTimeDaily,
-            onEmergencyChange = viewModel::changeEmergencyDaily,
-            onAntiSabotageChange = viewModel::setAntiSabotage,
-            onSelectPlan = viewModel::selectPlan,
-            onWouldPay = viewModel::answerWouldPay,
-            onExcusesConsent = viewModel::setExcusesConsent,
-            onAnalyticsConsent = viewModel::setAnalyticsConsent,
-            onKindMode = viewModel::setKindMode,
-            onErase = { viewModel.eraseEverything(onErased) },
-            onDisableProtection = viewModel::disableProtectionNow,
-            onScheduleProtectionOff = viewModel::scheduleProtectionOff,
-            onCancelProtectionOff = viewModel::cancelProtectionOff,
-            onOpenSetup = onOpenSetup,
-            onNextPreview = viewModel::nextPreview,
-            onRegenerate = onRegenerate,
-        ),
-    )
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshDevice() }
+    MainScaffold(MainTab.SETTINGS, onTab) {
+        SettingsContent(
+            state = state,
+            actions = SettingsActions(
+                onEditStep = onEditStep,
+                onExtraTimeChange = viewModel::changeExtraTimeDaily,
+                onEmergencyChange = viewModel::changeEmergencyDaily,
+                onAntiSabotageChange = viewModel::setAntiSabotage,
+                onSelectPlan = viewModel::selectPlan,
+                onWouldPay = viewModel::answerWouldPay,
+                onExcusesConsent = viewModel::setExcusesConsent,
+                onAnalyticsConsent = viewModel::setAnalyticsConsent,
+                onKindMode = viewModel::setKindMode,
+                onErase = { viewModel.eraseEverything(onErased) },
+                onDisableProtection = viewModel::disableProtectionNow,
+                onScheduleProtectionOff = viewModel::scheduleProtectionOff,
+                onCancelProtectionOff = viewModel::cancelProtectionOff,
+                onOpenSetup = onOpenSetup,
+                onNextPreview = viewModel::nextPreview,
+                onRegenerate = onRegenerate,
+            ),
+        )
+    }
 }
 
 private class SettingsActions(
@@ -105,186 +126,249 @@ private class SettingsActions(
 
 @Composable
 private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
-    val colors = LaVidaTheme.colors
-    val profile = state.profile
-    val locked = state.protection.locked
-    val onEditStep = actions.onEditStep
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 24.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(28.dp),
     ) {
-        Spacer(Modifier.height(16.dp))
-        Text(text = stringResource(R.string.settings_title), style = LaVidaTheme.type.title, color = colors.textPrimary)
+        Text(
+            text = stringResource(R.string.settings_title),
+            style = LaVidaTheme.type.screenTitle,
+            color = LaVidaTheme.colors.textPrimary,
+        )
+        BlockSection(state, actions)
+        MessagesSection(state, actions)
+        ProfileSection(state, actions)
+        AccountSection(state, actions)
+    }
+}
 
-        Section(R.string.settings_section_rules) {
-            if (locked) {
-                Text(text = stringResource(R.string.settings_locked), style = LaVidaTheme.type.small, color = colors.rejected)
+@Composable
+private fun Section(@StringRes label: Int, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(text = stringResource(label), style = LaVidaTheme.type.section, color = LaVidaTheme.colors.textPrimary)
+        content()
+    }
+}
+
+@Composable
+private fun BlockSection(state: SettingsUiState, actions: SettingsActions) {
+    val locked = state.protection.locked
+    val unlocksAt = state.protection.unlocksAt
+    val limits = state.limits
+    Section(R.string.settings_section_block) {
+        if (locked && unlocksAt != null) {
+            Notice(tone = NoticeTone.INFO) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    UiIcon(R.drawable.ic_ui_lock, size = 16.dp, modifier = Modifier.padding(top = 2.dp))
+                    Text(
+                        text = stringResource(R.string.settings_locked, unlocksAt),
+                        style = LaVidaTheme.type.caption.copy(fontWeight = FontWeight.SemiBold),
+                        color = LaVidaTheme.colors.textPrimary,
+                    )
+                }
             }
+        }
+        val note = unlocksAt?.takeIf { locked }?.let { stringResource(R.string.settings_locked_row, it) }
+        GroupedCard {
             LinkRow(
                 title = stringResource(R.string.settings_apps),
                 value = state.apps.joinToString(", ") { it.label },
-                onClick = { onEditStep(OnboardingStep.APPS) },
+                note = note,
+                onClick = { actions.onEditStep(OnboardingStep.APPS) },
                 enabled = !locked,
             )
+            RowDivider()
             LinkRow(
                 title = stringResource(R.string.settings_schedule),
                 value = state.schedule,
-                monoValue = true,
-                onClick = { onEditStep(OnboardingStep.SCHEDULE) },
+                note = note,
+                onClick = { actions.onEditStep(OnboardingStep.SCHEDULE) },
                 enabled = !locked,
             )
-        }
-
-        Section(R.string.settings_section_quotas) {
-            val limits = state.limits
+            RowDivider()
+            val extraTime = stringResource(R.string.settings_extra_time)
             StepperRow(
-                title = stringResource(R.string.settings_extra_time),
-                value = stringResource(R.string.settings_quota_value, limits.extraTimeDaily),
+                title = extraTime,
+                hint = stringResource(R.string.settings_extra_time_hint, UnlockLimits.MAX_EXTRA_TIME_DAILY),
+                value = limits.extraTimeDaily.toString(),
                 onDecrease = { actions.onExtraTimeChange(-1) },
                 onIncrease = { actions.onExtraTimeChange(1) },
+                decreaseLabel = stringResource(R.string.settings_decrease, extraTime),
+                increaseLabel = stringResource(R.string.settings_increase, extraTime),
                 canDecrease = !locked && limits.extraTimeDaily > 0,
                 canIncrease = !locked && limits.extraTimeDaily < UnlockLimits.MAX_EXTRA_TIME_DAILY,
             )
+            RowDivider()
+            val emergency = stringResource(R.string.settings_emergency)
             StepperRow(
-                title = stringResource(R.string.settings_emergency),
-                value = stringResource(R.string.settings_quota_value, limits.emergencyDaily),
+                title = emergency,
+                hint = stringResource(R.string.settings_emergency_hint, UnlockLimits.MAX_EMERGENCY_DAILY),
+                value = limits.emergencyDaily.toString(),
                 onDecrease = { actions.onEmergencyChange(-1) },
                 onIncrease = { actions.onEmergencyChange(1) },
+                decreaseLabel = stringResource(R.string.settings_decrease, emergency),
+                increaseLabel = stringResource(R.string.settings_increase, emergency),
                 canDecrease = !locked && limits.emergencyDaily > 0,
                 canIncrease = !locked && limits.emergencyDaily < UnlockLimits.MAX_EMERGENCY_DAILY,
             )
-            Text(
-                text = stringResource(R.string.settings_quotas_hint),
-                style = LaVidaTheme.type.small,
-                color = colors.textSecondary,
-            )
         }
+        ProtectionCard(state.protection, actions)
+    }
+}
 
-        Section(R.string.settings_section_plan) {
-            PlanSection(state.device, actions)
+/** Encendida y en horario de bloqueo, apagarla pasa por la salida con fricción. */
+@Composable
+private fun ProtectionCard(protection: Protection, actions: SettingsActions) {
+    val colors = LaVidaTheme.colors
+    var exiting by rememberSaveable { mutableStateOf(false) }
+    var reason by rememberSaveable { mutableStateOf("") }
+    GroupedCard {
+        CheckRow(
+            title = stringResource(R.string.settings_anti_sabotage),
+            description = stringResource(R.string.settings_anti_sabotage_desc),
+            checked = protection.on,
+            onToggle = { if (protection.locked) exiting = true else actions.onAntiSabotageChange(!protection.on) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            trailingMark = true,
+        )
+        protection.offAt?.let { offAt ->
+            RowDivider()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(colors.accentSoft)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.sabotage_exit_scheduled, offAt),
+                    modifier = Modifier.weight(1f),
+                    style = LaVidaTheme.type.caption,
+                    color = colors.textPrimary,
+                )
+                SmallButton(text = stringResource(R.string.sabotage_exit_cancel), onClick = actions.onCancelProtectionOff)
+            }
         }
+        RowDivider()
+        LinkRow(title = stringResource(R.string.settings_permissions), onClick = actions.onOpenSetup)
+    }
+    if (exiting) {
+        AlertDialog(
+            onDismissRequest = { exiting = false },
+            title = { Text(stringResource(R.string.sabotage_exit_title), style = LaVidaTheme.type.subhead) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    SabotageExitForm(
+                        reason = reason,
+                        scheduledAt = protection.offAt,
+                        scheduleAt = protection.scheduleAt,
+                        onReasonChange = { reason = it },
+                        onDisableNow = {
+                            actions.onDisableProtection(reason)
+                            exiting = false
+                            reason = ""
+                        },
+                        onSchedule = {
+                            actions.onScheduleProtectionOff()
+                            exiting = false
+                        },
+                    )
+                }
+            },
+            confirmButton = {
+                TextLink(text = stringResource(R.string.sabotage_exit_keep), onClick = { exiting = false })
+            },
+            shape = MaterialTheme.shapes.large,
+            containerColor = colors.surface,
+        )
+    }
+}
 
-        Section(R.string.settings_section_protection) {
-            LinkRow(
-                title = stringResource(R.string.setup_link),
-                value = state.setupPending?.let { pending ->
-                    if (pending == 0) {
-                        stringResource(R.string.setup_all_done)
-                    } else {
-                        pluralStringResource(R.plurals.setup_pending_count, pending, pending)
-                    }
-                },
-                onClick = actions.onOpenSetup,
-            )
-            ProtectionRow(state.protection, actions)
-        }
-
-        Section(R.string.settings_section_tone) {
-            SelectableRow(
+@Composable
+private fun MessagesSection(state: SettingsUiState, actions: SettingsActions) {
+    val colors = LaVidaTheme.colors
+    val type = LaVidaTheme.type
+    val profile = state.profile
+    val kind = state.kindMode
+    Section(R.string.settings_section_messages) {
+        GroupedCard {
+            CheckRow(
                 title = stringResource(R.string.settings_kind_mode),
-                subtitle = stringResource(R.string.settings_kind_mode_desc),
-                selected = state.kindMode,
-                onClick = { actions.onKindMode(!state.kindMode) },
-                multiple = true,
+                description = stringResource(R.string.settings_kind_mode_desc),
+                checked = kind,
+                onToggle = { actions.onKindMode(!kind) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                trailingMark = true,
             )
+            RowDivider()
             LinkRow(
                 title = stringResource(R.string.settings_sarcasm),
-                value = profile?.let { stringResource(sarcasmLabel(it.sarcasmLevel)) },
-                onClick = { onEditStep(OnboardingStep.SARCASM) },
+                value = when {
+                    kind -> stringResource(R.string.settings_sarcasm_off)
+                    profile == null -> null
+                    else -> stringResource(R.string.settings_sarcasm_value, profile.sarcasmLevel, sarcasmName(profile.sarcasmLevel))
+                },
+                onClick = { actions.onEditStep(OnboardingStep.SARCASM) },
             )
-            Text(
-                text = stringResource(R.string.settings_sarcasm_hint),
-                style = LaVidaTheme.type.small,
-                color = colors.textSecondary,
-            )
+            RowDivider()
             LinkRow(
                 title = stringResource(R.string.settings_profanity),
-                value = profile?.let { stringResource(if (it.profanityAllowed) R.string.profanity_yes else R.string.profanity_no) },
-                onClick = { onEditStep(OnboardingStep.PROFANITY) },
+                value = profile?.let {
+                    stringResource(if (it.profanityAllowed && !kind) R.string.profanity_yes else R.string.profanity_no)
+                },
+                onClick = { actions.onEditStep(OnboardingStep.PROFANITY) },
             )
+            RowDivider()
             LinkRow(
                 title = stringResource(R.string.settings_country),
                 value = profile?.country?.let {
                     if (it == OnboardingRules.NEUTRAL_COUNTRY) stringResource(R.string.country_neutral) else it
                 },
-                onClick = { onEditStep(OnboardingStep.COUNTRY) },
+                onClick = { actions.onEditStep(OnboardingStep.COUNTRY) },
             )
+            RowDivider()
             LinkRow(
                 title = stringResource(R.string.settings_forbidden),
                 value = profile?.forbiddenTopics?.ifBlank { stringResource(R.string.settings_none) },
-                onClick = { onEditStep(OnboardingStep.FORBIDDEN) },
+                onClick = { actions.onEditStep(OnboardingStep.FORBIDDEN) },
             )
         }
-
-        Section(R.string.settings_section_profile) {
-            LinkRow(
-                title = stringResource(R.string.settings_name),
-                value = profile?.name,
-                onClick = { onEditStep(OnboardingStep.NAME) },
-            )
-            LinkRow(
-                title = stringResource(R.string.settings_goal),
-                value = profile?.mainGoal,
-                onClick = { onEditStep(OnboardingStep.MAIN_GOAL) },
-            )
-            LinkRow(
-                title = stringResource(R.string.settings_secondary),
-                value = profile?.secondaryGoals?.joinToString("; ")?.ifBlank { stringResource(R.string.settings_none) },
-                onClick = { onEditStep(OnboardingStep.SECONDARY_GOALS) },
-            )
-            LinkRow(
-                title = stringResource(R.string.settings_reason),
-                value = profile?.goalReason,
-                onClick = { onEditStep(OnboardingStep.GOAL_REASON) },
-            )
-            LinkRow(
-                title = stringResource(R.string.settings_excuses),
-                value = profile?.typicalExcuses,
-                onClick = { onEditStep(OnboardingStep.EXCUSES) },
-            )
-        }
-
-        Section(R.string.settings_section_privacy) {
-            PrivacySection(state, actions)
-        }
-
-        Section(R.string.settings_section_template) {
-            Panel {
-                InfoRow(label = stringResource(R.string.home_messages_label), value = state.template.messageCount.toString())
-                InfoRow(
-                    label = stringResource(R.string.settings_template_generated),
-                    value = state.template.generatedAt ?: "-",
+        Panel {
+            state.template.generatedAt?.let { generatedAt ->
+                Text(
+                    text = stringResource(R.string.settings_template_info, state.template.messageCount, generatedAt),
+                    style = type.small,
+                    color = colors.textPrimary,
                 )
             }
             if (state.template.stale) {
-                Text(
-                    text = stringResource(R.string.settings_template_stale),
-                    style = LaVidaTheme.type.small,
-                    color = colors.rejected,
-                )
+                Notice(tone = NoticeTone.INFO) {
+                    Text(
+                        text = stringResource(R.string.settings_template_stale),
+                        style = type.caption.copy(fontWeight = FontWeight.SemiBold),
+                        color = colors.textPrimary,
+                    )
+                }
             }
             state.preview?.let { preview ->
-                Panel {
-                    MonoLabel(stringResource(R.string.home_preview_label))
+                Notice(tone = NoticeTone.PLAIN) {
                     AnimatedContent(
                         targetState = preview,
                         transitionSpec = { FadeIn togetherWith FadeOut },
                         label = "vista previa",
                     ) { text ->
-                        Text(text = text, style = LaVidaTheme.type.title, color = colors.textPrimary)
+                        Text(
+                            text = text,
+                            style = type.body.copy(fontWeight = FontWeight.Bold),
+                            color = colors.textPrimary,
+                        )
                     }
                 }
-                SecondaryButton(text = stringResource(R.string.home_preview_next), onClick = actions.onNextPreview)
+                TextLink(text = stringResource(R.string.home_preview_next), onClick = actions.onNextPreview)
             }
-            Text(
-                text = stringResource(R.string.settings_regenerate_hint),
-                style = LaVidaTheme.type.small,
-                color = colors.textSecondary,
-            )
             PrimaryButton(
                 text = stringResource(R.string.settings_regenerate),
                 onClick = actions.onRegenerate,
@@ -294,54 +378,51 @@ private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
     }
 }
 
-/** Encendida y en horario de bloqueo, apagarla pasa por la salida con fricción. */
 @Composable
-private fun ProtectionRow(protection: Protection, actions: SettingsActions) {
-    var exiting by rememberSaveable { mutableStateOf(false) }
-    var reason by rememberSaveable { mutableStateOf("") }
-    SelectableRow(
-        title = stringResource(R.string.settings_anti_sabotage),
-        subtitle = stringResource(R.string.settings_anti_sabotage_desc),
-        selected = protection.on,
-        onClick = { if (protection.locked) exiting = true else actions.onAntiSabotageChange(!protection.on) },
-        multiple = true,
-    )
-    protection.offAt?.let { offAt ->
-        Text(
-            text = stringResource(R.string.sabotage_exit_scheduled, offAt),
-            style = LaVidaTheme.type.small,
-            color = LaVidaTheme.colors.textSecondary,
-        )
-        GhostButton(
-            text = stringResource(R.string.sabotage_exit_cancel),
-            onClick = actions.onCancelProtectionOff,
-            modifier = Modifier.fillMaxWidth(),
-        )
+private fun ProfileSection(state: SettingsUiState, actions: SettingsActions) {
+    val profile = state.profile
+    val none = stringResource(R.string.settings_none)
+    Section(R.string.settings_section_profile) {
+        GroupedCard {
+            LinkRow(
+                title = stringResource(R.string.settings_name),
+                value = profile?.name,
+                onClick = { actions.onEditStep(OnboardingStep.NAME) },
+            )
+            RowDivider()
+            LinkRow(
+                title = stringResource(R.string.settings_goal),
+                value = profile?.mainGoal,
+                onClick = { actions.onEditStep(OnboardingStep.MAIN_GOAL) },
+            )
+            RowDivider()
+            val goals = profile?.secondaryGoals.orEmpty().size
+            LinkRow(
+                title = stringResource(R.string.settings_secondary),
+                value = if (goals == 0) none else pluralStringResource(R.plurals.settings_secondary_count, goals, goals),
+                onClick = { actions.onEditStep(OnboardingStep.SECONDARY_GOALS) },
+            )
+            RowDivider()
+            LinkRow(
+                title = stringResource(R.string.settings_reason),
+                value = profile?.goalReason?.ifBlank { none },
+                onClick = { actions.onEditStep(OnboardingStep.GOAL_REASON) },
+            )
+            RowDivider()
+            LinkRow(
+                title = stringResource(R.string.settings_excuses),
+                value = profile?.typicalExcuses?.ifBlank { none },
+                onClick = { actions.onEditStep(OnboardingStep.EXCUSES) },
+            )
+        }
     }
-    if (exiting) {
-        AlertDialog(
-            onDismissRequest = { exiting = false },
-            title = { Text(stringResource(R.string.sabotage_exit_title)) },
-            text = {
-                SabotageExitForm(
-                    reason = reason,
-                    scheduledAt = protection.offAt,
-                    onReasonChange = { reason = it },
-                    onDisableNow = {
-                        actions.onDisableProtection(reason)
-                        exiting = false
-                        reason = ""
-                    },
-                    onSchedule = {
-                        actions.onScheduleProtectionOff()
-                        exiting = false
-                    },
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { exiting = false }) { Text(stringResource(R.string.action_cancel)) }
-            },
-        )
+}
+
+@Composable
+private fun AccountSection(state: SettingsUiState, actions: SettingsActions) {
+    Section(R.string.settings_section_account) {
+        PlanSection(state.device, actions)
+        PrivacySection(state, actions)
     }
 }
 
@@ -349,47 +430,68 @@ private fun ProtectionRow(protection: Protection, actions: SettingsActions) {
 private fun PrivacySection(state: SettingsUiState, actions: SettingsActions) {
     val colors = LaVidaTheme.colors
     var confirming by rememberSaveable { mutableStateOf(false) }
-    state.consents?.let { consents ->
-        SelectableRow(
-            title = stringResource(R.string.settings_consent_excuses),
-            subtitle = stringResource(R.string.settings_consent_excuses_desc),
-            selected = consents.excuses,
-            onClick = { actions.onExcusesConsent(!consents.excuses) },
-            multiple = true,
-        )
-        SelectableRow(
-            title = stringResource(R.string.settings_consent_analytics),
-            subtitle = stringResource(R.string.settings_consent_analytics_desc),
-            selected = consents.analytics,
-            onClick = { actions.onAnalyticsConsent(!consents.analytics) },
-            multiple = true,
-        )
-    }
-    PolicyLink()
-    SecondaryButton(
-        text = stringResource(R.string.settings_erase),
-        onClick = { confirming = true },
-        modifier = Modifier.fillMaxWidth(),
-    )
-    if (state.eraseFailed) {
-        Text(text = stringResource(R.string.settings_erase_failed), style = LaVidaTheme.type.small, color = colors.rejected)
+    Panel(spacing = 14.dp) {
+        state.consents?.let { consents ->
+            CheckRow(
+                title = stringResource(R.string.settings_consent_excuses),
+                description = stringResource(R.string.settings_consent_excuses_desc),
+                checked = consents.excuses,
+                onToggle = { actions.onExcusesConsent(!consents.excuses) },
+            )
+            CheckRow(
+                title = stringResource(R.string.settings_consent_analytics),
+                description = stringResource(R.string.settings_consent_analytics_desc),
+                checked = consents.analytics,
+                onToggle = { actions.onAnalyticsConsent(!consents.analytics) },
+            )
+        }
+        PolicyLink()
+        EraseButton(onClick = { confirming = true })
+        if (state.eraseFailed) {
+            Text(text = stringResource(R.string.settings_erase_failed), style = LaVidaTheme.type.small, color = colors.rejected)
+        }
     }
     if (confirming) {
         AlertDialog(
             onDismissRequest = { confirming = false },
-            title = { Text(stringResource(R.string.settings_erase_title)) },
-            text = { Text(stringResource(R.string.settings_erase_warning)) },
+            title = { Text(stringResource(R.string.settings_erase_title), style = LaVidaTheme.type.subhead) },
+            text = { Text(stringResource(R.string.settings_erase_warning), style = LaVidaTheme.type.small) },
             confirmButton = {
-                TextButton(
+                TextLink(
+                    text = stringResource(R.string.settings_erase_confirm),
                     onClick = {
                         confirming = false
                         actions.onErase()
                     },
-                ) { Text(stringResource(R.string.settings_erase_confirm)) }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.action_cancel)) }
+                TextLink(text = stringResource(R.string.action_cancel), onClick = { confirming = false })
             },
+            shape = MaterialTheme.shapes.large,
+            containerColor = colors.surface,
+        )
+    }
+}
+
+/** El único botón rojo de la app: borra todo y no se puede deshacer. */
+@Composable
+private fun EraseButton(onClick: () -> Unit) {
+    val colors = LaVidaTheme.colors
+    val shape = MaterialTheme.shapes.small
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 50.dp)
+            .border(2.dp, colors.rejected, shape)
+            .clip(shape)
+            .clickable(role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.settings_erase),
+            style = LaVidaTheme.type.small.copy(fontWeight = FontWeight.Bold),
+            color = colors.rejected,
         )
     }
 }
@@ -400,57 +502,97 @@ private val PLANS = listOf(
     "semester" to R.string.plan_semester,
 )
 
-private val WOULD_PAY = listOf(
-    "yes" to R.string.would_pay_yes,
-    "no" to R.string.would_pay_no,
-    "maybe" to R.string.would_pay_maybe,
-)
-
 @Composable
 private fun PlanSection(device: DeviceStatusDto?, actions: SettingsActions) {
     val colors = LaVidaTheme.colors
+    val type = LaVidaTheme.type
     if (device == null) {
-        Text(text = stringResource(R.string.settings_plan_offline), style = LaVidaTheme.type.small, color = colors.textSecondary)
+        Text(text = stringResource(R.string.settings_plan_offline), style = type.small, color = colors.textSecondary)
         return
     }
-    Panel {
-        InfoRow(
-            label = stringResource(R.string.ai_calls_label),
-            value = stringResource(R.string.ai_calls_value, device.remainingToday, device.dailyLimit),
+    var showPlans by rememberSaveable { mutableStateOf(false) }
+    var surveyClosed by rememberSaveable { mutableStateOf(false) }
+    Panel(spacing = 10.dp) {
+        MonoLabel(stringResource(R.string.settings_plan_label))
+        val name = PLANS.firstOrNull { it.first == device.plan }?.second ?: R.string.plan_free
+        Text(text = stringResource(name), style = type.section, color = colors.textPrimary)
+        Text(
+            text = pluralStringResource(R.plurals.settings_plan_limit, device.dailyLimit, device.dailyLimit, device.remainingToday),
+            style = type.small,
+            color = colors.textPrimary,
+        )
+        if (showPlans) {
+            PLANS.forEach { (plan, label) ->
+                SelectableRow(
+                    title = stringResource(label),
+                    selected = device.plan == plan,
+                    onClick = { actions.onSelectPlan(plan) },
+                )
+            }
+            Text(text = stringResource(R.string.settings_plan_hint), style = type.caption, color = colors.textSecondary)
+        } else {
+            SmallButton(text = stringResource(R.string.settings_plans), onClick = { showPlans = true })
+        }
+    }
+    if (!surveyClosed && device.wouldPay == null) {
+        PaySurvey(
+            onAnswer = { answer ->
+                actions.onWouldPay(answer)
+                surveyClosed = true
+            },
+            onClose = { surveyClosed = true },
         )
     }
-    PLANS.forEach { (plan, label) ->
-        SelectableRow(
-            title = stringResource(label),
-            selected = device.plan == plan,
-            onClick = { actions.onSelectPlan(plan) },
-        )
-    }
-    Text(text = stringResource(R.string.settings_plan_hint), style = LaVidaTheme.type.small, color = colors.textSecondary)
-    Spacer(Modifier.height(8.dp))
-    Text(text = stringResource(R.string.settings_would_pay), style = LaVidaTheme.type.body, color = colors.textPrimary)
-    WOULD_PAY.forEach { (answer, label) ->
-        SelectableRow(
-            title = stringResource(label),
-            selected = device.wouldPay == answer,
-            onClick = { actions.onWouldPay(answer) },
-        )
+}
+
+/** Se contesta una vez o se cierra: no es un cartel fijo en Ajustes. */
+@Composable
+private fun PaySurvey(onAnswer: (String) -> Unit, onClose: () -> Unit) {
+    val colors = LaVidaTheme.colors
+    val closeLabel = stringResource(R.string.settings_survey_close)
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .dashed(shape, colors.border)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row {
+            Text(
+                text = stringResource(R.string.settings_would_pay),
+                modifier = Modifier.weight(1f),
+                style = LaVidaTheme.type.small.copy(fontWeight = FontWeight.Bold),
+                color = colors.textPrimary,
+            )
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClick = onClose)
+                    .semantics { contentDescription = closeLabel },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = "×", style = LaVidaTheme.type.section, color = colors.textPrimary)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SmallButton(text = stringResource(R.string.would_pay_yes), onClick = { onAnswer("yes") })
+            SmallButton(text = stringResource(R.string.would_pay_no), onClick = { onAnswer("no") })
+        }
     }
 }
 
 @Composable
-private fun Section(@StringRes label: Int, content: @Composable ColumnScope.() -> Unit) {
-    Spacer(Modifier.height(32.dp))
-    MonoLabel(stringResource(label))
-    Spacer(Modifier.height(12.dp))
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
-}
-
-@StringRes
-private fun sarcasmLabel(level: Int): Int = when (level) {
-    1 -> R.string.sarcasm_1
-    2 -> R.string.sarcasm_2
-    3 -> R.string.sarcasm_3
-    4 -> R.string.sarcasm_4
-    else -> R.string.sarcasm_5
+private fun sarcasmName(level: Int): String {
+    val full = stringResource(
+        when (level) {
+            1 -> R.string.sarcasm_1
+            2 -> R.string.sarcasm_2
+            3 -> R.string.sarcasm_3
+            4 -> R.string.sarcasm_4
+            else -> R.string.sarcasm_5
+        },
+    )
+    return full.substringAfter("· ")
 }

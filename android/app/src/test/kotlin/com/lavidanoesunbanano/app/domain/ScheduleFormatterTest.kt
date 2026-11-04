@@ -48,4 +48,18 @@ class ScheduleFormatterTest {
         assertEquals("1 ene", ScheduleFormatter.shortDate(LocalDate.of(2027, 1, 1)))
         assertEquals("15 oct 08:05", ScheduleFormatter.dateTime(LocalDateTime.of(2026, 10, 15, 8, 5)))
     }
+
+    @Test
+    fun `until gives the time within a day and the weekday after that`() {
+        val now = java.time.LocalDateTime.of(2026, 10, 12, 23, 40) // lunes
+
+        assertEquals("las 06:00", ScheduleFormatter.until(now.plusHours(6).plusMinutes(20), now))
+        assertEquals("el mié 08:00", ScheduleFormatter.until(java.time.LocalDateTime.of(2026, 10, 14, 8, 0), now))
+    }
+
+    @Test
+    fun `long formats match the design`() {
+        assertEquals("lunes 12 oct", ScheduleFormatter.longDate(java.time.LocalDate.of(2026, 10, 12)))
+        assertEquals("lun 12 oct · 23:40", ScheduleFormatter.dayTime(java.time.LocalDateTime.of(2026, 10, 12, 23, 40)))
+    }
 }

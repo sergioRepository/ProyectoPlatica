@@ -15,6 +15,6 @@ data class Consents(
     val isCurrent: Boolean get() = version == CURRENT_VERSION && phoneUsage && crossBorder
 
     companion object {
-        const val CURRENT_VERSION = "2026-11-v1"
+        const val CURRENT_VERSION = "2026-11-v2"
     }
 }

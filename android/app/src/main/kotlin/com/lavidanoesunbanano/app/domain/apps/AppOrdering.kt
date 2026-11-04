@@ -6,6 +6,15 @@ import java.util.Locale
 
 /** Ordena las apps instaladas: primero las que suelen robar tiempo, luego alfabético. */
 object AppOrdering {
+    private const val MAX_NAMED = 3
+
+    /** "Instagram y TikTok"; con muchas, "Instagram, TikTok y 3 más". */
+    fun names(labels: List<String>): String = when {
+        labels.size <= 1 -> labels.joinToString()
+        labels.size <= MAX_NAMED -> "${labels.dropLast(1).joinToString(", ")} y ${labels.last()}"
+        else -> "${labels.take(MAX_NAMED - 1).joinToString(", ")} y ${labels.size - MAX_NAMED + 1} más"
+    }
+
     val SUGGESTED = setOf(
         "com.instagram.android",
         "com.instagram.barcelona", // Threads

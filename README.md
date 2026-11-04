@@ -122,7 +122,7 @@ El backend (`lavidanoesunbanano-api`) tiene tres grafos de LangGraph que usan Gr
 
 ### 1. Generador de mensajes (`POST /templates/generate`)
 
-Recibe el perfil del onboarding (meta, metas secundarias, excusas típicas, apps, nivel de sarcasmo, jerga y temas prohibidos) y lo procesa en tres nodos:
+Recibe el perfil del onboarding (meta, apps, nivel de sarcasmo, jerga y temas prohibidos; las metas secundarias, el porqué y las excusas típicas son opcionales y se llenan en Ajustes) y lo procesa en tres nodos:
 
 1. `analizar_perfil`: encuentra los ángulos de ataque, sobre todo las contradicciones entre tu meta y tus hábitos.
 2. `generar_mensajes`: escribe unos 60 mensajes variados, con placeholders como `{app}`, `{meta}` o `{hora}`.

@@ -6,37 +6,52 @@
     <string name="action_back">Atrás</string>
     <string name="action_add">Agregar</string>
     <string name="action_remove">Quitar</string>
-    <string name="action_retry">Reintentar</string>
     <string name="action_cancel">Cancelar</string>
-    <string name="action_save">Guardar</string>
     <string name="action_accept">Aceptar</string>
 
-    <!-- Autorizaciones de datos. TODO(sergio): revisión legal del texto; si cambia, sube
-         Consents.CURRENT_VERSION para volver a pedirlas. -->
+    <!-- Barra inferior -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_history">Historial</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- Autorizaciones de datos. TODO(sergio): revisión legal del texto y confirmar los países; si
+         cambia, sube Consents.CURRENT_VERSION para volver a pedirlas. -->
+    <string name="consent_brand">la vida no es un banano</string>
     <string name="consent_title">Antes de empezar</string>
-    <string name="consent_intro">Esta app te ayuda a reducir el uso del celular; no es un servicio médico ni de salud mental. Para funcionar envía algunos datos a servidores. Responsable: Sergio Daniel Flórez López. Elige qué autorizas.</string>
-    <string name="consent_phone_usage_title">Uso del teléfono (necesaria)</string>
-    <string name="consent_phone_usage_desc">Qué apps usas y cuántos minutos en las últimas 24 horas, para que el agente decida si intervenir. No se lee lo que hay dentro de las apps.</string>
-    <string name="consent_cross_border_title">Servidores fuera de Colombia (necesaria)</string>
-    <string name="consent_cross_border_desc">Tu perfil (nombre, metas, excusas típicas, apps y horarios) y tu uso se procesan fuera de Colombia en Vercel, Neon, el gateway del Reto Agente de PLATICA MX y xAI (Grok).</string>
-    <string name="consent_excuses_title">Texto de tus excusas (opcional)</string>
-    <string name="consent_excuses_desc">Lo que escribes para pedir una emergencia o 10 minutos va al juez de IA, y puede contener datos de salud, que son datos sensibles. No estás obligado a autorizarlo: si no lo haces, la app funciona igual y decide en el teléfono, sin juez. El servidor no guarda ese texto.</string>
-    <string name="consent_analytics_title">Analítica de uso de la app (opcional)</string>
-    <string name="consent_analytics_desc">Eventos como bloqueos mostrados o salidas, nunca el texto de tus excusas. Puedes desactivarla en Ajustes.</string>
-    <string name="policy_link">Política de tratamiento de datos</string>
+    <string name="consent_intro">Para bloquearte apps y escribirte mensajes, necesitamos ver cómo usas el teléfono. Aquí decides qué compartes.</string>
+    <string name="consent_not_medical">La Vida te ayuda a usar menos el teléfono. No es atención médica ni psicológica.</string>
+    <string name="consent_section_required">Para que funcione</string>
+    <string name="consent_section_optional">Si quieres</string>
+    <string name="consent_phone_usage_title">Ver qué apps usas</string>
+    <string name="consent_phone_usage_desc">Contamos los minutos por app de las últimas 24 horas. No leemos lo que haces dentro de ellas.</string>
+    <string name="consent_cross_border_title">Procesar tus datos fuera de Colombia</string>
+    <string name="consent_cross_border_desc">Tu perfil y tu uso se envían a servidores en Estados Unidos y México.</string>
+    <string name="consent_excuses_title">Enviar tus razones para evaluarlas</string>
+    <string name="consent_excuses_desc">Las lee una IA para aprobar o rechazar tus pedidos. Pueden incluir datos de salud.</string>
+    <string name="consent_excuses_if_not">las emergencias se aprueban siempre y los 10 minutos se rechazan siempre.</string>
+    <string name="consent_analytics_title">Ayudarnos a mejorar la app</string>
+    <string name="consent_analytics_desc">Solo registramos qué botones tocas. Nunca lo que escribes.</string>
+    <string name="consent_analytics_if_not">la app funciona igual.</string>
+    <string name="consent_if_not">Si no lo marcas:</string>
+    <string name="consent_controller">Responsable de tus datos: Sergio Daniel Flórez López</string>
+    <string name="policy_link">Leer la política de datos</string>
     <string name="policy_url" translatable="false">https://github.com/sergioRepository/ProyectoPlatica/blob/production/docs/politica-de-datos.md</string>
-    <string name="consent_age">Al continuar declaras tener 18 años o más.</string>
-    <string name="consent_required_hint">Marca las dos autorizaciones necesarias para continuar: sin ellas la app no puede conectarse a su servidor.</string>
-    <string name="consent_continue">Continuar</string>
+    <string name="consent_required_hint">Marca las 2 casillas de «Para que funcione» para seguir.</string>
+    <string name="consent_continue">Tengo 18 años o más, continuar</string>
 
     <!-- Onboarding -->
+    <string name="stage_block">Tu bloqueo · %1$d de %2$d</string>
+    <string name="stage_messages">Tus mensajes · %1$d de %2$d</string>
+    <string name="stage_summary">Resumen</string>
+
     <string name="onboarding_name_title">¿Cómo te llamamos?</string>
     <string name="onboarding_name_hint">Nombre o apodo. Lo vamos a usar en tu contra.</string>
     <string name="onboarding_name_placeholder">Tu nombre</string>
 
     <string name="onboarding_goal_title">¿Qué quieres lograr?</string>
-    <string name="onboarding_goal_hint">Tu meta principal. Sé concreto: la vamos a citar seguido.</string>
-    <string name="onboarding_goal_placeholder">Ser el mejor programador del mundo</string>
+    <string name="onboarding_goal_hint">Una frase concreta. Los mensajes la van a citar cuando intentes abrir una app bloqueada.</string>
+    <string name="onboarding_goal_placeholder">Terminar la tesis antes de diciembre</string>
+    <string name="onboarding_goal_short">Escribe al menos 3 letras.</string>
 
     <string name="onboarding_secondary_title">¿Algo más?</string>
     <string name="onboarding_secondary_hint">Metas secundarias. Opcionales, pero dan más material.</string>
@@ -44,7 +59,7 @@
 
     <string name="onboarding_reason_title">¿Por qué importa?</string>
     <string name="onboarding_reason_hint">Lo que está en juego si no lo logras.</string>
-    <string name="onboarding_reason_placeholder">Quiero vivir de lo que construyo</string>
+    <string name="onboarding_reason_placeholder">Quiero graduarme este año</string>
 
     <string name="onboarding_apps_title">¿Qué apps te roban el tiempo?</string>
     <string name="onboarding_apps_hint">Las que elijas se bloquean en tu horario.</string>
@@ -57,23 +72,26 @@
         <item quantity="other">%1$d seleccionadas</item>
     </plurals>
 
-    <string name="onboarding_schedule_title">¿Cuándo bloqueamos?</string>
-    <string name="onboarding_schedule_hint">Rangos por día. Fuera de ellos, tú decides.</string>
-    <string name="onboarding_schedule_presets">atajos</string>
-    <string name="onboarding_schedule_preset_work">Laboral</string>
-    <string name="onboarding_schedule_preset_nights">Noches</string>
-    <string name="onboarding_schedule_preset_mornings">Mañanas</string>
-    <string name="onboarding_schedule_custom">Rango a mano</string>
+    <string name="onboarding_schedule_title">¿A qué horas las bloqueamos?</string>
+    <string name="onboarding_schedule_hint">En esas horas, para abrir %1$s tendrás que dar una razón. Puedes elegir varios.</string>
+    <string name="onboarding_schedule_hint_generic">En esas horas tendrás que dar una razón para abrirlas. Puedes elegir varios.</string>
+    <string name="onboarding_schedule_nights">Noches</string>
+    <string name="onboarding_schedule_nights_days">Todos los días · cruza la medianoche</string>
+    <string name="onboarding_schedule_work">Laboral</string>
+    <string name="onboarding_schedule_work_days">Lunes a viernes</string>
+    <string name="onboarding_schedule_mornings">Mañanas</string>
+    <string name="onboarding_schedule_mornings_days">Todos los días</string>
+    <string name="onboarding_schedule_custom">Otro horario</string>
     <string name="onboarding_schedule_from">desde</string>
     <string name="onboarding_schedule_to">hasta</string>
-    <string name="onboarding_schedule_empty">Sin rangos todavía.</string>
+    <string name="onboarding_schedule_required">Elige al menos un horario para seguir.</string>
     <string name="onboarding_schedule_overnight">cruza la medianoche</string>
     <string name="onboarding_schedule_all_day">desde y hasta iguales: todo el día</string>
     <string name="onboarding_schedule_pick_time">Elige la hora</string>
 
     <string name="onboarding_excuses_title">¿Qué excusas te dices?</string>
     <string name="onboarding_excuses_hint">Las que usas para abrirlas \"solo un ratito\". La IA se las va a saber.</string>
-    <string name="onboarding_excuses_placeholder">Solo cinco minutos. Es para descansar.</string>
+    <string name="onboarding_excuses_placeholder">Solo voy a mirar una cosa</string>
 
     <string name="onboarding_sarcasm_title">¿Qué tan duro?</string>
     <string name="onboarding_sarcasm_hint">Nivel de sarcasmo. Después lo puedes cambiar.</string>
@@ -103,220 +121,320 @@
     <string name="onboarding_forbidden_title">¿Qué temas no se tocan?</string>
     <string name="onboarding_forbidden_hint">La IA nunca los va a mencionar. Opcional.</string>
     <string name="onboarding_forbidden_placeholder">Mi familia, mi peso</string>
-    <string name="onboarding_finish">Generar mensajes</string>
+
+    <string name="onboarding_summary_title">Así queda tu bloqueo</string>
+    <string name="onboarding_summary_hint">Revísalo antes de crear tus mensajes. Puedes cambiar todo después en Ajustes.</string>
+    <string name="summary_apps">Apps</string>
+    <string name="summary_schedule">Horario</string>
+    <string name="summary_goal">Tu meta</string>
+    <string name="summary_tone">Cómo te hablamos</string>
+    <string name="summary_tone_value">Nivel %1$d de 5 · %2$s · %3$s</string>
+    <string name="summary_with_profanity">con groserías</string>
+    <string name="summary_without_profanity">sin groserías</string>
+    <string name="summary_forbidden">Temas que no se tocan</string>
+    <string name="summary_change">Cambiar</string>
+    <string name="summary_change_label">Cambiar %1$s</string>
+    <string name="onboarding_finish">Crear mis mensajes</string>
 
     <!-- Generación de la plantilla -->
     <string name="generation_working_title">Escribiendo tus mensajes</string>
-    <string name="generation_working_hint">Puede tardar un minuto. Menos de lo que se te va en un solo scroll.</string>
-    <string name="generation_status_1">analizando tu perfil...</string>
-    <string name="generation_status_2">buscando contradicciones...</string>
-    <string name="generation_status_3">anotando tus excusas...</string>
-    <string name="generation_status_4">afinando el sarcasmo...</string>
-    <string name="generation_status_5">quitando emojis...</string>
+    <string name="generation_working_hint">Tarda menos de un minuto. No cierres la app.</string>
+    <string name="generation_working_slow">Tarda más de lo normal. Sigue funcionando.</string>
+    <string name="generation_status_1">buscando contradicciones...</string>
+    <string name="generation_status_2">quitando emojis...</string>
+    <string name="generation_status_3">leyendo tus excusas típicas...</string>
+    <string name="generation_status_4">afilando el sarcasmo...</string>
+    <string name="generation_status_5">traduciendo a tu jerga...</string>
     <string name="generation_done_title">Listo.</string>
     <plurals name="generation_done_count">
-        <item quantity="one">%1$d mensaje listo para avergonzarte.</item>
-        <item quantity="many">%1$d mensajes listos para avergonzarte.</item>
-        <item quantity="other">%1$d mensajes listos para avergonzarte.</item>
+        <item quantity="one">Tienes %1$d mensaje escrito para ti. Así suena:</item>
+        <item quantity="many">Tienes %1$d mensajes escritos para ti. Así suena uno:</item>
+        <item quantity="other">Tienes %1$d mensajes escritos para ti. Así suena uno:</item>
     </plurals>
-    <string name="generation_sample_label">muestra</string>
-    <string name="generation_done_action">Empezar</string>
-    <string name="generation_failed_title">No salió.</string>
-    <string name="generation_failed_unreachable">No hay conexión con el servidor. Revisa que esté encendido y que el teléfono lo alcance.</string>
+    <string name="generation_done_step">Falta un paso: darle permiso al bloqueo.</string>
+    <string name="generation_done_action">Seguir: activar el bloqueo</string>
+    <string name="generation_failed_title">No pudimos crear tus mensajes</string>
+    <string name="generation_failed_unreachable">No hay internet. Conéctate y vuelve a intentar.</string>
     <string name="generation_failed_server">El servidor no pudo escribir los mensajes. Intenta otra vez en un momento.</string>
     <string name="generation_failed_not_configured">Esta compilación no tiene servidor configurado.</string>
-    <string name="generation_failed_missing_profile">Faltan tus respuestas del inicio.</string>
-    <string name="generation_failed_daily_limit">Ya generaste tus mensajes hace poco. Intenta más tarde.</string>
-    <string name="generation_failed_closed">El registro de teléfonos está cerrado por ahora. Intenta más tarde.</string>
-    <string name="generation_edit_answers">Revisar respuestas</string>
-
-    <!-- Inicio -->
-    <string name="home_messages_label">mensajes</string>
-    <string name="home_backend_label">servidor</string>
-    <string name="home_preview_label">vista previa</string>
-    <string name="home_preview_next">Otro mensaje</string>
-    <string name="home_disconnected_title">Sin conexión con el juez</string>
-    <string name="home_disconnected_hint">El servidor no reconoce este teléfono todavía. Mientras tanto, las emergencias se aprueban sin juez y los 10 minutos se rechazan. Se reintenta solo.</string>
-    <string name="home_blocker_label">bloqueo</string>
-
-    <string name="home_today">hoy</string>
-    <string name="home_attempts_label">intentos</string>
-    <string name="home_recovered_label">recuperados</string>
-    <string name="home_excuses_label">excusas</string>
-    <string name="home_unlocked_label">desbloqueo</string>
-    <string name="home_unlocked_value">%1$s hasta %2$s</string>
-    <string name="home_stats">Estadísticas</string>
-    <string name="home_stats_desc">Intentos, minutos y excusas.</string>
-    <string name="home_history">Historial</string>
-    <string name="home_history_desc">Cada intento y cada excusa.</string>
-    <string name="home_settings">Ajustes</string>
-    <string name="home_settings_desc">Reglas, cupos, tono y plantilla.</string>
-    <string name="minutes_approx">≈ %1$d min</string>
-    <string name="excuses_tally">aprobadas %1$d · rechazadas %2$d</string>
-
-    <!-- Estadísticas -->
-    <string name="stats_title">Estadísticas</string>
-    <string name="stats_period_7">7 días</string>
-    <string name="stats_period_30">30 días</string>
-    <string name="stats_attempts">intentos</string>
-    <string name="stats_recovered">min recuperados</string>
-    <string name="stats_recovered_value">≈ %1$d</string>
-    <string name="stats_granted">min concedidos</string>
-    <string name="stats_recovered_note">Estimado: %1$d minutos por cada intento que no terminó en desbloqueo.</string>
-    <string name="stats_per_day">intentos por día</string>
-    <string name="stats_per_app">intentos por app</string>
-    <string name="stats_excuses">excusas</string>
-    <string name="stats_emergency">emergencia</string>
-    <string name="stats_extra_time">10 minutos</string>
-    <string name="stats_approved_count">aprobadas %1$d</string>
-    <string name="stats_rejected_count">rechazadas %1$d</string>
-    <plurals name="stats_day_readout">
-        <item quantity="one">%1$s · %2$d intento</item>
-        <item quantity="many">%1$s · %2$d intentos</item>
-        <item quantity="other">%1$s · %2$d intentos</item>
-    </plurals>
-    <plurals name="stats_pending_review">
-        <item quantity="one">%1$d emergencia sin conexión por revisar en el historial.</item>
-        <item quantity="many">%1$d emergencias sin conexión por revisar en el historial.</item>
-        <item quantity="other">%1$d emergencias sin conexión por revisar en el historial.</item>
-    </plurals>
-    <string name="stats_empty">Sin intentos en este periodo.</string>
-
-    <!-- Historial -->
-    <string name="history_title">Historial</string>
-    <string name="history_today">hoy</string>
-    <string name="history_yesterday">ayer</string>
-    <string name="history_empty">Nada en los últimos 30 días. O no lo intentaste, o el bloqueo está apagado.</string>
-    <string name="outcome_exit">salió</string>
-    <string name="outcome_left">se fue</string>
-    <string name="outcome_emergency">emergencia</string>
-    <string name="outcome_extra_time">10 min</string>
-    <string name="history_review">REVISAR</string>
-    <string name="history_mark_reviewed">Marcar revisada</string>
-
-    <!-- Ajustes -->
-    <string name="settings_title">Ajustes</string>
-    <string name="settings_label">ajustes</string>
-    <string name="settings_section_rules">reglas</string>
-    <string name="settings_section_quotas">cupos por día</string>
-    <string name="settings_section_plan">plan</string>
-    <string name="ai_calls_label">llamadas de IA hoy</string>
-    <string name="ai_calls_value">%1$d de %2$d</string>
-    <string name="plan_free">Gratis</string>
-    <string name="plan_monthly">Mensual</string>
-    <string name="plan_semester">Semestral</string>
-    <string name="settings_plan_hint">Por ahora ningún plan tiene costo. Cada juicio o análisis del agente usa una llamada. Sin llamadas, las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
-    <string name="settings_plan_offline">Conéctate para ver tu plan y tus llamadas de hoy.</string>
-    <string name="settings_would_pay">¿Pagarías por este plan?</string>
-    <string name="would_pay_yes">Sí</string>
-    <string name="would_pay_no">No</string>
-    <string name="would_pay_maybe">Tal vez</string>
-    <string name="settings_section_tone">tono</string>
-    <string name="settings_section_profile">perfil</string>
-    <string name="settings_section_template">plantilla</string>
-    <string name="settings_section_privacy">privacidad</string>
-    <string name="settings_consent_excuses">Enviar mis excusas al juez de IA</string>
-    <string name="settings_consent_excuses_desc">Pueden contener datos de salud. Apagado, el texto no sale del teléfono: las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
-    <string name="settings_consent_analytics">Analítica de uso de la app</string>
-    <string name="settings_consent_analytics_desc">Eventos como bloqueos y salidas, nunca el texto de tus excusas. Apagada, se descarta lo que estaba por enviarse.</string>
-    <string name="settings_erase">Borrar mis datos</string>
-    <string name="settings_erase_title">¿Borrar tus datos?</string>
-    <string name="settings_erase_warning">Se borra todo lo tuyo en el servidor y en este teléfono: perfil, mensajes, historial, plan y autorizaciones. La app queda como recién instalada y no se puede deshacer.</string>
-    <string name="settings_erase_confirm">Borrar todo</string>
-    <string name="settings_erase_failed">No se pudieron borrar tus datos del servidor. Nada se borró; revisa tu conexión e intenta otra vez.</string>
-    <string name="settings_apps">Apps bloqueadas</string>
-    <string name="settings_schedule">Horario</string>
-    <string name="settings_extra_time">10 minutos más</string>
-    <string name="settings_emergency">Emergencias</string>
-    <string name="settings_quota_value">%1$d al día</string>
-    <string name="settings_quotas_hint">Lo máximo que el juez aprueba en un día, sumando todas las apps.</string>
-    <string name="settings_sarcasm">Sarcasmo</string>
-    <string name="settings_sarcasm_hint">Bájalo cuando quieras: aplica de inmediato, sin regenerar los mensajes.</string>
-    <string name="settings_kind_mode">Modo amable</string>
-    <string name="settings_kind_mode_desc">Para los días difíciles: sin sarcasmo en la pantalla de bloqueo ni en el juez.</string>
-    <string name="settings_profanity">Groserías</string>
-    <string name="settings_country">Jerga</string>
-    <string name="settings_forbidden">Temas vetados</string>
-    <string name="settings_none">ninguno</string>
-    <string name="settings_name">Nombre</string>
-    <string name="settings_goal">Meta</string>
-    <string name="settings_secondary">Metas secundarias</string>
-    <string name="settings_reason">Por qué importa</string>
-    <string name="settings_excuses">Excusas típicas</string>
-    <string name="settings_template_generated">generada</string>
-    <string name="settings_template_stale">Cambiaste tu perfil o el tono después de generarla. Regenera para que los mensajes lo usen.</string>
-    <string name="settings_regenerate">Regenerar mensajes</string>
-    <string name="settings_regenerate_hint">Reemplaza todos los mensajes. Tarda cerca de un minuto y necesita conexión.</string>
+    <string name="generation_failed_limit_title">Hoy ya no se pueden crear más</string>
+    <string name="generation_failed_daily_limit">Se alcanzó el máximo de mensajes por hoy. Mañana puedes intentarlo otra vez.</string>
+    <string name="generation_failed_missing_title">Faltan tus respuestas</string>
+    <string name="generation_failed_missing_profile">Falta tu nombre o tu meta. Complétalos y lo intentamos otra vez.</string>
+    <string name="generation_failed_closed_title">Por ahora no hay cupos</string>
+    <string name="generation_failed_closed">No estamos aceptando cuentas nuevas. Te avisamos cuando abramos.</string>
+    <string name="generation_saved">Tus respuestas están guardadas.</string>
+    <string name="generation_retry">Intentar de nuevo</string>
+    <string name="generation_edit_answers">Revisar mis respuestas</string>
+    <string name="generation_complete_answers">Completar mis respuestas</string>
     <string name="generation_done_back">Volver a ajustes</string>
 
-    <!-- Guía de configuración -->
-    <string name="setup_title">Configurar el bloqueo</string>
-    <string name="setup_progress">%1$d de %2$d listos</string>
-    <string name="setup_done">listo</string>
-    <string name="setup_pending">falta</string>
-    <string name="setup_required">necesario</string>
-    <string name="setup_recommended">recomendado</string>
-    <string name="setup_restricted_title">Permitir ajustes restringidos</string>
-    <string name="setup_restricted_desc">Android bloquea Accesibilidad a las apps instaladas desde un archivo. En la info de la app, toca los tres puntos de arriba y elige Permitir ajustes restringidos.</string>
-    <string name="setup_restricted_action">Abrir info de la app</string>
-    <string name="setup_accessibility_title">Activar Accesibilidad</string>
-    <string name="setup_accessibility_desc">Es lo que detecta qué app se abre. No lee la pantalla ni lo que escribes. En Samsung está en Apps instaladas.</string>
-    <string name="setup_accessibility_stopped_desc">Está activado, pero Android lo detuvo. Apágalo y vuélvelo a encender en Accesibilidad.</string>
-    <string name="setup_accessibility_action">Abrir Accesibilidad</string>
-    <string name="setup_notifications_title">Permitir notificaciones</string>
-    <string name="setup_notifications_desc">Para la cuenta regresiva de un desbloqueo y para avisarte si el bloqueo se apaga.</string>
-    <string name="setup_notifications_action">Permitir</string>
-    <string name="setup_overlay_title">Mostrar sobre otras apps</string>
-    <string name="setup_overlay_desc">Un seguro para que la pantalla de bloqueo pueda abrirse aunque el sistema se ponga estricto.</string>
-    <string name="setup_overlay_action">Abrir permiso</string>
-    <string name="setup_battery_title">Batería sin restricciones</string>
-    <string name="setup_battery_desc">Para que Android no apague el bloqueo por ahorrar batería.</string>
-    <string name="setup_battery_action">Quitar restricción</string>
-    <string name="setup_battery_samsung">En Samsung, además: Ajustes, Batería, Límites de uso en segundo plano, Apps que nunca se suspenden, y agrega La vida no es un banano.</string>
-    <string name="agent_title">agente</string>
-    <string name="agent_never">El agente revisa tu uso cada 15 minutos y solo actúa si hace falta.</string>
-    <string name="agent_unavailable">No hubo análisis: sin conexión con el backend. El bloqueo sigue igual.</string>
-    <string name="agent_analyzing">Analizando</string>
-    <string name="agent_action">Analizar ahora</string>
+    <!-- Inicio -->
+    <string name="home_brand">la vida · %1$s</string>
+    <string name="home_free_until">Libre hasta %1$s</string>
+    <string name="home_free_sub">A esa hora se bloquean %1$s.</string>
+    <string name="home_blocked_until">Bloqueado hasta %1$s</string>
+    <string name="home_blocked">Bloqueado</string>
+    <string name="home_blocked_sub">%1$s. Para abrirlas tendrás que dar una razón.</string>
+    <string name="home_off_title">El bloqueo está apagado</string>
+    <string name="home_off_sub">Tus apps se abren sin pedir nada.</string>
+    <string name="home_off_action">Activar el bloqueo</string>
+    <string name="home_stopped_title">Android apagó el bloqueo</string>
+    <string name="home_stopped_sub">Suele pasar por el ahorro de batería.</string>
+    <string name="home_stopped_action">Volver a activarlo</string>
+    <string name="home_checking">Revisando el bloqueo</string>
+    <string name="home_offline_title">Sin internet</string>
+    <string name="home_disconnected_title">Sin conexión con el juez</string>
+    <string name="home_offline_hint">El bloqueo sigue funcionando. Mientras tanto, las emergencias se aprueban solas y los 10 minutos se rechazan.</string>
+    <plurals name="home_recommended_pending">
+        <item quantity="one">Te falta %1$d paso recomendado</item>
+        <item quantity="many">Te faltan %1$d pasos recomendados</item>
+        <item quantity="other">Te faltan %1$d pasos recomendados</item>
+    </plurals>
+    <string name="home_recommended_detail">%1$s · %2$s</string>
+    <string name="home_today">hoy</string>
+    <string name="minutes_approx">≈%1$d min</string>
+    <string name="hours_approx">≈%1$d h</string>
+    <string name="home_not_used">que no usaste</string>
+    <string name="home_attempts">intentos</string>
+    <string name="home_approved">aprobadas</string>
+    <string name="home_rejected">rechazadas</string>
+    <string name="count_approved">✓ %1$d</string>
+    <string name="count_rejected">✕ %1$d</string>
+    <plurals name="home_evaluations_left">
+        <item quantity="one">Te queda %1$d evaluación hoy.</item>
+        <item quantity="many">Te quedan %1$d evaluaciones hoy.</item>
+        <item quantity="other">Te quedan %1$d evaluaciones hoy.</item>
+    </plurals>
+    <string name="home_unlocked_value">%1$s hasta las %2$s</string>
+
+    <string name="agent_title">revisión automática</string>
+    <string name="agent_never">Reviso tu uso cada 15 minutos y solo actúo si hace falta.</string>
+    <string name="agent_unavailable">No hubo revisión: sin conexión con el servidor. El bloqueo sigue igual.</string>
+    <string name="agent_analyzing">Revisando</string>
+    <string name="agent_action">Revisar ahora</string>
+    <string name="agent_details">Ver qué revisé</string>
+    <string name="agent_details_hide">Ocultar</string>
+    <string name="agent_blocked">Bloqueé %1$s %2$d min.</string>
+    <string name="agent_blocked_reason">Bloqueé %1$s %2$d min: %3$s</string>
     <string name="agent_decision_label">Decisión</string>
     <string name="agent_decision_intervene">intervenir</string>
     <string name="agent_decision_no_action">no hace falta</string>
     <string name="agent_decision_insufficient">faltan datos</string>
     <string name="agent_decision_unavailable">sin análisis</string>
-    <string name="agent_decision_plan_quota">sin llamadas de IA hoy</string>
+    <string name="agent_decision_plan_quota">sin evaluaciones hoy</string>
     <string name="agent_focus_label">Enfoque de %1$d min</string>
     <string name="notify_focus_title">Enfoque en %1$s hasta las %2$s</string>
-    <string name="setup_usage_title">Acceso a datos de uso</string>
-    <string name="setup_usage_desc">Para que el agente vea cuánto usas cada app. No lee lo que hay en la pantalla.</string>
-    <string name="setup_usage_action">Abrir permiso</string>
-    <string name="setup_battery_xiaomi">En Xiaomi, además: Seguridad, Permisos, Inicio automático, y actívalo para La vida no es un banano.</string>
-    <string name="setup_protection_note">La protección anti-autosabotaje está encendida: en tu horario de bloqueo, los ajustes que mencionan la app piden una pausa antes. Configura fuera de ese horario o desactívala en Ajustes.</string>
 
-    <string name="home_setup_title">Falta configurar el bloqueo</string>
-    <string name="home_setup_hint">Sin estos pasos, las apps no se bloquean.</string>
-    <string name="home_setup_action">Configurar</string>
-    <string name="setup_link">Permisos y batería</string>
-    <string name="setup_all_done">todo listo</string>
-    <plurals name="setup_pending_count">
-        <item quantity="one">%1$d paso pendiente</item>
-        <item quantity="many">%1$d pasos pendientes</item>
-        <item quantity="other">%1$d pasos pendientes</item>
+    <!-- Historial -->
+    <string name="history_title">Historial</string>
+    <string name="history_tab_summary">Resumen</string>
+    <string name="history_tab_attempts">Intentos</string>
+    <string name="history_today">hoy</string>
+    <string name="history_yesterday">ayer</string>
+    <string name="history_empty">Nada en los últimos 30 días. O no lo intentaste, o el bloqueo está apagado.</string>
+    <string name="history_empty_filter">No hay intentos con este filtro en los últimos 30 días.</string>
+    <string name="history_filter_all">Todo</string>
+    <string name="history_filter_approved">Aprobadas</string>
+    <string name="history_filter_rejected">Rechazadas</string>
+    <string name="history_to_review">Por revisar</string>
+    <string name="history_to_review_hint">Se aprobó sin internet, así que nadie la leyó. Mira si de verdad fue una emergencia. Marcarla solo quita el aviso.</string>
+    <string name="history_to_review_meta">%1$s · %2$s · %3$s</string>
+    <string name="history_quoted">“%1$s”</string>
+    <string name="history_mark_reviewed">Ya la revisé</string>
+    <string name="history_reviewed">Listo, revisada.</string>
+    <string name="outcome_exit">Saliste</string>
+    <string name="outcome_left">Cerraste sin decidir</string>
+    <string name="outcome_extra_time">Pediste 10 min</string>
+    <string name="outcome_emergency">Emergencia</string>
+    <string name="outcome_emergency_offline">Emergencia · sin internet</string>
+    <string name="history_approved">✓ aprobada</string>
+    <string name="history_rejected">✕ rechazada</string>
+    <string name="history_judge_banana">El banano:</string>
+    <string name="history_judge_rule">Regla sin internet:</string>
+
+    <!-- Resumen -->
+    <string name="stats_period_7">Esta semana</string>
+    <string name="stats_period_30">Este mes</string>
+    <plurals name="stats_pending_review">
+        <item quantity="one">%1$d emergencia por revisar</item>
+        <item quantity="many">%1$d emergencias por revisar</item>
+        <item quantity="other">%1$d emergencias por revisar</item>
     </plurals>
-    <string name="status_blocker_stopped">detenido por el sistema</string>
+    <string name="stats_pending_hint">Se aprobó sin internet y nadie la leyó.</string>
+    <string name="stats_review">Revisar</string>
+    <string name="stats_not_used">de tiempo que no usaste</string>
+    <plurals name="stats_attempts">
+        <item quantity="one">Intentaste abrir apps bloqueadas %1$d vez.</item>
+        <item quantity="many">Intentaste abrir apps bloqueadas %1$d veces.</item>
+        <item quantity="other">Intentaste abrir apps bloqueadas %1$d veces.</item>
+    </plurals>
+    <string name="stats_attempts_delta">%1$s %2$s</string>
+    <string name="stats_fewer_week">%1$d menos que la semana pasada.</string>
+    <string name="stats_more_week">%1$d más que la semana pasada.</string>
+    <string name="stats_same_week">Igual que la semana pasada.</string>
+    <string name="stats_fewer_month">%1$d menos que el mes pasado.</string>
+    <string name="stats_more_month">%1$d más que el mes pasado.</string>
+    <string name="stats_same_month">Igual que el mes pasado.</string>
+    <string name="stats_granted_value">%1$d min</string>
+    <string name="stats_granted">que pediste y te dimos</string>
+    <string name="stats_reasons">razones enviadas</string>
+    <string name="stats_recovered_note">Contamos %1$d minutos por cada vez que no abriste la app. Es un estimado.</string>
+    <string name="stats_per_day">Intentos por día</string>
+    <string name="stats_day_readout">%1$s: %2$d</string>
+    <string name="stats_days_ago">hace %1$d días</string>
+    <string name="stats_per_app">Apps que más intentaste abrir</string>
+    <string name="stats_excuses">Tus razones</string>
+    <string name="stats_emergency">Emergencias</string>
+    <string name="stats_extra_time">10 minutos</string>
+    <string name="stats_approved_count">✓ %1$d aprobadas</string>
+    <string name="stats_rejected_count">✕ %1$d rechazadas</string>
+    <string name="stats_empty">Sin intentos en este periodo.</string>
+
+    <!-- Ajustes -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_section_block">Tu bloqueo</string>
+    <string name="settings_section_messages">Tus mensajes</string>
+    <string name="settings_section_profile">Tu perfil</string>
+    <string name="settings_section_account">Cuenta y privacidad</string>
+    <string name="settings_locked">Estás en horario de bloqueo y la protección está encendida. Apps, horario y cupos se pueden cambiar desde %1$s.</string>
+    <string name="settings_locked_row">Se puede cambiar desde %1$s</string>
+    <string name="settings_apps">Apps bloqueadas</string>
+    <string name="settings_schedule">Horario</string>
+    <string name="settings_extra_time">10 minutos</string>
+    <string name="settings_extra_time_hint">Cada vez son 10 min · máximo %1$d</string>
+    <string name="settings_emergency">Emergencias</string>
+    <string name="settings_emergency_hint">Cada vez son 15 min · máximo %1$d</string>
+    <string name="settings_decrease">Restar %1$s</string>
+    <string name="settings_increase">Sumar %1$s</string>
+    <string name="settings_anti_sabotage">No dejarme apagar el bloqueo fácil</string>
+    <string name="settings_anti_sabotage_desc">En horario de bloqueo, para apagarlo tendrás que escribir por qué o esperar 24 horas.</string>
+    <string name="settings_permissions">Permisos del teléfono</string>
+    <string name="settings_kind_mode">Mensajes amables</string>
+    <string name="settings_kind_mode_desc">Sin sarcasmo ni groserías. El bloqueo funciona igual.</string>
+    <string name="settings_sarcasm">Qué tan duro</string>
+    <string name="settings_sarcasm_value">%1$d de 5 · %2$s</string>
+    <string name="settings_sarcasm_off">Apagado por mensajes amables</string>
+    <string name="settings_profanity">Groserías</string>
+    <string name="settings_country">Jerga</string>
+    <string name="settings_forbidden">Temas que no se tocan</string>
+    <string name="settings_none">ninguno</string>
+    <string name="settings_template_info">Tienes %1$d mensajes, escritos el %2$s.</string>
+    <string name="settings_template_stale">Cambiaste tu perfil después de escribirlos. ¿Escribimos mensajes nuevos?</string>
+    <string name="home_preview_next">Ver otro ejemplo</string>
+    <string name="settings_regenerate">Escribir mensajes nuevos</string>
+    <string name="settings_name">Nombre</string>
+    <string name="settings_goal">Tu meta</string>
+    <string name="settings_secondary">Otras metas</string>
+    <plurals name="settings_secondary_count">
+        <item quantity="one">%1$d meta</item>
+        <item quantity="many">%1$d metas</item>
+        <item quantity="other">%1$d metas</item>
+    </plurals>
+    <string name="settings_reason">Por qué importa</string>
+    <string name="settings_excuses">Tus excusas de siempre</string>
+    <string name="settings_plan_label">tu plan</string>
+    <string name="plan_free">Gratis</string>
+    <string name="plan_monthly">Mensual</string>
+    <string name="plan_semester">Semestral</string>
+    <plurals name="settings_plan_limit">
+        <item quantity="one">El banano evalúa hasta %1$d razón al día. Hoy te quedan %2$d.</item>
+        <item quantity="many">El banano evalúa hasta %1$d razones al día. Hoy te quedan %2$d.</item>
+        <item quantity="other">El banano evalúa hasta %1$d razones al día. Hoy te quedan %2$d.</item>
+    </plurals>
+    <string name="settings_plans">Ver planes</string>
+    <string name="settings_plan_hint">Por ahora ningún plan tiene costo. Sin evaluaciones, las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
+    <string name="settings_plan_offline">Conéctate para ver tu plan y tus evaluaciones de hoy.</string>
+    <string name="settings_would_pay">¿Pagarías por un plan con más evaluaciones al día?</string>
+    <string name="settings_survey_close">Cerrar encuesta</string>
+    <string name="would_pay_yes">Sí</string>
+    <string name="would_pay_no">No</string>
+    <string name="settings_consent_excuses">Enviar tus razones para evaluarlas</string>
+    <string name="settings_consent_excuses_desc">Las lee una IA. Si lo apagas, las emergencias se aprueban siempre y los 10 minutos se rechazan.</string>
+    <string name="settings_consent_analytics">Ayudarnos a mejorar la app</string>
+    <string name="settings_consent_analytics_desc">Solo qué botones tocas. Nunca lo que escribes.</string>
+    <string name="settings_erase">Borrar todos mis datos</string>
+    <string name="settings_erase_title">¿Borrar tus datos?</string>
+    <string name="settings_erase_warning">Se borra todo lo tuyo en el servidor y en este teléfono: perfil, mensajes, historial, plan y autorizaciones. La app queda como recién instalada y no se puede deshacer.</string>
+    <string name="settings_erase_confirm">Borrar todo</string>
+    <string name="settings_erase_failed">No se pudieron borrar tus datos del servidor. Nada se borró; revisa tu conexión e intenta otra vez.</string>
+
+    <!-- Editar respuesta -->
+    <string name="edit_path_block">Ajustes › Tu bloqueo</string>
+    <string name="edit_path_messages">Ajustes › Tus mensajes</string>
+    <string name="edit_path_profile">Ajustes › Tu perfil</string>
+    <string name="edit_note">Tus mensajes actuales no cambian. Después puedes escribir unos nuevos desde Ajustes.</string>
+    <string name="edit_save">Guardar cambios</string>
+
+    <!-- Activar el bloqueo -->
+    <string name="setup_title">Activa el bloqueo</string>
+    <plurals name="setup_intro_required">
+        <item quantity="one">%1$d paso necesario</item>
+        <item quantity="many">%1$d pasos necesarios</item>
+        <item quantity="other">%1$d pasos necesarios</item>
+    </plurals>
+    <plurals name="setup_intro_recommended">
+        <item quantity="one">%1$d recomendado</item>
+        <item quantity="many">%1$d recomendados</item>
+        <item quantity="other">%1$d recomendados</item>
+    </plurals>
+    <string name="setup_intro">%1$s y %2$s. Unos 2 minutos.</string>
+    <string name="setup_required_badge">necesario · %1$d de %2$d</string>
+    <string name="setup_what_to_do">Qué hacer allá</string>
+    <string name="setup_warning">Android te va a mostrar un aviso que suena fuerte. Es normal: lo muestra para todas las apps de este tipo.</string>
+    <string name="setup_accessibility_title">Deja que La Vida vea qué app abres</string>
+    <string name="setup_accessibility_desc">Así podemos poner el bloqueo encima de tus apps. Usamos el permiso de Accesibilidad solo para saber qué app está en pantalla. No leemos lo que escribes, tus mensajes ni tus contraseñas.</string>
+    <string name="setup_accessibility_stopped_desc">Está activado, pero Android lo detuvo. Apágalo y vuélvelo a encender en Accesibilidad.</string>
+    <string name="setup_accessibility_step_1">Toca «Apps instaladas».</string>
+    <string name="setup_accessibility_step_2">Busca La vida no es un banano.</string>
+    <string name="setup_accessibility_step_3">Activa el interruptor y toca «Permitir».</string>
+    <string name="setup_accessibility_action">Abrir ajuste de Accesibilidad</string>
+    <string name="setup_accessibility_denied">Accesibilidad sigue apagada</string>
+    <string name="setup_denied_hint">Sin ella no podemos bloquear tus apps. Puedes intentarlo de nuevo cuando quieras.</string>
+    <string name="setup_retry">Intentar de nuevo</string>
+    <string name="setup_how">Ver cómo hacerlo, paso a paso</string>
+    <string name="setup_how_detail">En Samsung está en Apps instaladas. En otros teléfonos puede estar en Servicios instalados o Descargados. Si Android no te deja activarla, primero permite los ajustes restringidos desde la info de la app.</string>
+    <string name="setup_ok">Listo. Tus apps ya se pueden bloquear.</string>
+    <string name="setup_continue">Seguir con los recomendados</string>
+    <string name="setup_restricted_title">Permite los ajustes restringidos</string>
+    <string name="setup_restricted_desc">Android bloquea Accesibilidad a las apps instaladas desde un archivo. Hay que permitirlo una vez.</string>
+    <string name="setup_restricted_step_1">Toca los tres puntos de arriba.</string>
+    <string name="setup_restricted_step_2">Elige «Permitir ajustes restringidos».</string>
+    <string name="setup_restricted_step_3">Vuelve aquí.</string>
+    <string name="setup_restricted_action">Abrir info de la app</string>
+    <string name="setup_restricted_denied">Faltan los ajustes restringidos</string>
+    <string name="setup_later">Después: recomendados</string>
+    <string name="setup_if_skipped">Si lo omites: %1$s</string>
+    <string name="setup_later_hint">Puedes hacerlos después; te los recordamos en Inicio.</string>
+    <string name="setup_done">✓ listo</string>
+    <string name="setup_battery_title">Batería sin restricciones</string>
+    <string name="setup_battery_risk">Android puede apagar el bloqueo sin avisar.</string>
+    <string name="setup_overlay_title">Mostrar sobre otras apps</string>
+    <string name="setup_overlay_risk">la app bloqueada puede verse un segundo.</string>
+    <string name="setup_notifications_title">Notificaciones</string>
+    <string name="setup_notifications_risk">no verás cuántos minutos te quedan.</string>
+    <string name="setup_usage_title">Datos de uso</string>
+    <string name="setup_usage_risk">no habrá estadísticas ni revisión automática.</string>
+    <string name="setup_battery_samsung">En Samsung, además: Ajustes, Batería, Límites de uso en segundo plano, Apps que nunca se suspenden, y agrega La vida no es un banano.</string>
+    <string name="setup_battery_xiaomi">En Xiaomi, además: Seguridad, Permisos, Inicio automático, y actívalo para La vida no es un banano.</string>
+    <string name="setup_protection_note">La protección está encendida: en tu horario de bloqueo, los ajustes que mencionan la app piden una pausa antes. Configura fuera de ese horario o apágala en Ajustes.</string>
 
     <!-- Protección -->
-    <string name="settings_section_protection">protección</string>
-    <string name="settings_anti_sabotage">Anti-autosabotaje</string>
-    <string name="settings_anti_sabotage_desc">En tu horario de bloqueo pone una pausa antes de la página del bloqueo en Accesibilidad y del diálogo para desinstalar, y no deja cambiar apps, horarios ni cupos. Siempre puedes desactivarla: ya mismo escribiendo por qué, o programándola para dentro de 24 horas.</string>
-    <string name="settings_locked">Protección activa: en tu horario de bloqueo no se pueden cambiar apps, horarios ni cupos. Para cambiarlos, desactívala en la sección de protección.</string>
     <string name="sabotage_label">Ajustes</string>
+    <string name="sabotage_brand">La Vida · protección</string>
     <string name="sabotage_exit_title">¿Quieres apagar la protección?</string>
-    <string name="sabotage_exit_hint">Tú decides. Escribe por qué y se apaga ya, o prográmalo para dentro de 24 horas y lo piensas con calma. Lo que escribas no se guarda.</string>
+    <string name="sabotage_exit_hint">Estás en horario de bloqueo. Puedes programarla para mañana a esta hora, o apagarla ahora si escribes por qué.</string>
+    <string name="sabotage_exit_schedule">Programar para mañana a esta hora</string>
+    <string name="sabotage_exit_schedule_at">se apaga el %1$s</string>
+    <string name="sabotage_exit_now_title">Apagarla ahora</string>
+    <string name="sabotage_exit_now_hint">Escribe por qué, con al menos %1$d letras. No guardamos lo que escribas.</string>
     <string name="sabotage_exit_placeholder">Por qué quiero apagarla</string>
-    <string name="sabotage_exit_now">Desactivar ahora</string>
-    <string name="sabotage_exit_schedule">Programar para dentro de 24 horas</string>
-    <string name="sabotage_exit_scheduled">Se apaga el %1$s.</string>
-    <string name="sabotage_exit_cancel">Cancelar la desactivación</string>
+    <string name="sabotage_exit_count">%1$d / %2$d letras mínimo</string>
+    <string name="sabotage_exit_ready">%1$d letras · listo</string>
+    <string name="sabotage_exit_now">Apagar la protección ahora</string>
+    <string name="sabotage_exit_keep">Dejarla encendida</string>
+    <string name="sabotage_exit_scheduled">Se apaga el %1$s</string>
+    <string name="sabotage_exit_cancel">Mantenerla encendida</string>
 
     <!-- Notificaciones -->
     <string name="notify_channel_unlocks">Desbloqueos</string>
@@ -329,48 +447,74 @@
     <string name="notify_stopped_title">Android detuvo el bloqueo</string>
     <string name="notify_off_text">Toca para activarlo otra vez.</string>
 
-    <!-- Estado del servidor -->
-    <string name="status_checking">verificando...</string>
-    <string name="status_online">en línea · v%1$s</string>
-    <string name="status_unreachable">sin conexión</string>
-    <string name="status_not_configured">sin configurar</string>
-    <string name="status_http_error">error http %1$d</string>
-    <string name="status_blocker_on">activo</string>
-    <string name="status_blocker_off">apagado</string>
-
     <!-- Pantalla de bloqueo -->
     <string name="block_meta">%1$s · %2$s · intento %3$d hoy</string>
+    <string name="block_until">Bloqueada hasta %1$s · la elegiste tú</string>
     <string name="block_fallback_message">Esta app está bloqueada a esta hora. Lo decidiste tú.</string>
     <string name="block_exit">Salir</string>
-    <string name="block_emergency">Esto es una emergencia</string>
-    <string name="block_extra_time">Dame 10 minutos más</string>
+    <string name="block_extra_time">Pedir 10 minutos</string>
+    <string name="block_extra_time_left">quedan %1$d de %2$d hoy</string>
+    <string name="block_extra_time_out">hoy ya usaste los %1$d</string>
+    <string name="block_emergency">Es una emergencia</string>
+    <string name="block_emergency_left">15 min · quedan %1$d de %2$d</string>
+    <string name="block_emergency_unlimited">15 min · sin tope hoy</string>
+    <string name="block_help">¿Necesitas ayuda?</string>
 
-    <!-- Excusas y veredicto -->
+    <!-- Razones y veredicto -->
+    <string name="excuse_extra_time_meta">10 min · quedan %1$d de %2$d hoy</string>
+    <string name="excuse_emergency_meta">15 min · quedan %1$d de %2$d hoy</string>
+    <string name="excuse_emergency_meta_unlimited">15 min · sin tope hoy</string>
     <string name="excuse_emergency_title">¿Cuál es la emergencia?</string>
-    <string name="excuse_emergency_hint">Concreta. El juez decide si es real.</string>
+    <string name="excuse_emergency_hint">Di qué pasó y por qué no puede esperar a %1$s.</string>
+    <string name="excuse_emergency_hint_generic">Di qué pasó y por qué no puede esperar.</string>
     <string name="excuse_emergency_placeholder">Tengo que pagar el arriendo antes de las 5</string>
-    <string name="excuse_extra_time_title">¿Para qué los 10 minutos?</string>
-    <string name="excuse_extra_time_hint">Convence al juez. Cada intento lo pone más estricto.</string>
+    <string name="excuse_extra_time_title">¿Para qué necesitas 10 minutos?</string>
+    <string name="excuse_extra_time_hint">Di qué vas a hacer y por qué no puede esperar a %1$s.</string>
+    <string name="excuse_extra_time_hint_generic">Di qué vas a hacer y por qué no puede esperar.</string>
     <string name="excuse_extra_time_placeholder">Responder un mensaje del trabajo</string>
-    <string name="excuse_submit">Enviar</string>
-    <string name="excuse_judging">evaluando...</string>
-    <string name="verdict_approved">APROBADO · %1$d min</string>
-    <string name="verdict_approved_offline">APROBADO · %1$d min · sin juez</string>
-    <string name="verdict_rejected">RECHAZADO · %1$s</string>
-    <string name="verdict_reason_repeated">excusa repetida</string>
+    <string name="excuse_submit">Enviar mi razón</string>
+    <string name="excuse_cancel">Mejor no</string>
+    <string name="excuse_judging">El banano está leyendo tu razón…</string>
+    <string name="excuse_judging_hint">Tarda unos segundos.</string>
+    <string name="verdict_approved">✓ APROBADA · %1$d min</string>
+    <string name="verdict_approved_offline">✓ APROBADA · %1$d min · sin internet</string>
+    <string name="verdict_approved_rule">✓ APROBADA · %1$d min · sin evaluar</string>
+    <string name="verdict_rejected">✕ RECHAZADA · %1$s</string>
+    <string name="verdict_reason_repeated">razón repetida</string>
     <string name="verdict_reason_over_quota">sin cupo hoy</string>
     <string name="verdict_reason_too_short">muy corta</string>
     <string name="verdict_reason_boredom">aburrimiento</string>
-    <string name="verdict_reason_offline">sin juez</string>
-    <string name="verdict_reason_plan_quota">sin llamadas de IA hoy</string>
+    <string name="verdict_reason_offline">sin internet</string>
+    <string name="verdict_reason_rule">sin evaluar</string>
+    <string name="verdict_reason_plan_quota">sin evaluaciones hoy</string>
     <string name="verdict_reason_rejection_cap">demasiados rechazos hoy</string>
-    <string name="verdict_offline_emergency">Esta vez no hay juez, así que te creo. Tienes %1$d minutos y queda anotado para revisarlo después.</string>
+    <string name="verdict_what_now">Qué puedes hacer</string>
+    <string name="verdict_tip_repeated">Ya usaste esta razón hace poco; no cuenta otra vez.</string>
+    <string name="verdict_tip_over_quota">Hoy ya usaste este cupo. Mañana vuelve a empezar.</string>
+    <string name="verdict_tip_too_short">Escribe algo más concreto: qué vas a hacer y por qué.</string>
+    <string name="verdict_tip_boredom">Di qué vas a hacer y por qué no puede esperar.</string>
+    <string name="verdict_tip_offline">Sin internet no hay minutos extra. Vuelve cuando haya conexión.</string>
+    <string name="verdict_tip_rule">Sin compartir tus razones, los 10 minutos se rechazan. Puedes cambiarlo en Ajustes.</string>
+    <string name="verdict_tip_plan_quota">Hoy no quedan evaluaciones. Mañana vuelven.</string>
+    <string name="verdict_tip_rejection_cap">Hoy ya hubo demasiados rechazos. Mañana vuelve a empezar.</string>
+    <string name="verdict_tip_opens">%1$s se abre sola a %2$s.</string>
+    <string name="verdict_tip_emergency">Si de verdad es urgente, usa «Es una emergencia».</string>
+    <string name="verdict_clock">El tiempo corre desde ahora, abras o no la app. La cuenta está en tus notificaciones.</string>
+    <string name="verdict_clock_short">El tiempo corre desde ahora, abras o no la app.</string>
+    <string name="verdict_offline_title">Sin internet, decidió una regla: las emergencias se aprueban.</string>
+    <string name="verdict_rule_title">Sin compartir tus razones, decide una regla: las emergencias se aprueban.</string>
+    <string name="verdict_offline_note">Nadie leyó tu razón. Queda marcada en el Historial para que la revises después.</string>
+    <string name="verdict_offline_emergency">Aprobada sin leerla. Las emergencias se aprueban cuando no hay conexión.</string>
     <string name="verdict_offline_rejected">Sin juez no hay minutos extra. Vuelve cuando haya conexión.</string>
-    <string name="verdict_crisis">Ve. Lo importante es que tú y los tuyos estén bien. Tienes %1$d minutos.</string>
-    <string name="crisis_lines_title">Si necesitas ayuda, aquí hay personas que pueden escucharte:</string>
-    <string name="crisis_no_lines">Si tú o alguien más está en peligro, busca ayuda ya: llama a los servicios de emergencia de tu ciudad o habla con alguien de confianza.</string>
+    <string name="verdict_crisis">Te damos %1$d minutos. Si estás pasando por un momento difícil, no tienes que hacerlo solo.</string>
+    <string name="crisis_title">Te damos %1$d minutos.</string>
+    <string name="help_title">Aquí hay ayuda.</string>
+    <string name="crisis_body">Si estás pasando por un momento difícil, no tienes que hacerlo solo. Habla con alguien ahora.</string>
+    <string name="crisis_danger">Si sientes que estás en peligro, llama a emergencias o busca a alguien de confianza que esté cerca.</string>
+    <string name="crisis_dial">Marcar %1$s</string>
+    <string name="crisis_dial_note">Abre el marcador con el número listo. Tú decides si llamas.</string>
     <string name="verdict_open_app">Abrir %1$s</string>
-    <string name="verdict_back">Volver</string>
+    <string name="verdict_back">Volver a las opciones</string>
 
     <!-- Reportes de contenido -->
     <string name="report_action">Reportar este mensaje</string>

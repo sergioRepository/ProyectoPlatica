@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 enum class GenerationFailure { UNREACHABLE, SERVER, NOT_CONFIGURED, MISSING_PROFILE, REGISTRATION_CLOSED, DAILY_LIMIT }
 
 sealed interface GenerationUiState {
-    /** `status` rota entre frases mientras el backend trabaja. */
+    /** `status`: frases que han pasado mientras el backend trabaja. */
     data class Working(val status: Int = 0) : GenerationUiState
 
     data class Done(val count: Int, val sample: String?) : GenerationUiState
@@ -83,14 +83,13 @@ class GenerationViewModel @Inject constructor(
             var status = 0
             while (true) {
                 delay(STATUS_INTERVAL_MS)
-                status = (status + 1) % STATUS_COUNT
+                status += 1
                 _state.update { if (it is GenerationUiState.Working) it.copy(status = status) else it }
             }
         }
     }
 
-    companion object {
-        const val STATUS_COUNT = 5
-        private const val STATUS_INTERVAL_MS = 3_500L
+    private companion object {
+        const val STATUS_INTERVAL_MS = 3_500L
     }
 }

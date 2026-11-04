@@ -7,19 +7,29 @@ import com.lavidanoesunbanano.app.domain.model.Profile
 import java.time.DayOfWeek
 import java.time.LocalTime
 
-/** Un paso por pantalla, en el orden de la tabla del spec. */
-enum class OnboardingStep {
-    NAME,
-    MAIN_GOAL,
+/** Las etapas de la barra de progreso. */
+enum class OnboardingStage { BLOCK, MESSAGES, SUMMARY }
+
+/** Un paso por pantalla. `stage` nulo: no sale en el onboarding, se llena desde Ajustes. */
+enum class OnboardingStep(val stage: OnboardingStage? = null) {
+    APPS(OnboardingStage.BLOCK),
+    SCHEDULE(OnboardingStage.BLOCK),
+    NAME(OnboardingStage.MESSAGES),
+    MAIN_GOAL(OnboardingStage.MESSAGES),
+    SARCASM(OnboardingStage.MESSAGES),
+    PROFANITY(OnboardingStage.MESSAGES),
+    COUNTRY(OnboardingStage.MESSAGES),
+    FORBIDDEN(OnboardingStage.MESSAGES),
+    SUMMARY(OnboardingStage.SUMMARY),
     SECONDARY_GOALS,
     GOAL_REASON,
-    APPS,
-    SCHEDULE,
     EXCUSES,
-    SARCASM,
-    PROFANITY,
-    COUNTRY,
-    FORBIDDEN,
+    ;
+
+    companion object {
+        /** Los pasos del onboarding, en orden. */
+        val FLOW: List<OnboardingStep> = entries.filter { it.stage != null }
+    }
 }
 
 data class OnboardingDraft(
@@ -68,6 +78,7 @@ object OnboardingRules {
         OnboardingStep.GOAL_REASON,
         OnboardingStep.EXCUSES,
         OnboardingStep.FORBIDDEN,
+        OnboardingStep.SUMMARY,
         -> true
     }
 
@@ -118,13 +129,25 @@ data class OnboardingUiState(
     val finished: Boolean = false,
     /** Ya se intentó cargar el perfil guardado; antes de eso no se puede editar ni guardar un paso. */
     val profileLoaded: Boolean = false,
-    /** Se edita un solo paso desde Ajustes, no el onboarding completo. */
-    val editing: Boolean = false,
+    /** El paso que se edita desde Ajustes; `null` en el onboarding completo. */
+    val editingStep: OnboardingStep? = null,
+    /** Lo guardado antes de editar: sin cambios no hay nada que guardar. */
+    val savedDraft: OnboardingDraft? = null,
+    /** Se vino del resumen a cambiar algo: al llegar a este paso se vuelve al resumen. */
+    val reviewUntil: OnboardingStep? = null,
 ) {
-    val step: OnboardingStep get() = OnboardingStep.entries[stepIndex]
-    val totalSteps: Int get() = OnboardingStep.entries.size
-    val isLastStep: Boolean get() = stepIndex == totalSteps - 1
+    val editing: Boolean get() = editingStep != null
+    val step: OnboardingStep get() = editingStep ?: OnboardingStep.FLOW[stepIndex]
+    val isLastStep: Boolean get() = step == OnboardingStep.SUMMARY
     val canContinue: Boolean get() = !saving && OnboardingRules.canContinue(step, draft)
+    val hasChanges: Boolean get() = draft != savedDraft
+
+    /** Desde el primer paso solo se vuelve si se vino del resumen. */
+    val canGoBack: Boolean get() = stepIndex > 0 || reviewUntil != null
+
+    /** Pasos de la etapa actual y cuál es este, desde 1. */
+    val stageSteps: List<OnboardingStep> get() = OnboardingStep.FLOW.filter { it.stage == step.stage }
+    val stagePosition: Int get() = stageSteps.indexOf(step) + 1
     val visibleApps: List<AppInfo>? get() = installedApps?.let { AppOrdering.filter(it, appQuery) }
     val selectedPackages: Set<String> get() = draft.selectedApps.mapTo(mutableSetOf()) { it.packageName }
 }
@@ -133,6 +156,9 @@ data class OnboardingUiState(
 interface OnboardingActions {
     fun next()
     fun back()
+
+    /** Desde el resumen: abre `step` y vuelve al resumen al pasar `until`. */
+    fun review(step: OnboardingStep, until: OnboardingStep = step)
     fun onNameChange(value: String)
     fun onMainGoalChange(value: String)
     fun onSecondaryInputChange(value: String)

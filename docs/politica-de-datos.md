@@ -71,7 +71,7 @@ Tus datos se procesan fuera de Colombia con estos proveedores:
 | PLATICA MX (gateway del Reto Agente 2026) | Conecta el servidor con el modelo de IA | Perfil, excusas autorizadas y uso |
 | xAI (Grok) | Modelo de IA | Perfil, excusas autorizadas y uso |
 
-<!-- TODO(sergio): confirmar países y regiones de Vercel y Neon, y qué retiene cada proveedor (sobre todo PLATICA MX y xAI). No está verificado: el servidor no guarda las excusas, pero eso no dice nada de lo que retengan ellos. -->
+<!-- TODO(sergio): la pantalla de autorizaciones dice "servidores en Estados Unidos y México"; confirmarlo antes de distribuir. Confirmar países y regiones de Vercel y Neon, y qué retiene cada proveedor (sobre todo PLATICA MX y xAI). No está verificado: el servidor no guarda las excusas, pero eso no dice nada de lo que retengan ellos. -->
 
 Los proveedores de IA ven el texto que se les envía para responder. **Qué conserven y por cuánto tiempo depende de sus propias políticas.** No escribas en tus excusas nada que no quieras enviarles.
 

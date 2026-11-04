@@ -9,6 +9,7 @@ import androidx.navigation.toRoute
 import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.FadeIn
 import com.lavidanoesunbanano.app.core.designsystem.FadeOut
+import com.lavidanoesunbanano.app.core.designsystem.MainTab
 import com.lavidanoesunbanano.app.feature.consent.ConsentScreen
 import com.lavidanoesunbanano.app.feature.generation.GenerationScreen
 import com.lavidanoesunbanano.app.feature.history.HistoryScreen
@@ -18,7 +19,6 @@ import com.lavidanoesunbanano.app.feature.onboarding.OnboardingScreen
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingStep
 import com.lavidanoesunbanano.app.feature.settings.SettingsScreen
 import com.lavidanoesunbanano.app.feature.setup.SetupScreen
-import com.lavidanoesunbanano.app.feature.stats.StatsScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -33,9 +33,6 @@ data class GenerationRoute(val regenerate: Boolean = false)
 
 @Serializable
 data object HomeRoute
-
-@Serializable
-data object StatsRoute
 
 @Serializable
 data object HistoryRoute
@@ -57,6 +54,20 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false) {
     LaunchedEffect(openSetup) {
         // Sin onboarding terminado no hay bloqueo que configurar todavía.
         if (openSetup && startDestination == HomeRoute) navController.navigate(SetupRoute)
+    }
+    val openTab: (MainTab) -> Unit = { tab ->
+        // Las pestañas no se apilan: Atrás siempre lleva a Inicio.
+        when (tab) {
+            MainTab.HOME -> navController.popBackStack<HomeRoute>(inclusive = false)
+            MainTab.HISTORY -> navController.navigate(HistoryRoute) {
+                popUpTo<HomeRoute>()
+                launchSingleTop = true
+            }
+            MainTab.SETTINGS -> navController.navigate(SettingsRoute) {
+                popUpTo<HomeRoute>()
+                launchSingleTop = true
+            }
+        }
     }
     NavHost(
         navController = navController,
@@ -92,13 +103,16 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false) {
                     onEditAnswers = { navController.popBackStack() },
                     doneLabel = R.string.generation_done_back,
                     editAnswersLabel = R.string.generation_done_back,
+                    firstTime = false,
                 )
             } else {
                 GenerationScreen(
                     onDone = {
+                        // Inicio queda debajo: Atrás desde los permisos no cierra la app.
                         navController.navigate(HomeRoute) {
                             popUpTo<GenerationRoute> { inclusive = true }
                         }
+                        navController.navigate(SetupRoute)
                     },
                     onEditAnswers = {
                         navController.navigate(OnboardingRoute) {
@@ -109,17 +123,12 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false) {
             }
         }
         composable<HomeRoute> {
-            HomeScreen(
-                onOpenStats = { navController.navigate(StatsRoute) },
-                onOpenHistory = { navController.navigate(HistoryRoute) },
-                onOpenSettings = { navController.navigate(SettingsRoute) },
-                onOpenSetup = { navController.navigate(SetupRoute) },
-            )
+            HomeScreen(onTab = openTab, onOpenSetup = { navController.navigate(SetupRoute) })
         }
-        composable<StatsRoute> { StatsScreen() }
-        composable<HistoryRoute> { HistoryScreen() }
+        composable<HistoryRoute> { HistoryScreen(onTab = openTab) }
         composable<SettingsRoute> {
             SettingsScreen(
+                onTab = openTab,
                 onEditStep = { step -> navController.navigate(EditAnswerRoute(step.name)) },
                 onRegenerate = { navController.navigate(GenerationRoute(regenerate = true)) },
                 onOpenSetup = { navController.navigate(SetupRoute) },
@@ -130,7 +139,7 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false) {
                 },
             )
         }
-        composable<SetupRoute> { SetupScreen() }
+        composable<SetupRoute> { SetupScreen(onContinue = { navController.popBackStack() }) }
         composable<EditAnswerRoute> { entry ->
             val step = OnboardingStep.valueOf(entry.toRoute<EditAnswerRoute>().step)
             EditAnswerScreen(step = step, onDone = { navController.popBackStack() })

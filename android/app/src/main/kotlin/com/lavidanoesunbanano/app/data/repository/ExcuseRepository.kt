@@ -44,6 +44,15 @@ data class ExcuseResult(
     val unlockedUntil: Instant?,
 )
 
+/** Lo que queda hoy de cada cupo. `judged`: las razones van al juez, que es quien aplica los cupos. */
+data class QuotaToday(
+    val extraTimeLeft: Int,
+    val extraTimeDaily: Int,
+    val emergencyLeft: Int,
+    val emergencyDaily: Int,
+    val judged: Boolean,
+)
+
 /** Pide el veredicto, aplica la regla sin conexión si hace falta y deja todo en el historial. */
 @Singleton
 class ExcuseRepository @Inject constructor(
@@ -63,6 +72,18 @@ class ExcuseRepository @Inject constructor(
     /** Último desbloqueo de cada app. Los vencidos los descarta `BlockPolicy`. */
     fun observeUnlocks(): Flow<Map<String, Instant>> = excuseDao.observeUnlocks().map { rows ->
         rows.associate { it.packageName to Instant.ofEpochMilli(it.unlockedUntil) }
+    }
+
+    suspend fun quotaToday(): QuotaToday {
+        val limits = settings.limits.first()
+        val dayStart = clock.instant().atZone(clock.zone).toLocalDate().atStartOfDay(clock.zone).toInstant().toEpochMilli()
+        return QuotaToday(
+            extraTimeLeft = (limits.extraTimeDaily - excuseDao.countGrantedSince(ExcuseType.EXTRA_TIME.wire, dayStart)).coerceAtLeast(0),
+            extraTimeDaily = limits.extraTimeDaily,
+            emergencyLeft = (limits.emergencyDaily - excuseDao.countGrantedSince(ExcuseType.EMERGENCY.wire, dayStart)).coerceAtLeast(0),
+            emergencyDaily = limits.emergencyDaily,
+            judged = settings.consents.first()?.excuses == true,
+        )
     }
 
     suspend fun judge(session: BlockSession, type: ExcuseType, reason: String): ExcuseResult {

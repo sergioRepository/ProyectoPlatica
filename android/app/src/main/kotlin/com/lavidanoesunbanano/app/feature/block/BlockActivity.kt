@@ -46,6 +46,7 @@ class BlockActivity : ComponentActivity() {
         val actions = BlockActions(
             onExit = ::exit,
             onAskExcuse = viewModel::askExcuse,
+            onAskHelp = viewModel::askHelp,
             onReasonChange = viewModel::updateReason,
             onSubmit = viewModel::submit,
             onBack = viewModel::back,

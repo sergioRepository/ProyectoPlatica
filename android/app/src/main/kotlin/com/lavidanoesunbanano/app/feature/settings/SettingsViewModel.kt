@@ -13,14 +13,13 @@ import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.data.repository.ProtectionRepository
 import com.lavidanoesunbanano.app.data.repository.TemplatePreviewer
 import com.lavidanoesunbanano.app.data.repository.TemplateRepository
-import com.lavidanoesunbanano.app.data.system.SetupStatusSource
 import com.lavidanoesunbanano.app.domain.blocking.SabotageGuard
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.Consents
 import com.lavidanoesunbanano.app.domain.model.Profile
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
+import com.lavidanoesunbanano.app.domain.model.nextBlockChange
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
-import com.lavidanoesunbanano.app.domain.setup.SetupChecklist
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Instant
@@ -40,7 +39,7 @@ import kotlinx.serialization.json.JsonPrimitive
 
 data class TemplateInfo(
     val messageCount: Int = 0,
-    /** "15 oct 08:00"; `null` si no hay plantilla. */
+    /** "15 oct"; `null` si no hay plantilla. */
     val generatedAt: String? = null,
     /** El perfil o el tono cambiaron después de generarla. */
     val stale: Boolean = false,
@@ -48,9 +47,16 @@ data class TemplateInfo(
 
 /**
  * Anti-autosabotaje y si ahora, en horario de bloqueo, las reglas están bajo llave.
- * `offAt`: cuándo se apaga, si hay una desactivación programada.
+ * `offAt`: cuándo se apaga, si hay una desactivación programada. `scheduleAt`: cuándo se
+ * apagaría si se programa ahora. `unlocksAt`: "las 06:00", cuando termina el horario.
  */
-data class Protection(val on: Boolean = false, val locked: Boolean = false, val offAt: String? = null)
+data class Protection(
+    val on: Boolean = false,
+    val locked: Boolean = false,
+    val offAt: String? = null,
+    val scheduleAt: String = "",
+    val unlocksAt: String? = null,
+)
 
 data class SettingsUiState(
     val profile: Profile? = null,
@@ -58,8 +64,6 @@ data class SettingsUiState(
     val schedule: String = "",
     val limits: UnlockLimits = UnlockLimits(),
     val protection: Protection = Protection(),
-    /** Pasos de la guía que faltan; `null` antes de revisar. */
-    val setupPending: Int? = null,
     /** Plan y llamadas de IA de hoy; `null` sin conexión. */
     val device: DeviceStatusDto? = null,
     val consents: Consents? = null,
@@ -75,7 +79,6 @@ class SettingsViewModel @Inject constructor(
     templateRepository: TemplateRepository,
     private val settings: SettingsStore,
     private val previewer: TemplatePreviewer,
-    private val setupSource: SetupStatusSource,
     private val deviceRepository: DeviceRepository,
     private val events: EventRepository,
     private val privacy: PrivacyRepository,
@@ -84,7 +87,6 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val preview = MutableStateFlow<MessagePreview?>(null)
-    private val setupPending = MutableStateFlow<Int?>(null)
     private val device = MutableStateFlow<DeviceStatusDto?>(null)
     private val eraseFailed = MutableStateFlow(false)
 
@@ -95,7 +97,7 @@ class SettingsViewModel @Inject constructor(
     ) { count, generatedAt, changedAt ->
         TemplateInfo(
             messageCount = count,
-            generatedAt = generatedAt?.let { ScheduleFormatter.dateTime(LocalDateTime.ofInstant(it, clock.zone)) },
+            generatedAt = generatedAt?.let { ScheduleFormatter.shortDate(LocalDateTime.ofInstant(it, clock.zone).toLocalDate()) },
             stale = generatedAt != null && changedAt != null && changedAt > generatedAt.toEpochMilli(),
         )
     }
@@ -125,12 +127,14 @@ class SettingsViewModel @Inject constructor(
         Protection(
             on = on,
             locked = SabotageGuard.rulesLocked(on, ranges, now),
-            offAt = off?.takeIf { on }?.let { ScheduleFormatter.dateTime(LocalDateTime.ofInstant(it, clock.zone)) },
+            offAt = off?.takeIf { on }?.let { ScheduleFormatter.dayTime(LocalDateTime.ofInstant(it, clock.zone)) },
+            scheduleAt = ScheduleFormatter.dayTime(now.plus(SabotageGuard.DISABLE_DELAY)),
+            unlocksAt = ranges.nextBlockChange(now)?.let { ScheduleFormatter.until(it, now) },
         )
     }
 
-    private val preferences = combine(settings.limits, protection, setupPending, device) { limits, protection, pending, device ->
-        Preferences(limits, protection, pending, device)
+    private val preferences = combine(settings.limits, protection, device) { limits, protection, device ->
+        Preferences(limits, protection, device)
     }
 
     private val privacyState = combine(settings.consents, eraseFailed, settings.kindMode, ::Triple)
@@ -143,7 +147,6 @@ class SettingsViewModel @Inject constructor(
             schedule = ScheduleFormatter.summary(ranges),
             limits = prefs.limits,
             protection = prefs.protection,
-            setupPending = prefs.setupPending,
             device = prefs.device,
             consents = privacyState.first,
             eraseFailed = privacyState.second,
@@ -158,9 +161,8 @@ class SettingsViewModel @Inject constructor(
         nextPreview()
     }
 
-    /** Al volver a la pantalla: los permisos se cambian fuera de la app. */
-    fun refreshSetup() {
-        setupPending.value = SetupChecklist.pending(SetupChecklist.items(setupSource.current()))
+    /** Al volver a la pantalla: las evaluaciones de hoy cambian con cada juicio. */
+    fun refreshDevice() {
         viewModelScope.launch { device.value = deviceRepository.status() }
     }
 
@@ -241,7 +243,6 @@ class SettingsViewModel @Inject constructor(
     private data class Preferences(
         val limits: UnlockLimits,
         val protection: Protection,
-        val setupPending: Int?,
         val device: DeviceStatusDto?,
     )
 

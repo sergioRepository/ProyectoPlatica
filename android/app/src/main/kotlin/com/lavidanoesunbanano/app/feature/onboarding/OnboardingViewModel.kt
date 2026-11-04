@@ -35,7 +35,15 @@ class OnboardingViewModel @Inject constructor(
             val draft = profile?.let {
                 OnboardingRules.fromSaved(it, profileRepository.getBlockedApps(), profileRepository.getRanges())
             }
-            _state.update { it.copy(draft = draft ?: it.draft, profileLoaded = true) }
+            _state.update {
+                it.copy(
+                    draft = draft ?: it.draft,
+                    savedDraft = draft,
+                    profileLoaded = true,
+                    // Se vuelve de una generación fallida: las respuestas ya están, a revisarlas.
+                    stepIndex = if (draft != null) OnboardingStep.FLOW.indexOf(OnboardingStep.SUMMARY) else it.stepIndex,
+                )
+            }
         }
         viewModelScope.launch {
             val apps = installedAppsSource.launchableApps()
@@ -46,11 +54,26 @@ class OnboardingViewModel @Inject constructor(
     override fun next() {
         val current = _state.value
         if (!current.canContinue) return
-        if (current.isLastStep) finish() else _state.update { it.copy(stepIndex = it.stepIndex + 1) }
+        when {
+            current.isLastStep -> finish()
+            current.reviewUntil == current.step -> backToSummary()
+            else -> _state.update { it.copy(stepIndex = it.stepIndex + 1) }
+        }
     }
 
     override fun back() {
-        _state.update { if (it.stepIndex > 0) it.copy(stepIndex = it.stepIndex - 1) else it }
+        when {
+            _state.value.reviewUntil != null -> backToSummary()
+            else -> _state.update { if (it.stepIndex > 0) it.copy(stepIndex = it.stepIndex - 1) else it }
+        }
+    }
+
+    override fun review(step: OnboardingStep, until: OnboardingStep) {
+        _state.update { it.copy(stepIndex = OnboardingStep.FLOW.indexOf(step), reviewUntil = until) }
+    }
+
+    private fun backToSummary() {
+        _state.update { it.copy(stepIndex = OnboardingStep.FLOW.indexOf(OnboardingStep.SUMMARY), reviewUntil = null) }
     }
 
     private fun updateDraft(transform: (OnboardingDraft) -> OnboardingDraft) {
@@ -111,7 +134,7 @@ class OnboardingViewModel @Inject constructor(
 
     /** Desde Ajustes: muestra solo ese paso, con las respuestas guardadas. */
     fun editStep(step: OnboardingStep) {
-        _state.update { it.copy(stepIndex = step.ordinal, editing = true) }
+        _state.update { it.copy(editingStep = step) }
     }
 
     /** Guarda el paso editado. Si cambió el perfil, la plantilla queda marcada como vieja. */

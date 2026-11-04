@@ -5,5 +5,7 @@
         <domain includeSubdomains="false">localhost</domain>
         <!-- Host de la PC visto desde el emulador -->
         <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- La PC en la red de casa, para probar por Wi-Fi sin adb reverse -->
+        <domain includeSubdomains="false">192.168.1.6</domain>
     </domain-config>
 </network-security-config>

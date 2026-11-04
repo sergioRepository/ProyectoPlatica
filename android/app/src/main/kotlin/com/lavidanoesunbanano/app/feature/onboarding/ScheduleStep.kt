@@ -1,11 +1,9 @@
 package com.lavidanoesunbanano.app.feature.onboarding
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,12 +32,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.DayToggle
-import com.lavidanoesunbanano.app.core.designsystem.GhostButton
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
-import com.lavidanoesunbanano.app.core.designsystem.toon
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
 import com.lavidanoesunbanano.app.core.designsystem.Panel
 import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
+import com.lavidanoesunbanano.app.core.designsystem.SelectableRow
+import com.lavidanoesunbanano.app.core.designsystem.TextLink
+import com.lavidanoesunbanano.app.core.designsystem.toon
 import com.lavidanoesunbanano.app.domain.model.BlockRange
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import java.time.DayOfWeek
@@ -56,27 +55,48 @@ private val DAY_INITIALS = listOf(
     DayOfWeek.SUNDAY to "D",
 )
 
+private class Preset(val range: BlockRange, @param:StringRes val name: Int, @param:StringRes val days: Int)
+
+private val PRESETS = listOf(
+    Preset(SchedulePresets.NIGHTS, R.string.onboarding_schedule_nights, R.string.onboarding_schedule_nights_days),
+    Preset(SchedulePresets.WORK, R.string.onboarding_schedule_work, R.string.onboarding_schedule_work_days),
+    Preset(SchedulePresets.MORNINGS, R.string.onboarding_schedule_mornings, R.string.onboarding_schedule_mornings_days),
+)
+
 @Composable
 internal fun ScheduleStep(ranges: List<BlockRange>, onAdd: (BlockRange) -> Unit, onRemove: (Int) -> Unit) {
+    var custom by rememberSaveable { mutableStateOf(false) }
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (ranges.isEmpty()) {
-            MonoLabel(stringResource(R.string.onboarding_schedule_empty))
+        PRESETS.forEach { preset ->
+            val index = ranges.indexOf(preset.range)
+            SelectableRow(
+                title = stringResource(preset.name),
+                subtitle = "${ScheduleFormatter.time(preset.range.start)} – ${ScheduleFormatter.time(preset.range.end)}",
+                monoSubtitle = true,
+                detail = stringResource(preset.days),
+                selected = index >= 0,
+                onClick = { if (index >= 0) onRemove(index) else onAdd(preset.range) },
+                multiple = true,
+            )
+        }
+        val presets = PRESETS.map { it.range }
+        ranges.forEachIndexed { index, range ->
+            if (range !in presets) RangeRow(range, onRemove = { onRemove(index) })
+        }
+        if (custom) {
+            RangeEditor(onAdd = onAdd)
         } else {
-            ranges.forEachIndexed { index, range -> RangeRow(range, onRemove = { onRemove(index) }) }
+            SecondaryButton(
+                text = stringResource(R.string.onboarding_schedule_custom),
+                onClick = { custom = true },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
+        // Lugar para la sombra de la última tarjeta.
         Spacer(Modifier.height(4.dp))
-        MonoLabel(stringResource(R.string.onboarding_schedule_presets))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SecondaryButton(stringResource(R.string.onboarding_schedule_preset_work), onClick = { onAdd(SchedulePresets.WORK) })
-            SecondaryButton(stringResource(R.string.onboarding_schedule_preset_nights), onClick = { onAdd(SchedulePresets.NIGHTS) })
-            SecondaryButton(stringResource(R.string.onboarding_schedule_preset_mornings), onClick = { onAdd(SchedulePresets.MORNINGS) })
-        }
-        Spacer(Modifier.height(4.dp))
-        MonoLabel(stringResource(R.string.onboarding_schedule_custom))
-        RangeEditor(onAdd = onAdd)
     }
 }
 
@@ -87,16 +107,20 @@ private fun RangeRow(range: BlockRange, onRemove: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .toon(MaterialTheme.shapes.medium, colors.surface, colors.border)
-            .padding(start = 18.dp),
+            .padding(start = 16.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
+        Column(Modifier.weight(1f).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(text = ScheduleFormatter.range(range), style = LaVidaTheme.type.monoBody, color = colors.textPrimary)
             if (range.crossesMidnight) {
-                MonoLabel(stringResource(R.string.onboarding_schedule_overnight))
+                Text(
+                    text = stringResource(R.string.onboarding_schedule_overnight),
+                    style = LaVidaTheme.type.caption,
+                    color = colors.textBody,
+                )
             }
         }
-        GhostButton(text = stringResource(R.string.action_remove), onClick = onRemove)
+        TextLink(text = stringResource(R.string.action_remove), onClick = onRemove)
     }
 }
 
@@ -131,6 +155,7 @@ private fun RangeEditor(onAdd: (BlockRange) -> Unit) {
         SecondaryButton(
             text = stringResource(R.string.action_add),
             enabled = days.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth(),
             onClick = {
                 onAdd(BlockRange(days.map { DayOfWeek.of(it) }.toSet(), start, end))
             },
@@ -179,12 +204,12 @@ private fun TimeDialog(initial: LocalTime, onDismiss: () -> Unit, onConfirm: (Lo
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            GhostButton(
+            TextLink(
                 text = stringResource(R.string.action_accept),
                 onClick = { onConfirm(LocalTime.of(state.hour, state.minute)) },
             )
         },
-        dismissButton = { GhostButton(text = stringResource(R.string.action_cancel), onClick = onDismiss) },
+        dismissButton = { TextLink(text = stringResource(R.string.action_cancel), onClick = onDismiss) },
         title = {
             Text(
                 text = stringResource(R.string.onboarding_schedule_pick_time),
@@ -198,7 +223,7 @@ private fun TimeDialog(initial: LocalTime, onDismiss: () -> Unit, onConfirm: (Lo
                 colors = TimePickerDefaults.colors(
                     timeSelectorSelectedContainerColor = colors.background,
                     timeSelectorUnselectedContainerColor = colors.background,
-                    timeSelectorSelectedContentColor = colors.accent,
+                    timeSelectorSelectedContentColor = colors.textPrimary,
                     timeSelectorUnselectedContentColor = colors.textPrimary,
                 ),
             )

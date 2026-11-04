@@ -1,7 +1,6 @@
 package com.lavidanoesunbanano.app.feature.block
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -9,19 +8,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,22 +37,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.lavidanoesunbanano.app.R
+import com.lavidanoesunbanano.app.core.designsystem.Banana
+import com.lavidanoesunbanano.app.core.designsystem.BananaMood
+import com.lavidanoesunbanano.app.core.designsystem.BobbingBanana
 import com.lavidanoesunbanano.app.core.designsystem.FadeIn
 import com.lavidanoesunbanano.app.core.designsystem.FadeOut
-import com.lavidanoesunbanano.app.core.designsystem.GhostButton
+import com.lavidanoesunbanano.app.core.designsystem.IconNotice
+import com.lavidanoesunbanano.app.core.designsystem.InfoPill
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTextField
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
-import com.lavidanoesunbanano.app.core.designsystem.LinkRow
-import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
+import com.lavidanoesunbanano.app.core.designsystem.Notice
+import com.lavidanoesunbanano.app.core.designsystem.NoticeTone
+import com.lavidanoesunbanano.app.core.designsystem.OptionButton
+import com.lavidanoesunbanano.app.core.designsystem.Panel
 import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
-import com.lavidanoesunbanano.app.core.designsystem.StatusLine
+import com.lavidanoesunbanano.app.core.designsystem.StatusTag
+import com.lavidanoesunbanano.app.core.designsystem.TextLink
+import com.lavidanoesunbanano.app.core.designsystem.UiIcon
+import com.lavidanoesunbanano.app.data.repository.QuotaToday
 import com.lavidanoesunbanano.app.domain.excuse.CrisisLine
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
 import com.lavidanoesunbanano.app.domain.model.Verdict
@@ -62,6 +74,7 @@ private const val MAX_REASON_CHARS = 300
 class BlockActions(
     val onExit: () -> Unit,
     val onAskExcuse: (ExcuseType) -> Unit,
+    val onAskHelp: () -> Unit,
     val onReasonChange: (String) -> Unit,
     val onSubmit: () -> Unit,
     val onBack: () -> Unit,
@@ -73,7 +86,7 @@ class BlockActions(
 
 /**
  * Fondo plano; arriba la app, la hora y el intento en mono. Según el paso: el mensaje con
- * los tres botones, la pregunta de una excusa, o el veredicto del juez.
+ * sus opciones, la pregunta de una razón, el veredicto, la ayuda o la salida de la protección.
  *
  * `onShown` se llama en el primer cuadro con el mensaje, para medir la latencia.
  */
@@ -95,15 +108,16 @@ fun BlockScreen(state: BlockUiState?, actions: BlockActions, onShown: () -> Unit
             modifier = Modifier
                 .fillMaxSize()
                 .safeDrawingPadding()
-                .padding(horizontal = 24.dp, vertical = 24.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (current != null) {
-                MonoLabel(stringResource(R.string.block_meta, current.appLabel, current.time, current.attemptNumber))
                 when (val step = current.step) {
                     BlockStep.Message -> MessageStep(current, actions)
-                    is BlockStep.Excuse -> ExcuseStep(step, actions)
+                    is BlockStep.Excuse -> ExcuseStep(current, step, actions)
                     is BlockStep.Sabotage -> SabotageStep(step, actions)
                     is BlockStep.Decided -> DecidedStep(current, step, actions)
+                    is BlockStep.Help -> HelpStep(current, step, actions)
                 }
             }
         }
@@ -121,109 +135,199 @@ private fun BlockUiState.contentKey(): String = when (val step = step) {
     is BlockStep.Excuse -> "$attemptId:excusa:${step.type}"
     is BlockStep.Sabotage -> "$attemptId:proteccion:${step.scheduledAt}"
     is BlockStep.Decided -> "$attemptId:veredicto"
+    is BlockStep.Help -> "$attemptId:ayuda"
+}
+
+@Composable
+private fun ColumnScope.Meta(state: BlockUiState) {
+    InfoPill(
+        text = stringResource(R.string.block_meta, state.appLabel, state.time, state.attemptNumber),
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+    )
+}
+
+@Composable
+private fun ColumnScope.MetaLine(text: String, strong: Boolean = false) {
+    Text(
+        text = text,
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+        style = LaVidaTheme.type.monoBody.copy(fontWeight = if (strong) FontWeight.SemiBold else FontWeight.Normal),
+        color = if (strong) LaVidaTheme.colors.textPrimary else LaVidaTheme.colors.textBody,
+    )
+}
+
+/** Contenido centrado en lo alto que sobra; con letra grande se desplaza sin tapar los botones. */
+@Composable
+private fun ColumnScope.CenteredBody(content: @Composable ColumnScope.() -> Unit) {
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth(),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            content = content,
+        )
+    }
 }
 
 @Composable
 private fun ColumnScope.MessageStep(state: BlockUiState, actions: BlockActions) {
-    Spacer(Modifier.height(24.dp))
-    Mascot(happy = false)
-    CenteredText(state.message ?: stringResource(R.string.block_fallback_message))
-    Spacer(Modifier.height(24.dp))
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SecondaryButton(
-            text = stringResource(R.string.block_emergency),
-            onClick = { actions.onAskExcuse(ExcuseType.EMERGENCY) },
-            modifier = Modifier.fillMaxWidth(),
+    val quota = state.quota
+    Meta(state)
+    state.blockedUntil?.let { MetaLine(stringResource(R.string.block_until, it), strong = true) }
+    CenteredBody {
+        Banana(BananaMood.DISAPPROVING, 112.dp)
+        Text(
+            text = state.message ?: stringResource(R.string.block_fallback_message),
+            style = LaVidaTheme.type.display,
+            color = LaVidaTheme.colors.textPrimary,
         )
-        SecondaryButton(
-            text = stringResource(R.string.block_extra_time),
-            onClick = { actions.onAskExcuse(ExcuseType.EXTRA_TIME) },
-            modifier = Modifier.fillMaxWidth(),
-        )
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PrimaryButton(
             text = stringResource(R.string.block_exit),
             onClick = actions.onExit,
             modifier = Modifier.fillMaxWidth(),
         )
-        state.message?.let { ReportControl(it, ReportSource.MESSAGE, state.reported, actions) }
+        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            val extraTimeOut = quota.extraTimeLeft == 0
+            OptionButton(
+                text = stringResource(R.string.block_extra_time),
+                subtitle = if (extraTimeOut) {
+                    stringResource(R.string.block_extra_time_out, quota.extraTimeDaily)
+                } else {
+                    stringResource(R.string.block_extra_time_left, quota.extraTimeLeft, quota.extraTimeDaily)
+                },
+                onClick = { actions.onAskExcuse(ExcuseType.EXTRA_TIME) },
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                enabled = !extraTimeOut,
+            )
+            // Nunca se apaga: por aquí se escribe una crisis, aunque el cupo esté agotado.
+            OptionButton(
+                text = stringResource(R.string.block_emergency),
+                subtitle = if (quota.judged) {
+                    stringResource(R.string.block_emergency_left, quota.emergencyLeft, quota.emergencyDaily)
+                } else {
+                    stringResource(R.string.block_emergency_unlimited)
+                },
+                onClick = { actions.onAskExcuse(ExcuseType.EMERGENCY) },
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            TextLink(text = stringResource(R.string.block_help), onClick = actions.onAskHelp, weight = FontWeight.SemiBold)
+            state.message?.let { ReportControl(it, ReportSource.MESSAGE, state.reported, actions) }
+        }
     }
 }
 
 /** Salir siempre es una opción: la protección da fricción, no encierra. */
 @Composable
 private fun ColumnScope.SabotageStep(step: BlockStep.Sabotage, actions: BlockActions) {
-    Spacer(Modifier.height(24.dp))
+    val colors = LaVidaTheme.colors
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Banana(BananaMood.PLAIN, 28.dp)
+        Text(
+            text = stringResource(R.string.sabotage_brand),
+            style = LaVidaTheme.type.mono.copy(fontWeight = FontWeight.SemiBold),
+            color = colors.textPrimary,
+        )
+    }
     Column(
         modifier = Modifier
             .weight(1f)
             .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(
-            text = stringResource(R.string.sabotage_exit_title),
-            style = LaVidaTheme.type.title,
-            color = LaVidaTheme.colors.textPrimary,
-        )
-        Spacer(Modifier.height(16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.sabotage_exit_title),
+                style = LaVidaTheme.type.display,
+                color = colors.textPrimary,
+            )
+            Text(text = stringResource(R.string.sabotage_exit_hint), style = LaVidaTheme.type.body, color = colors.textBody)
+        }
         SabotageExitForm(
             reason = step.reason,
             scheduledAt = step.scheduledAt,
+            scheduleAt = step.scheduleAt,
             onReasonChange = actions.onReasonChange,
             onDisableNow = actions.onDisableProtection,
             onSchedule = actions.onScheduleProtectionOff,
         )
     }
-    Spacer(Modifier.height(12.dp))
-    PrimaryButton(
-        text = stringResource(R.string.block_exit),
+    SecondaryButton(
+        text = stringResource(R.string.sabotage_exit_keep),
         onClick = actions.onExit,
         modifier = Modifier.fillMaxWidth(),
     )
 }
 
 @Composable
-private fun ColumnScope.ExcuseStep(step: BlockStep.Excuse, actions: BlockActions) {
+private fun ColumnScope.ExcuseStep(state: BlockUiState, step: BlockStep.Excuse, actions: BlockActions) {
     val colors = LaVidaTheme.colors
+    val type = LaVidaTheme.type
+    val quota = state.quota
     val emergency = step.type == ExcuseType.EMERGENCY
     val focus = remember { FocusRequester() }
-    Spacer(Modifier.height(32.dp))
-    Text(
-        text = stringResource(if (emergency) R.string.excuse_emergency_title else R.string.excuse_extra_time_title),
-        style = LaVidaTheme.type.title,
-        color = colors.textPrimary,
+    Meta(state)
+    MetaLine(
+        when {
+            !emergency -> stringResource(R.string.excuse_extra_time_meta, quota.extraTimeLeft, quota.extraTimeDaily)
+            quota.judged -> stringResource(R.string.excuse_emergency_meta, quota.emergencyLeft, quota.emergencyDaily)
+            else -> stringResource(R.string.excuse_emergency_meta_unlimited)
+        },
     )
-    Spacer(Modifier.height(8.dp))
-    Text(
-        text = stringResource(if (emergency) R.string.excuse_emergency_hint else R.string.excuse_extra_time_hint),
-        style = LaVidaTheme.type.small,
-        color = colors.textSecondary,
-    )
-    Spacer(Modifier.height(24.dp))
-    LaVidaTextField(
-        value = step.reason,
-        onValueChange = actions.onReasonChange,
-        placeholder = stringResource(
-            if (emergency) R.string.excuse_emergency_placeholder else R.string.excuse_extra_time_placeholder,
-        ),
-        maxLength = MAX_REASON_CHARS,
-        modifier = Modifier.focusRequester(focus),
-        singleLine = false,
-        minLines = 5,
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-    )
-    Spacer(Modifier.weight(1f))
-    Spacer(Modifier.height(24.dp))
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .verticalScroll(rememberScrollState())
+            .padding(top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = stringResource(if (emergency) R.string.excuse_emergency_title else R.string.excuse_extra_time_title),
+            style = type.title,
+            color = colors.textPrimary,
+        )
+        Text(text = excuseHint(emergency, state.blockedUntil), style = type.body, color = colors.textBody)
+        LaVidaTextField(
+            value = step.reason,
+            onValueChange = actions.onReasonChange,
+            placeholder = stringResource(
+                if (emergency) R.string.excuse_emergency_placeholder else R.string.excuse_extra_time_placeholder,
+            ),
+            maxLength = MAX_REASON_CHARS,
+            modifier = Modifier.focusRequester(focus),
+            singleLine = false,
+            minLines = 5,
+            textStyle = type.body.copy(fontSize = 17.sp, lineHeight = 26.sp),
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        )
+    }
     if (step.judging) {
-        StatusLine(stringResource(R.string.excuse_judging))
+        Notice(tone = NoticeTone.INFO) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BobbingBanana(BananaMood.READING, 48.dp)
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(text = stringResource(R.string.excuse_judging), style = type.subhead, color = colors.textPrimary)
+                    Text(text = stringResource(R.string.excuse_judging_hint), style = type.caption, color = colors.textSecondary)
+                }
+            }
+        }
     } else {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             PrimaryButton(
                 text = stringResource(R.string.excuse_submit),
                 onClick = actions.onSubmit,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = step.reason.isNotBlank(),
             )
-            GhostButton(
-                text = stringResource(R.string.action_cancel),
+            SecondaryButton(
+                text = stringResource(R.string.excuse_cancel),
                 onClick = actions.onBack,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -233,76 +337,166 @@ private fun ColumnScope.ExcuseStep(step: BlockStep.Excuse, actions: BlockActions
 }
 
 @Composable
+private fun excuseHint(emergency: Boolean, blockedUntil: String?): String = when {
+    blockedUntil == null -> stringResource(
+        if (emergency) R.string.excuse_emergency_hint_generic else R.string.excuse_extra_time_hint_generic,
+    )
+    emergency -> stringResource(R.string.excuse_emergency_hint, blockedUntil)
+    else -> stringResource(R.string.excuse_extra_time_hint, blockedUntil)
+}
+
+@Composable
 private fun ColumnScope.DecidedStep(state: BlockUiState, step: BlockStep.Decided, actions: BlockActions) {
     val verdict = step.verdict
-    Box(
-        modifier = Modifier
-            .weight(1f)
-            .fillMaxWidth(),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Column(Modifier.verticalScroll(rememberScrollState())) {
-            val crisis = verdict.reason == VerdictReason.CRISIS
-            // Un banano feliz no acompaña a alguien en crisis.
-            if (!crisis) {
-                Mascot(happy = verdict.valid)
-                Spacer(Modifier.height(24.dp))
-            }
+    Meta(state)
+    when {
+        verdict.reason == VerdictReason.CRISIS -> CrisisVerdict(state, step, actions)
+        verdict.valid && verdict.offline -> RuleApproved(state, verdict, actions)
+        verdict.valid -> Approved(state, verdict, actions)
+        else -> Rejected(state, step, actions)
+    }
+}
+
+@Composable
+private fun ColumnScope.Approved(state: BlockUiState, verdict: Verdict, actions: BlockActions) {
+    val type = LaVidaTheme.type
+    CenteredBody {
+        Banana(BananaMood.HAPPY, 104.dp)
+        StatusTag(verdictLabel(verdict), approved = true)
+        Text(text = verdictMessage(verdict), style = type.headline, color = LaVidaTheme.colors.textPrimary)
+        IconNotice(R.drawable.ic_ui_history, stringResource(R.string.verdict_clock), tone = NoticeTone.PLAIN)
+    }
+    PrimaryButton(
+        text = stringResource(R.string.verdict_open_app, state.appLabel),
+        onClick = actions.onOpenApp,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    verdict.message?.let { ReportControl(it, ReportSource.VERDICT, state.reported, actions, Modifier.align(Alignment.CenterHorizontally)) }
+}
+
+/** Decidió la regla, no el juez: se dice claro que nadie leyó la razón. */
+@Composable
+private fun ColumnScope.RuleApproved(state: BlockUiState, verdict: Verdict, actions: BlockActions) {
+    val colors = LaVidaTheme.colors
+    val type = LaVidaTheme.type
+    val shared = state.quota.judged
+    CenteredBody {
+        StatusTag(verdictLabel(verdict, shared), approved = true)
+        Text(
+            text = stringResource(if (shared) R.string.verdict_offline_title else R.string.verdict_rule_title),
+            style = type.headline.copy(fontSize = 24.sp, lineHeight = 30.sp),
+            color = colors.textPrimary,
+        )
+        Text(text = stringResource(R.string.verdict_offline_note), style = type.body, color = colors.textBody)
+        IconNotice(R.drawable.ic_ui_history, stringResource(R.string.verdict_clock_short), tone = NoticeTone.PLAIN)
+    }
+    PrimaryButton(
+        text = stringResource(R.string.verdict_open_app, state.appLabel),
+        onClick = actions.onOpenApp,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun ColumnScope.Rejected(state: BlockUiState, step: BlockStep.Decided, actions: BlockActions) {
+    val colors = LaVidaTheme.colors
+    val type = LaVidaTheme.type
+    val verdict = step.verdict
+    val shared = state.quota.judged
+    CenteredBody {
+        Banana(BananaMood.SAD, 104.dp)
+        StatusTag(verdictLabel(verdict, shared), approved = false)
+        Text(text = verdictMessage(verdict), style = type.headline, color = colors.textPrimary)
+        Panel(spacing = 6.dp, shadow = 0.dp) {
             Text(
-                text = verdictMessage(verdict),
-                style = LaVidaTheme.type.display,
-                color = LaVidaTheme.colors.textPrimary,
+                text = stringResource(R.string.verdict_what_now),
+                style = type.small.copy(fontWeight = FontWeight.ExtraBold),
+                color = colors.textPrimary,
             )
-            Spacer(Modifier.height(16.dp))
-            Text(text = verdictLabel(verdict), style = LaVidaTheme.type.mono, color = verdictColor(verdict))
-            if (crisis) {
-                Spacer(Modifier.height(24.dp))
-                CrisisHelp(step.helpLines)
-            }
+            Tip(verdictTip(verdict.reason, shared))
+            state.blockedUntil?.let { Tip(stringResource(R.string.verdict_tip_opens, state.appLabel, it)) }
+            if (step.type == ExcuseType.EXTRA_TIME) Tip(stringResource(R.string.verdict_tip_emergency))
         }
     }
-    Spacer(Modifier.height(24.dp))
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (verdict.valid) {
-            PrimaryButton(
-                text = stringResource(R.string.verdict_open_app, state.appLabel),
-                onClick = actions.onOpenApp,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        } else {
-            SecondaryButton(
-                text = stringResource(R.string.verdict_back),
-                onClick = actions.onBack,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            PrimaryButton(
-                text = stringResource(R.string.block_exit),
-                onClick = actions.onExit,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        verdict.message?.let { ReportControl(it, ReportSource.VERDICT, state.reported, actions) }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        PrimaryButton(
+            text = stringResource(R.string.block_exit),
+            onClick = actions.onExit,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        SecondaryButton(
+            text = stringResource(R.string.verdict_back),
+            onClick = actions.onBack,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        verdict.message?.let { ReportControl(it, ReportSource.VERDICT, state.reported, actions, Modifier.align(Alignment.CenterHorizontally)) }
     }
+}
+
+@Composable
+private fun Tip(text: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text = "•", style = LaVidaTheme.type.small, color = LaVidaTheme.colors.textPrimary)
+        Text(text = text, style = LaVidaTheme.type.small, color = LaVidaTheme.colors.textPrimary)
+    }
+}
+
+/** Sin banano ni sarcasmo: un banano feliz no acompaña a alguien en crisis. */
+@Composable
+private fun ColumnScope.CrisisVerdict(state: BlockUiState, step: BlockStep.Decided, actions: BlockActions) {
+    HelpBody(stringResource(R.string.crisis_title, step.verdict.grantedMinutes), step.helpLines)
+    SecondaryButton(
+        text = stringResource(R.string.verdict_open_app, state.appLabel),
+        onClick = actions.onOpenApp,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+/** La misma ayuda sin escribir nada. No desbloquea: si diera minutos, sería una salida gratis. */
+@Composable
+private fun ColumnScope.HelpStep(state: BlockUiState, step: BlockStep.Help, actions: BlockActions) {
+    Meta(state)
+    HelpBody(stringResource(R.string.help_title), step.lines)
+    SecondaryButton(
+        text = stringResource(R.string.verdict_back),
+        onClick = actions.onBack,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 /** Líneas de ayuda: un toque abre el marcador, sin llamar por el usuario. */
 @Composable
-private fun CrisisHelp(lines: List<CrisisLine>) {
+private fun ColumnScope.HelpBody(title: String, lines: List<CrisisLine>) {
+    val colors = LaVidaTheme.colors
+    val type = LaVidaTheme.type
     val uriHandler = LocalUriHandler.current
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = stringResource(if (lines.isEmpty()) R.string.crisis_no_lines else R.string.crisis_lines_title),
-            style = LaVidaTheme.type.body,
-            color = LaVidaTheme.colors.textPrimary,
-        )
-        lines.forEach { line ->
-            LinkRow(
-                title = line.name,
-                value = line.number,
-                monoValue = true,
-                onClick = { uriHandler.openUri("tel:${line.number}") },
-            )
+    CenteredBody {
+        Text(text = title, style = type.display, color = colors.textPrimary)
+        Text(text = stringResource(R.string.crisis_body), style = type.body.copy(fontSize = 17.sp, lineHeight = 26.sp), color = colors.textPrimary)
+        Panel(spacing = 10.dp) {
+            Text(text = stringResource(R.string.crisis_danger), style = type.body, color = colors.textPrimary)
+            lines.forEach { line ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(text = line.name, style = type.caption, color = colors.textSecondary)
+                    DialButton(line.number) { uriHandler.openUri("tel:${line.number}") }
+                }
+            }
+            if (lines.isNotEmpty()) {
+                Text(text = stringResource(R.string.crisis_dial_note), style = type.caption, color = colors.textSecondary)
+            }
         }
+    }
+}
+
+@Composable
+private fun DialButton(number: String, onClick: () -> Unit) {
+    Box(Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+        SecondaryButton(
+            text = stringResource(R.string.crisis_dial, number),
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        UiIcon(R.drawable.ic_ui_phone, Modifier.align(Alignment.CenterStart).padding(start = 18.dp), size = 18.dp)
     }
 }
 
@@ -315,68 +509,55 @@ private val REPORT_REASONS = listOf(
 
 /** Reporta un mensaje de la IA dentro de la pantalla. Solo aparece si el mensaje vino de la IA. */
 @Composable
-private fun ReportControl(message: String, source: ReportSource, reported: Boolean?, actions: BlockActions) {
+private fun ReportControl(
+    message: String,
+    source: ReportSource,
+    reported: Boolean?,
+    actions: BlockActions,
+    modifier: Modifier = Modifier,
+) {
     var choosing by rememberSaveable { mutableStateOf(false) }
     when (reported) {
-        true -> Text(text = stringResource(R.string.report_sent), style = LaVidaTheme.type.small, color = LaVidaTheme.colors.textSecondary)
-        else -> GhostButton(
+        true -> Text(
+            text = stringResource(R.string.report_sent),
+            modifier = modifier,
+            style = LaVidaTheme.type.small,
+            color = LaVidaTheme.colors.textBody,
+        )
+        else -> TextLink(
             text = stringResource(if (reported == false) R.string.report_retry else R.string.report_action),
             onClick = { choosing = true },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = modifier,
+            weight = FontWeight.SemiBold,
         )
     }
     if (choosing) {
         AlertDialog(
             onDismissRequest = { choosing = false },
-            title = { Text(stringResource(R.string.report_title)) },
+            title = { Text(stringResource(R.string.report_title), style = LaVidaTheme.type.subhead) },
             text = {
-                Column {
+                Column(horizontalAlignment = Alignment.Start) {
                     REPORT_REASONS.forEach { (reason, label) ->
-                        TextButton(
+                        TextLink(
+                            text = stringResource(label),
                             onClick = {
                                 choosing = false
                                 actions.onReport(message, reason, source)
                             },
-                        ) { Text(stringResource(label)) }
+                        )
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { choosing = false }) { Text(stringResource(R.string.action_cancel)) }
+                TextLink(text = stringResource(R.string.action_cancel), onClick = { choosing = false })
             },
+            shape = MaterialTheme.shapes.large,
+            containerColor = LaVidaTheme.colors.surface,
         )
     }
 }
 
-/** El banano: decepcionado en el bloqueo y en los rechazos, feliz cuando se aprueba. Decorativo. */
-@Composable
-private fun Mascot(happy: Boolean) {
-    Image(
-        painter = painterResource(if (happy) R.drawable.banana_happy else R.drawable.banana_sad),
-        contentDescription = null,
-        modifier = Modifier.size(112.dp),
-    )
-}
-
-/** Mensaje centrado verticalmente; con letra grande se desplaza en vez de tapar los botones. */
-@Composable
-private fun ColumnScope.CenteredText(text: String) {
-    Box(
-        modifier = Modifier
-            .weight(1f)
-            .fillMaxWidth(),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.verticalScroll(rememberScrollState()),
-            style = LaVidaTheme.type.display,
-            color = LaVidaTheme.colors.textPrimary,
-        )
-    }
-}
-
-private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, { _, _, _ -> }, {}, {})
+private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, {}, { _, _, _ -> }, {}, {})
 
 private val PreviewState = BlockUiState(
     attemptId = 7,
@@ -385,6 +566,8 @@ private val PreviewState = BlockUiState(
     time = "23:40",
     attemptNumber = 7,
     message = "¿Instagram otra vez? Así piensas ser el mejor programador del mundo. Qué mierda.",
+    quota = QuotaToday(extraTimeLeft = 2, extraTimeDaily = 3, emergencyLeft = 2, emergencyDaily = 2, judged = true),
+    blockedUntil = "las 06:00",
 )
 
 @Preview

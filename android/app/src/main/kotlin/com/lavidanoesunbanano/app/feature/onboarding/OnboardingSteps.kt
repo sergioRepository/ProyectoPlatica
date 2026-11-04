@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,20 +26,30 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.lavidanoesunbanano.app.R
-import com.lavidanoesunbanano.app.core.designsystem.GhostButton
+import com.lavidanoesunbanano.app.core.designsystem.GroupedCard
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTextField
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
+import com.lavidanoesunbanano.app.core.designsystem.RowDivider
 import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
 import com.lavidanoesunbanano.app.core.designsystem.SelectableRow
+import com.lavidanoesunbanano.app.core.designsystem.TextLink
+import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 
 @Composable
 internal fun ColumnScope.StepBody(step: OnboardingStep, state: OnboardingUiState, actions: OnboardingActions) {
     val draft = state.draft
+    // Editar la meta exige un texto válido: el error se ve aquí, junto al contador.
+    val goalError = stringResource(R.string.onboarding_goal_short).takeIf {
+        draft.mainGoal.trim().length < OnboardingRules.MIN_GOAL && draft.mainGoal.isNotEmpty()
+    }
     when (step) {
         OnboardingStep.NAME -> TextStep(
             value = draft.name,
@@ -53,7 +64,8 @@ internal fun ColumnScope.StepBody(step: OnboardingStep, state: OnboardingUiState
             onValueChange = actions::onMainGoalChange,
             placeholder = stringResource(R.string.onboarding_goal_placeholder),
             maxLength = OnboardingRules.MAX_GOAL,
-            minLines = 2,
+            minLines = 3,
+            error = goalError,
         )
         OnboardingStep.SECONDARY_GOALS -> SecondaryGoalsStep(state, actions)
         OnboardingStep.GOAL_REASON -> TextStep(
@@ -125,6 +137,7 @@ internal fun ColumnScope.StepBody(step: OnboardingStep, state: OnboardingUiState
             maxLength = OnboardingRules.MAX_FORBIDDEN,
             minLines = 3,
         )
+        OnboardingStep.SUMMARY -> SummaryStep(draft, actions)
     }
 }
 
@@ -139,6 +152,61 @@ private val SARCASM_LEVELS = listOf(
 )
 
 @Composable
+private fun SummaryStep(draft: OnboardingDraft, actions: OnboardingActions) {
+    val country = if (draft.country == OnboardingRules.NEUTRAL_COUNTRY) stringResource(R.string.country_neutral) else draft.country
+    val profanity = stringResource(if (draft.profanityAllowed == true) R.string.summary_with_profanity else R.string.summary_without_profanity)
+    // El margen deja ver la sombra de la tarjeta, que el desplazamiento recortaría.
+    Column(Modifier.verticalScroll(rememberScrollState()).padding(end = 3.dp, bottom = 4.dp)) {
+        GroupedCard {
+            SummaryRow(R.string.summary_apps, draft.selectedApps.joinToString(", ") { it.label }) {
+                actions.review(OnboardingStep.APPS)
+            }
+            RowDivider()
+            SummaryRow(R.string.summary_schedule, ScheduleFormatter.summary(draft.ranges)) {
+                actions.review(OnboardingStep.SCHEDULE)
+            }
+            RowDivider()
+            SummaryRow(R.string.summary_goal, draft.mainGoal) { actions.review(OnboardingStep.MAIN_GOAL) }
+            RowDivider()
+            SummaryRow(R.string.summary_tone, stringResource(R.string.summary_tone_value, draft.sarcasmLevel, profanity, country)) {
+                actions.review(OnboardingStep.SARCASM, until = OnboardingStep.COUNTRY)
+            }
+            RowDivider()
+            SummaryRow(R.string.summary_forbidden, draft.forbiddenTopics.ifBlank { stringResource(R.string.settings_none) }) {
+                actions.review(OnboardingStep.FORBIDDEN)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryRow(@StringRes label: Int, value: String, onChange: () -> Unit) {
+    val name = stringResource(label)
+    val changeLabel = stringResource(R.string.summary_change_label, name.lowercase())
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            MonoLabel(name)
+            Text(
+                text = value,
+                style = LaVidaTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
+                color = LaVidaTheme.colors.textPrimary,
+            )
+        }
+        TextLink(
+            text = stringResource(R.string.summary_change),
+            onClick = onChange,
+            modifier = Modifier.semantics { contentDescription = changeLabel },
+        )
+    }
+}
+
+@Composable
 private fun TextStep(
     value: String,
     onValueChange: (String) -> Unit,
@@ -146,6 +214,7 @@ private fun TextStep(
     maxLength: Int,
     singleLine: Boolean = false,
     minLines: Int = 1,
+    error: String? = null,
     onDone: () -> Unit = {},
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -158,6 +227,8 @@ private fun TextStep(
         modifier = Modifier.focusRequester(focusRequester),
         singleLine = singleLine,
         minLines = minLines,
+        error = error,
+        textStyle = LaVidaTheme.type.body.copy(fontSize = LaVidaTheme.type.subhead.fontSize),
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Sentences,
             imeAction = if (singleLine) ImeAction.Next else ImeAction.Default,
@@ -170,9 +241,11 @@ private fun TextStep(
 private fun ChoiceList(content: @Composable () -> Unit) {
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         content()
+        // Lugar para la sombra de la última tarjeta.
+        Spacer(Modifier.height(4.dp))
     }
 }
 
@@ -181,7 +254,7 @@ private fun SecondaryGoalsStep(state: OnboardingUiState, actions: OnboardingActi
     val goals = state.draft.secondaryGoals
     val canAdd = state.secondaryInput.isNotBlank() && goals.size < OnboardingRules.MAX_SECONDARY_GOALS
     Column(Modifier.verticalScroll(rememberScrollState())) {
-        Row(verticalAlignment = Alignment.Top) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             LaVidaTextField(
                 value = state.secondaryInput,
                 onValueChange = actions::onSecondaryInputChange,
@@ -210,7 +283,7 @@ private fun SecondaryGoalsStep(state: OnboardingUiState, actions: OnboardingActi
                     style = LaVidaTheme.type.body,
                     color = LaVidaTheme.colors.textPrimary,
                 )
-                GhostButton(text = stringResource(R.string.action_remove), onClick = { actions.removeSecondaryGoal(index) })
+                TextLink(text = stringResource(R.string.action_remove), onClick = { actions.removeSecondaryGoal(index) })
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -237,7 +310,7 @@ private fun ColumnScope.AppsStep(state: OnboardingUiState, actions: OnboardingAc
         apps.isEmpty() -> MonoLabel(stringResource(R.string.onboarding_apps_empty))
         else -> LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(apps, key = { it.packageName }) { app ->
                 SelectableRow(

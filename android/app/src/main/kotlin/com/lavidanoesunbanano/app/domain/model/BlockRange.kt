@@ -34,3 +34,29 @@ data class BlockRange(
 }
 
 fun List<BlockRange>.isBlockedAt(at: LocalDateTime): Boolean = any { it.covers(at) }
+
+/**
+ * Cuándo pasa de libre a bloqueado, o al revés, después de `from`. Junta los rangos que se
+ * tocan. `null` si nunca cambia: sin rangos, o bloqueado la semana entera.
+ */
+fun List<BlockRange>.nextBlockChange(from: LocalDateTime): LocalDateTime? {
+    val blocked = isBlockedAt(from)
+    val today = from.toLocalDate()
+    return (-1L..DAYS_AHEAD)
+        .flatMap { offset ->
+            val date = today.plusDays(offset)
+            flatMap { range ->
+                if (date.dayOfWeek !in range.days) {
+                    emptyList()
+                } else {
+                    val endDate = if (range.crossesMidnight || range.isAllDay) date.plusDays(1) else date
+                    listOf(date.atTime(range.start), endDate.atTime(range.end))
+                }
+            }
+        }
+        .filter { it > from }
+        .sorted()
+        .firstOrNull { isBlockedAt(it) != blocked }
+}
+
+private const val DAYS_AHEAD = 8L

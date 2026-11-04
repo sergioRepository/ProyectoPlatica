@@ -12,7 +12,10 @@ import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.HistoryRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.data.system.SetupStatusSource
+import com.lavidanoesunbanano.app.domain.apps.AppOrdering
 import com.lavidanoesunbanano.app.domain.model.BackendStatus
+import com.lavidanoesunbanano.app.domain.model.isBlockedAt
+import com.lavidanoesunbanano.app.domain.model.nextBlockChange
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import com.lavidanoesunbanano.app.domain.setup.SetupStatus
 import com.lavidanoesunbanano.app.domain.stats.Stats
@@ -20,6 +23,7 @@ import com.lavidanoesunbanano.app.domain.stats.StatsCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.LocalTime
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -36,6 +40,16 @@ import kotlinx.coroutines.launch
 /** Una app desbloqueada ahora mismo y la hora a la que se vuelve a bloquear. */
 data class ActiveUnlock(val label: String, val until: String)
 
+/** El horario leído ahora: `until` es cuándo cambia ("las 22:00"), `null` si nunca. */
+data class ScheduleNow(
+    val date: String = "",
+    val blocked: Boolean = false,
+    val until: String? = null,
+    val apps: String = "",
+    /** Nombre de cada app bloqueada por paquete, para hablar de lo que hizo el agente. */
+    val labels: Map<String, String> = emptyMap(),
+)
+
 data class HomeUiState(
     /** `null` mientras se verifica. */
     val backend: BackendStatus? = null,
@@ -50,6 +64,7 @@ data class HomeUiState(
     /** Último análisis del agente en esta sesión; `null` si no ha corrido. */
     val agent: AgentRun? = null,
     val analyzing: Boolean = false,
+    val schedule: ScheduleNow = ScheduleNow(),
 )
 
 @HiltViewModel
@@ -74,7 +89,7 @@ class HomeViewModel @Inject constructor(
         StatsCalculator.compute(it.attempts, it.excuses, it.today, days = 1, zone = it.zone)
     }
 
-    /** Los desbloqueos vencen solos: se revisan cada 30 s para quitarlos de la lista. */
+    /** Los desbloqueos vencen y el horario avanza: se revisan cada 30 s. */
     private val ticker: Flow<Instant> = flow {
         while (true) {
             emit(clock.instant())
@@ -96,6 +111,21 @@ class HomeViewModel @Inject constructor(
         }.sortedBy { it.until }
     }
 
+    private val schedule: Flow<ScheduleNow> = combine(
+        profileRepository.observeRanges(),
+        profileRepository.observeBlockedApps(),
+        ticker,
+    ) { ranges, apps, _ ->
+        val now = LocalDateTime.now(clock)
+        ScheduleNow(
+            date = ScheduleFormatter.longDate(now.toLocalDate()),
+            blocked = ranges.isBlockedAt(now),
+            until = ranges.nextBlockChange(now)?.let { ScheduleFormatter.until(it, now) },
+            apps = AppOrdering.names(apps.map { it.label }),
+            labels = apps.associate { it.packageName to it.label },
+        )
+    }
+
     private val analyzing = MutableStateFlow(false)
 
     val state: StateFlow<HomeUiState> = combine(
@@ -105,7 +135,10 @@ class HomeViewModel @Inject constructor(
         agentRepository.lastRun,
         analyzing,
         device,
-    ) { state, agent, busy, device -> state.copy(agent = agent, analyzing = busy, device = device) }
+        schedule,
+    ) { state, agent, busy, device, schedule ->
+        state.copy(agent = agent, analyzing = busy, device = device, schedule = schedule)
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     fun analyzeNow() {

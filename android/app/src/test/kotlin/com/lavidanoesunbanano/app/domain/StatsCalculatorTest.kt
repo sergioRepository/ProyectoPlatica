@@ -10,12 +10,14 @@ import com.lavidanoesunbanano.app.domain.model.VerdictReason
 import com.lavidanoesunbanano.app.domain.stats.AppCount
 import com.lavidanoesunbanano.app.domain.stats.ExcuseTally
 import com.lavidanoesunbanano.app.domain.stats.HistoryBuilder
+import com.lavidanoesunbanano.app.domain.stats.HistoryFilter
 import com.lavidanoesunbanano.app.domain.stats.StatsCalculator
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import org.junit.Test
 
 class StatsCalculatorTest {
@@ -128,5 +130,48 @@ class StatsCalculatorTest {
         assertEquals(1, days[0].items[0].excuses.size)
         assertEquals(emptyList(), days[0].items[1].excuses)
         assertEquals(listOf(late.id), days[1].items.map { it.attempt.id })
+    }
+
+    @Test
+    fun `the previous period has the same length and does not count in this one`() {
+        val attempts = listOf(
+            attempt(instagram, at(15, 9)),
+            attempt(instagram, at(8, 12)),
+            attempt(instagram, at(2, 12)),
+            // Antes del periodo anterior.
+            attempt(instagram, at(1, 12)),
+        )
+
+        val stats = StatsCalculator.compute(attempts, emptyList(), today, days = 7, zone = zone)
+
+        assertEquals(1, stats.attempts)
+        assertEquals(2, stats.previousAttempts)
+    }
+
+    @Test
+    fun `no previous attempts means nothing to compare`() {
+        val stats = StatsCalculator.compute(listOf(attempt(instagram, at(15, 9))), emptyList(), today, days = 7, zone = zone)
+
+        assertNull(stats.previousAttempts)
+    }
+
+    @Test
+    fun `history filter keeps attempts with that verdict and drops empty days`() {
+        val approved = attempt(instagram, at(15, 9))
+        val rejected = attempt(tiktok, at(14, 9))
+        val noExcuse = attempt(tiktok, at(15, 8))
+        val days = HistoryBuilder.build(
+            listOf(approved, rejected, noExcuse),
+            listOf(excuse(approved, ExcuseType.EXTRA_TIME, valid = true), excuse(rejected, ExcuseType.EXTRA_TIME, valid = false)),
+            zone,
+        )
+
+        assertEquals(days, HistoryBuilder.filter(days, HistoryFilter.ALL))
+        assertEquals(
+            listOf(approved.id),
+            HistoryBuilder.filter(days, HistoryFilter.APPROVED).flatMap { it.items }.map { it.attempt.id },
+        )
+        val onlyRejected = HistoryBuilder.filter(days, HistoryFilter.REJECTED)
+        assertEquals(listOf(LocalDate.of(2026, 10, 14)), onlyRejected.map { it.date })
     }
 }

@@ -1,22 +1,28 @@
 package com.lavidanoesunbanano.app.feature.home
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -24,184 +30,278 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lavidanoesunbanano.app.R
+import com.lavidanoesunbanano.app.core.designsystem.Banana
+import com.lavidanoesunbanano.app.core.designsystem.BananaMood
+import com.lavidanoesunbanano.app.core.designsystem.DashedDivider
 import com.lavidanoesunbanano.app.core.designsystem.InfoRow
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
-import com.lavidanoesunbanano.app.core.designsystem.LinkRow
+import com.lavidanoesunbanano.app.core.designsystem.MainScaffold
+import com.lavidanoesunbanano.app.core.designsystem.MainTab
 import com.lavidanoesunbanano.app.core.designsystem.MonoLabel
+import com.lavidanoesunbanano.app.core.designsystem.Notice
+import com.lavidanoesunbanano.app.core.designsystem.NoticeTone
 import com.lavidanoesunbanano.app.core.designsystem.Panel
-import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
-import com.lavidanoesunbanano.app.core.designsystem.SecondaryButton
-import com.lavidanoesunbanano.app.core.designsystem.StatusLine
+import com.lavidanoesunbanano.app.core.designsystem.SmallButton
+import com.lavidanoesunbanano.app.core.designsystem.TextLink
+import com.lavidanoesunbanano.app.core.designsystem.UiIcon
+import com.lavidanoesunbanano.app.core.designsystem.toon
 import com.lavidanoesunbanano.app.data.repository.AgentRun
 import com.lavidanoesunbanano.app.domain.model.BackendStatus
 import com.lavidanoesunbanano.app.domain.setup.ServiceHealth
 import com.lavidanoesunbanano.app.domain.setup.SetupChecklist
+import com.lavidanoesunbanano.app.domain.setup.SetupItem
+import com.lavidanoesunbanano.app.feature.setup.riskRes
+import com.lavidanoesunbanano.app.feature.setup.titleRes
 
 @Composable
 fun HomeScreen(
-    onOpenStats: () -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenSettings: () -> Unit,
+    onTab: (MainTab) -> Unit,
     onOpenSetup: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshOnResume() }
-    HomeContent(
-        state = state,
-        actions = HomeActions(
-            onOpenSetup = onOpenSetup,
-            onOpenStats = onOpenStats,
-            onOpenHistory = onOpenHistory,
-            onOpenSettings = onOpenSettings,
-            onAnalyze = viewModel::analyzeNow,
-        ),
-    )
+    MainScaffold(MainTab.HOME, onTab) {
+        HomeContent(state = state, onOpenSetup = onOpenSetup, onAnalyze = viewModel::analyzeNow)
+    }
 }
 
-private class HomeActions(
-    val onOpenSetup: () -> Unit,
-    val onOpenStats: () -> Unit,
-    val onOpenHistory: () -> Unit,
-    val onOpenSettings: () -> Unit,
-    val onAnalyze: () -> Unit,
-)
-
 @Composable
-private fun HomeContent(state: HomeUiState, actions: HomeActions) {
+private fun HomeContent(state: HomeUiState, onOpenSetup: () -> Unit, onAnalyze: () -> Unit) {
     val colors = LaVidaTheme.colors
+    val type = LaVidaTheme.type
+    val offline = state.backend == BackendStatus.Unreachable
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 24.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Spacer(Modifier.height(16.dp))
-        Text(text = stringResource(R.string.app_name), style = LaVidaTheme.type.title, color = colors.textPrimary)
-        Spacer(Modifier.height(24.dp))
-        Panel {
-            InfoRow(label = stringResource(R.string.home_blocker_label), value = blockerText(state.setup?.service))
-            InfoRow(label = stringResource(R.string.home_backend_label), value = backendText(state.backend))
-        }
-        state.setup?.let { setup ->
-            val items = SetupChecklist.items(setup)
-            if (!SetupChecklist.blockerReady(items)) {
-                Spacer(Modifier.height(16.dp))
-                Text(text = stringResource(R.string.home_setup_title), style = LaVidaTheme.type.body, color = colors.textPrimary)
-                Spacer(Modifier.height(4.dp))
-                Text(text = stringResource(R.string.home_setup_hint), style = LaVidaTheme.type.small, color = colors.textSecondary)
-                Spacer(Modifier.height(12.dp))
-                PrimaryButton(
-                    text = stringResource(R.string.home_setup_action),
-                    onClick = actions.onOpenSetup,
-                    modifier = Modifier.fillMaxWidth(),
+        MonoLabel(stringResource(R.string.home_brand, state.schedule.date))
+        Hero(state, onOpenSetup)
+        if (offline || state.disconnected) {
+            Notice(tone = NoticeTone.PLAIN) {
+                Text(
+                    text = stringResource(if (offline) R.string.home_offline_title else R.string.home_disconnected_title),
+                    style = type.subhead,
+                    color = colors.textPrimary,
                 )
-            } else if (SetupChecklist.pending(items) > 0) {
-                Spacer(Modifier.height(12.dp))
-                val pending = SetupChecklist.pending(items)
-                LinkRow(
-                    title = stringResource(R.string.setup_link),
-                    value = pluralStringResource(R.plurals.setup_pending_count, pending, pending),
-                    onClick = actions.onOpenSetup,
-                )
+                Text(text = stringResource(R.string.home_offline_hint), style = type.caption, color = colors.textBody)
             }
+        } else {
+            state.setup?.let { RecommendedCard(SetupChecklist.items(it), onOpenSetup) }
         }
-        if (state.disconnected) {
-            Spacer(Modifier.height(24.dp))
-            Text(text = stringResource(R.string.home_disconnected_title), style = LaVidaTheme.type.body, color = colors.textPrimary)
-            Spacer(Modifier.height(6.dp))
-            Text(text = stringResource(R.string.home_disconnected_hint), style = LaVidaTheme.type.small, color = colors.textSecondary)
-        }
+        TodayCard(state)
+        AgentCard(state, onAnalyze)
+    }
+}
 
-        Spacer(Modifier.height(32.dp))
+/** Lo primero que se lee: si ahora está libre o bloqueado, y hasta cuándo. */
+@Composable
+private fun Hero(state: HomeUiState, onOpenSetup: () -> Unit) {
+    val colors = LaVidaTheme.colors
+    val type = LaVidaTheme.type
+    val schedule = state.schedule
+    val service = state.setup?.service
+    val until = schedule.until
+    val texts: HeroTexts = when {
+        service == null -> HeroTexts(stringResource(R.string.home_checking), "", colors.surface)
+        service == ServiceHealth.OFF -> HeroTexts(
+            stringResource(R.string.home_off_title),
+            stringResource(R.string.home_off_sub),
+            colors.surface,
+            stringResource(R.string.home_off_action),
+        )
+        service == ServiceHealth.STOPPED -> HeroTexts(
+            stringResource(R.string.home_stopped_title),
+            stringResource(R.string.home_stopped_sub),
+            colors.surface,
+            stringResource(R.string.home_stopped_action),
+        )
+        schedule.blocked -> HeroTexts(
+            if (until != null) stringResource(R.string.home_blocked_until, until) else stringResource(R.string.home_blocked),
+            stringResource(R.string.home_blocked_sub, schedule.apps),
+            colors.accent,
+        )
+        else -> HeroTexts(
+            until?.let { stringResource(R.string.home_free_until, it) }.orEmpty(),
+            stringResource(R.string.home_free_sub, schedule.apps),
+            colors.surface,
+        )
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toon(MaterialTheme.shapes.large, texts.background, colors.border, shadow = 4.dp)
+            .padding(horizontal = 16.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Banana(BananaMood.SMILE, 76.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(text = texts.title, style = type.headline, color = colors.textPrimary)
+            if (texts.subtitle.isNotEmpty()) {
+                Text(text = texts.subtitle, style = type.small, color = colors.textPrimary)
+            }
+            texts.action?.let { action -> SmallButton(text = action, onClick = onOpenSetup) }
+        }
+    }
+}
+
+private class HeroTexts(val title: String, val subtitle: String, val background: Color, val action: String? = null)
+
+/** Solo cuando el bloqueo ya funciona: lo necesario lo reclama la tarjeta principal. */
+@Composable
+private fun RecommendedCard(items: List<SetupItem>, onOpenSetup: () -> Unit) {
+    val colors = LaVidaTheme.colors
+    val pending = items.filter { !it.done }
+    if (!SetupChecklist.blockerReady(items) || pending.isEmpty()) return
+    val first = pending.first().step
+    val shape = MaterialTheme.shapes.medium
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toon(shape, colors.surface, colors.border, shadow = 0.dp)
+            .clip(shape)
+            .clickable(role = Role.Button, onClick = onOpenSetup)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = pluralStringResource(R.plurals.home_recommended_pending, pending.size, pending.size),
+                style = LaVidaTheme.type.subhead,
+                color = colors.textPrimary,
+            )
+            Text(
+                text = stringResource(R.string.home_recommended_detail, stringResource(first.titleRes), stringResource(first.riskRes)),
+                style = LaVidaTheme.type.caption,
+                color = colors.textSecondary,
+            )
+        }
+        UiIcon(R.drawable.ic_ui_chevron, size = 18.dp)
+    }
+}
+
+@Composable
+private fun TodayCard(state: HomeUiState) {
+    val colors = LaVidaTheme.colors
+    val type = LaVidaTheme.type
+    val today = state.today
+    Panel {
         MonoLabel(stringResource(R.string.home_today))
-        Spacer(Modifier.height(12.dp))
-        Panel {
-            val today = state.today
-            InfoRow(label = stringResource(R.string.home_attempts_label), value = today?.attempts?.toString() ?: "-")
-            InfoRow(
-                label = stringResource(R.string.home_recovered_label),
-                value = today?.let { stringResource(R.string.minutes_approx, it.recoveredMinutes) } ?: "-",
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = today?.let { stringResource(R.string.minutes_approx, it.recoveredMinutes) } ?: "-",
+                style = type.bigFigure,
+                color = colors.textPrimary,
             )
-            InfoRow(
-                label = stringResource(R.string.home_excuses_label),
-                value = today?.let { stringResource(R.string.excuses_tally, it.approved, it.rejected) } ?: "-",
-            )
-            InfoRow(
-                label = stringResource(R.string.ai_calls_label),
-                value = state.device?.let { stringResource(R.string.ai_calls_value, it.remainingToday, it.dailyLimit) } ?: "-",
-            )
-            state.unlocks.forEach { unlock ->
-                InfoRow(
-                    label = stringResource(R.string.home_unlocked_label),
-                    value = stringResource(R.string.home_unlocked_value, unlock.label, unlock.until),
-                )
-            }
+            Text(text = stringResource(R.string.home_not_used), style = type.small, color = colors.textBody)
         }
-
-        Spacer(Modifier.height(32.dp))
-        MonoLabel(stringResource(R.string.agent_title))
-        Spacer(Modifier.height(12.dp))
-        AgentCard(state.agent, state.analyzing, actions.onAnalyze)
-
-        Spacer(Modifier.height(32.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            LinkRow(
-                title = stringResource(R.string.home_stats),
-                value = stringResource(R.string.home_stats_desc),
-                onClick = actions.onOpenStats,
+        DashedDivider()
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Figure(today?.attempts?.toString() ?: "-", stringResource(R.string.home_attempts), colors.textPrimary, Modifier.weight(1f))
+            Figure(
+                today?.let { stringResource(R.string.count_approved, it.approved) } ?: "-",
+                stringResource(R.string.home_approved),
+                colors.approved,
+                Modifier.weight(1f),
             )
-            LinkRow(
-                title = stringResource(R.string.home_history),
-                value = stringResource(R.string.home_history_desc),
-                onClick = actions.onOpenHistory,
+            Figure(
+                today?.let { stringResource(R.string.count_rejected, it.rejected) } ?: "-",
+                stringResource(R.string.home_rejected),
+                colors.rejected,
+                Modifier.weight(1f),
             )
-            LinkRow(
-                title = stringResource(R.string.home_settings),
-                value = stringResource(R.string.home_settings_desc),
-                onClick = actions.onOpenSettings,
+        }
+        state.device?.let { device ->
+            Text(
+                text = pluralStringResource(R.plurals.home_evaluations_left, device.remainingToday, device.remainingToday),
+                style = type.caption,
+                color = colors.textSecondary,
+            )
+        }
+        state.unlocks.forEach { unlock ->
+            Text(
+                text = stringResource(R.string.home_unlocked_value, unlock.label, unlock.until),
+                style = type.mono,
+                color = colors.textPrimary,
             )
         }
     }
 }
 
+@Composable
+private fun Figure(value: String, label: String, color: Color, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(text = value, style = LaVidaTheme.type.figure, color = color)
+        Text(text = label, style = LaVidaTheme.type.caption, color = LaVidaTheme.colors.textSecondary)
+    }
+}
+
 /**
- * Lo que hizo el agente, sin adornos: herramientas con su estado, decisión y lo que confirmó
- * el teléfono. "Enviada" no es "aplicada"; se muestran por separado.
+ * Lo que hizo el agente en una frase. El detalle (herramientas, estados, lo que confirmó el
+ * teléfono) sigue a un toque: "enviada" no es "aplicada" y se muestran por separado.
  */
 @Composable
-private fun AgentCard(run: AgentRun?, analyzing: Boolean, onAnalyze: () -> Unit) {
+private fun AgentCard(state: HomeUiState, onAnalyze: () -> Unit) {
     val colors = LaVidaTheme.colors
-    Panel {
-        when (run) {
-            null -> Text(stringResource(R.string.agent_never), style = LaVidaTheme.type.small, color = colors.textSecondary)
-            AgentRun.Unavailable ->
-                Text(stringResource(R.string.agent_unavailable), style = LaVidaTheme.type.small, color = colors.textSecondary)
-            is AgentRun.Done -> {
-                val response = run.response
-                InfoRow(label = stringResource(R.string.agent_decision_label), value = decisionText(response.decision))
-                if (response.reason.isNotBlank()) {
-                    Text(text = response.reason, style = LaVidaTheme.type.small, color = colors.textPrimary)
-                }
-                response.steps.forEach { step -> InfoRow(label = step.tool, value = step.status) }
-                response.intervention?.let { order ->
-                    val applied = run.applied ?: order.status
-                    InfoRow(
-                        label = stringResource(R.string.agent_focus_label, order.durationMinutes),
-                        value = order.policyCode?.let { "${order.status} ($it)" } ?: "${order.status} / $applied",
-                    )
+    val type = LaVidaTheme.type
+    val run = state.agent
+    var details by rememberSaveable { mutableStateOf(false) }
+    Panel(spacing = 10.dp, shadow = 0.dp) {
+        MonoLabel(stringResource(R.string.agent_title))
+        Text(text = agentSummary(state), style = type.body, color = colors.textPrimary)
+        if (details && run is AgentRun.Done) AgentDetails(run)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (state.analyzing) {
+                Text(text = stringResource(R.string.agent_analyzing), style = type.mono, color = colors.textSecondary)
+            } else {
+                SmallButton(text = stringResource(R.string.agent_action), onClick = onAnalyze)
+            }
+            if (run is AgentRun.Done) {
+                TextLink(
+                    text = stringResource(if (details) R.string.agent_details_hide else R.string.agent_details),
+                    onClick = { details = !details },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun agentSummary(state: HomeUiState): String = when (val run = state.agent) {
+    null -> stringResource(R.string.agent_never)
+    AgentRun.Unavailable -> stringResource(R.string.agent_unavailable)
+    is AgentRun.Done -> {
+        val response = run.response
+        val order = response.intervention
+        when {
+            order == null -> response.reason.ifBlank { decisionText(response.decision) }
+            else -> {
+                val apps = order.targetApps.joinToString(", ") { state.schedule.labels[it] ?: it }
+                if (response.reason.isBlank()) {
+                    stringResource(R.string.agent_blocked, apps, order.durationMinutes)
+                } else {
+                    stringResource(R.string.agent_blocked_reason, apps, order.durationMinutes, response.reason)
                 }
             }
         }
-        if (analyzing) {
-            StatusLine(stringResource(R.string.agent_analyzing))
-        } else {
-            SecondaryButton(
-                text = stringResource(R.string.agent_action),
-                onClick = onAnalyze,
-                modifier = Modifier.fillMaxWidth(),
+    }
+}
+
+@Composable
+private fun AgentDetails(run: AgentRun.Done) {
+    val response = run.response
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        InfoRow(label = stringResource(R.string.agent_decision_label), value = decisionText(response.decision))
+        response.steps.forEach { step -> InfoRow(label = step.tool, value = step.status) }
+        response.intervention?.let { order ->
+            val applied = run.applied ?: order.status
+            InfoRow(
+                label = stringResource(R.string.agent_focus_label, order.durationMinutes),
+                value = order.policyCode?.let { "${order.status} ($it)" } ?: "${order.status} / $applied",
             )
         }
     }
@@ -218,33 +318,20 @@ private fun decisionText(decision: String): String = stringResource(
     },
 )
 
-@Composable
-private fun blockerText(health: ServiceHealth?): String = when (health) {
-    null -> stringResource(R.string.status_checking)
-    ServiceHealth.ACTIVE -> stringResource(R.string.status_blocker_on)
-    ServiceHealth.OFF -> stringResource(R.string.status_blocker_off)
-    ServiceHealth.STOPPED -> stringResource(R.string.status_blocker_stopped)
-}
-
-@Composable
-private fun backendText(status: BackendStatus?): String = when (status) {
-    null -> stringResource(R.string.status_checking)
-    BackendStatus.NotConfigured -> stringResource(R.string.status_not_configured)
-    BackendStatus.Unreachable -> stringResource(R.string.status_unreachable)
-    is BackendStatus.Online -> stringResource(R.string.status_online, status.version)
-    is BackendStatus.HttpError -> stringResource(R.string.status_http_error, status.code)
-}
-
 @Preview
 @Composable
 private fun HomePreview() {
     LaVidaTheme {
-        HomeContent(
-            state = HomeUiState(
-                backend = BackendStatus.Online("0.1.0"),
-                unlocks = listOf(ActiveUnlock("Instagram", "21:55")),
-            ),
-            actions = HomeActions({}, {}, {}, {}, {}),
-        )
+        MainScaffold(MainTab.HOME, {}) {
+            HomeContent(
+                state = HomeUiState(
+                    backend = BackendStatus.Online("0.1.0"),
+                    unlocks = listOf(ActiveUnlock("Instagram", "21:55")),
+                    schedule = ScheduleNow("miércoles 4 nov", blocked = false, until = "las 22:00", apps = "Instagram y TikTok"),
+                ),
+                onOpenSetup = {},
+                onAnalyze = {},
+            )
+        }
     }
 }

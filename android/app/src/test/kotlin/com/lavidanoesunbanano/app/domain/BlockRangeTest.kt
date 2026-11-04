@@ -2,13 +2,17 @@ package com.lavidanoesunbanano.app.domain
 
 import com.lavidanoesunbanano.app.domain.model.BlockRange
 import com.lavidanoesunbanano.app.domain.model.isBlockedAt
+import com.lavidanoesunbanano.app.domain.model.nextBlockChange
+import java.time.DayOfWeek
 import java.time.DayOfWeek.FRIDAY
 import java.time.DayOfWeek.MONDAY
 import java.time.DayOfWeek.SATURDAY
 import java.time.DayOfWeek.SUNDAY
 import java.time.LocalDateTime
 import java.time.LocalTime
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Test
 
@@ -64,5 +68,40 @@ class BlockRangeTest {
 
         assertTrue(ranges.isBlockedAt(at(12, 20, 30)))
         assertFalse(ranges.isBlockedAt(at(12, 12)))
+    }
+
+    @Test
+    fun `next change is the start when free and the end when blocked`() {
+        val nights = listOf(BlockRange(DayOfWeek.entries.toSet(), LocalTime.of(22, 0), LocalTime.of(6, 0)))
+
+        assertEquals(at(12, 22), nights.nextBlockChange(at(12, 15)))
+        assertEquals(at(13, 6), nights.nextBlockChange(at(12, 23)))
+        assertEquals(at(13, 6), nights.nextBlockChange(at(13, 1)))
+    }
+
+    @Test
+    fun `touching ranges count as one block`() {
+        val ranges = listOf(
+            BlockRange(setOf(MONDAY), LocalTime.of(8, 0), LocalTime.of(12, 0)),
+            BlockRange(setOf(MONDAY), LocalTime.of(12, 0), LocalTime.of(18, 0)),
+        )
+
+        assertEquals(at(12, 18), ranges.nextBlockChange(at(12, 9)))
+    }
+
+    @Test
+    fun `the next change can be days away`() {
+        val fridays = listOf(BlockRange(setOf(FRIDAY), LocalTime.of(8, 0), LocalTime.of(9, 0)))
+
+        assertEquals(at(16, 8), fridays.nextBlockChange(at(12, 10)))
+        assertEquals(at(23, 8), fridays.nextBlockChange(at(16, 9)))
+    }
+
+    @Test
+    fun `no change without ranges or when always blocked`() {
+        val always = listOf(BlockRange(DayOfWeek.entries.toSet(), LocalTime.of(0, 0), LocalTime.of(0, 0)))
+
+        assertNull(emptyList<BlockRange>().nextBlockChange(at(12, 10)))
+        assertNull(always.nextBlockChange(at(12, 10)))
     }
 }

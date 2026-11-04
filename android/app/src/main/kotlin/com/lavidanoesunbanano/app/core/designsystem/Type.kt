@@ -24,67 +24,66 @@ private fun geistMono(weight: Int) = Font(
     variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
 )
 
-val JakartaFamily = FontFamily(jakarta(500), jakarta(700), jakarta(800))
-val GeistMonoFamily = FontFamily(geistMono(400), geistMono(500))
+val JakartaFamily = FontFamily(jakarta(500), jakarta(600), jakarta(700), jakarta(800))
+val GeistMonoFamily = FontFamily(geistMono(400), geistMono(500), geistMono(600))
+
+private fun heading(size: Int, line: Int, spacing: Double = 0.0) = TextStyle(
+    fontFamily = JakartaFamily,
+    fontWeight = FontWeight.ExtraBold,
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    letterSpacing = spacing.sp,
+)
+
+private fun monoStyle(size: Double, line: Int, weight: FontWeight = FontWeight.Normal, spacing: Double = 0.0) = TextStyle(
+    fontFamily = GeistMonoFamily,
+    fontWeight = weight,
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    letterSpacing = spacing.sp,
+)
+
+private fun text(size: Double, line: Int) = TextStyle(
+    fontFamily = JakartaFamily,
+    fontWeight = FontWeight.Medium,
+    fontSize = size.sp,
+    lineHeight = line.sp,
+)
 
 /**
- * Cinco tamaños: 30, 22, 16, 14 y 12. Pesos del estilo Warm Toon: 800 en títulos, 700 en
- * etiquetas interactivas y 500 en el cuerpo (nada más delgado).
+ * Escala del diseño: títulos con peso 800, etiquetas interactivas con 700 y cuerpo con 500.
  * Mono para datos: contadores, horas, paquetes, etiquetas e historial.
  */
 @Immutable
 data class LaVidaType(
-    /** Mensaje de la pantalla de bloqueo: grande y grueso, como una viñeta. */
-    val display: TextStyle = TextStyle(
-        fontFamily = JakartaFamily,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 30.sp,
-        lineHeight = 38.sp,
-        letterSpacing = (-0.3).sp,
-    ),
+    /** Primera pantalla. */
+    val hero: TextStyle = heading(34, 36, -0.68),
+    /** Título de Inicio, Historial y Ajustes. */
+    val screenTitle: TextStyle = heading(32, 34, -0.64),
     /** Pregunta del onboarding y títulos de pantalla. */
-    val title: TextStyle = TextStyle(
-        fontFamily = JakartaFamily,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = (-0.2).sp,
-    ),
-    val body: TextStyle = TextStyle(
-        fontFamily = JakartaFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-    ),
+    val title: TextStyle = heading(30, 33, -0.6),
+    /** Mensaje de la pantalla de bloqueo: grande y grueso, como una viñeta. */
+    val display: TextStyle = heading(28, 34, -0.56),
+    /** Título de la tarjeta principal y del veredicto. */
+    val headline: TextStyle = heading(26, 31, -0.52),
+    /** Secciones de Ajustes. */
+    val section: TextStyle = heading(20, 26),
+    /** Título dentro de una tarjeta. */
+    val subhead: TextStyle = heading(16, 22),
+    val body: TextStyle = text(16.0, 24),
     /** Ayudas y texto secundario. */
-    val small: TextStyle = TextStyle(
-        fontFamily = JakartaFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-    ),
-    /** Cifras de las estadísticas: en mono, como pide el spec, y del tamaño de un título. */
-    val figure: TextStyle = TextStyle(
-        fontFamily = GeistMonoFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-    ),
+    val small: TextStyle = text(14.0, 20),
+    val caption: TextStyle = text(13.0, 18),
+    /** Cifra principal. */
+    val bigFigure: TextStyle = monoStyle(40.0, 44, FontWeight.SemiBold),
+    /** Cifras de las estadísticas. */
+    val figure: TextStyle = monoStyle(20.0, 26, FontWeight.SemiBold),
     /** Valores técnicos legibles: horas, paquetes, códigos. */
-    val monoBody: TextStyle = TextStyle(
-        fontFamily = GeistMonoFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-    ),
+    val monoBody: TextStyle = monoStyle(14.0, 20),
     /** Etiquetas, contadores y progreso. */
-    val mono: TextStyle = TextStyle(
-        fontFamily = GeistMonoFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.2.sp,
-    ),
+    val mono: TextStyle = monoStyle(12.5, 16),
+    /** Etiqueta en mayúsculas sobre una sección. */
+    val monoLabel: TextStyle = monoStyle(12.0, 16, spacing = 0.96),
 )
 
 internal fun LaVidaType.toMaterial() = Typography(

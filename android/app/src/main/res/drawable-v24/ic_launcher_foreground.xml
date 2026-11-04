@@ -1,34 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Banano de una sola línea fina dentro de un círculo, sobre grafito.
-  La media luna son dos arcos de círculo (exterior r=17 en 54,49; interior r=15.5 en 56,42.5)
-  y el tallo sale de la punta derecha. Todo cabe en la zona segura de 66 dp.
--->
+<!-- Banano amarillo con contorno de tinta: el mismo trazo del diseño (lienzo de 120), sin cara. Cabe en la zona segura de 66 dp. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
         android:width="108dp"
         android:height="108dp"
         android:viewportWidth="108"
         android:viewportHeight="108">
-    <path
-            android:pathData="M26,54 A28,28 0 1,1 82,54 A28,28 0 1,1 26,54 Z"
-            android:fillColor="#00000000"
-            android:strokeColor="#E3E6E9"
-            android:strokeWidth="1.8"/>
     <group
-            android:pivotX="54"
-            android:pivotY="54"
-            android:rotation="-40">
+            android:scaleX="0.66"
+            android:scaleY="0.66"
+            android:translateX="11.1"
+            android:translateY="13.1">
         <path
-                android:pathData="M41.24,37.77 A17,17 0 1,0 70.87,46.88 A15.5,15.5 0 1,1 41.24,37.77 Z"
+                android:pathData="M30,20 L36,33"
                 android:fillColor="#00000000"
-                android:strokeColor="#E3E6E9"
-                android:strokeLineJoin="round"
-                android:strokeWidth="2.2"/>
-        <path
-                android:pathData="M70.87,46.88 L74.27,44.28"
-                android:fillColor="#00000000"
-                android:strokeColor="#E3E6E9"
+                android:strokeColor="#1F1A14"
                 android:strokeLineCap="round"
-                android:strokeWidth="2.2"/>
+                android:strokeWidth="5.5"/>
+        <path
+                android:pathData="M34,32 C18,62 30,98 66,104 C86,107 102,98 108,88 C88,92 64,86 52,70 C42,56 40,44 42,34 Z"
+                android:fillColor="#FACC15"
+                android:strokeColor="#1F1A14"
+                android:strokeLineJoin="round"
+                android:strokeWidth="4.5"/>
     </group>
 </vector>

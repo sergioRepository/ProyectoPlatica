@@ -16,6 +16,8 @@ data class ExcuseTally(val approved: Int = 0, val rejected: Int = 0)
 data class Stats(
     val days: Int,
     val attempts: Int,
+    /** Intentos del periodo anterior, del mismo largo; `null` si no hubo ninguno guardado. */
+    val previousAttempts: Int?,
     /** Estimado: ver [StatsCalculator.MINUTES_PER_BLOCKED_ATTEMPT]. */
     val recoveredMinutes: Int,
     val grantedMinutes: Int,
@@ -54,6 +56,9 @@ object StatsCalculator {
         val periodAttempts = attempts.filter { inPeriod(it.startedAt) }
         val periodExcuses = excuses.filter { inPeriod(it.decidedAt) }
 
+        val previousFrom = from.minusDays(days.toLong())
+        val previous = attempts.count { dateOf(it.startedAt).let { date -> date >= previousFrom && date < from } }
+
         val byDate = periodAttempts.groupingBy { dateOf(it.startedAt) }.eachCount()
         val perDay = (0 until days).map { offset ->
             val date = from.plusDays(offset.toLong())
@@ -72,6 +77,7 @@ object StatsCalculator {
         return Stats(
             days = days,
             attempts = periodAttempts.size,
+            previousAttempts = previous.takeIf { it > 0 },
             recoveredMinutes = blocked * MINUTES_PER_BLOCKED_ATTEMPT,
             grantedMinutes = periodExcuses.filter { it.verdict.valid }.sumOf { it.verdict.grantedMinutes },
             approved = periodExcuses.count { it.verdict.valid },

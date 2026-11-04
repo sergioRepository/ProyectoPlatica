@@ -47,5 +47,8 @@ class HistoryRepository @Inject constructor(
     companion object {
         /** El historial y las estadísticas llegan hasta 30 días atrás. */
         const val MAX_DAYS = 30
+
+        /** El Resumen también lee el periodo anterior para comparar. */
+        const val COMPARE_DAYS = MAX_DAYS * 2
     }
 }

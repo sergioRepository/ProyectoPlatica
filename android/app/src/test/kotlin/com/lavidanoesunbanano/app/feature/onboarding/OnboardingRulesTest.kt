@@ -65,4 +65,44 @@ class OnboardingRulesTest {
 
         assertEquals(draft, restored)
     }
+
+    @Test
+    fun `the flow asks the block first, then the messages, and ends in the summary`() {
+        assertEquals(
+            listOf(
+                OnboardingStep.APPS,
+                OnboardingStep.SCHEDULE,
+                OnboardingStep.NAME,
+                OnboardingStep.MAIN_GOAL,
+                OnboardingStep.SARCASM,
+                OnboardingStep.PROFANITY,
+                OnboardingStep.COUNTRY,
+                OnboardingStep.FORBIDDEN,
+                OnboardingStep.SUMMARY,
+            ),
+            OnboardingStep.FLOW,
+        )
+    }
+
+    @Test
+    fun `answers left out of the flow can still be edited alone`() {
+        listOf(OnboardingStep.SECONDARY_GOALS, OnboardingStep.GOAL_REASON, OnboardingStep.EXCUSES).forEach { step ->
+            assertFalse(step in OnboardingStep.FLOW, step.name)
+            assertEquals(step, OnboardingUiState(editingStep = step).step)
+        }
+    }
+
+    @Test
+    fun `progress counts inside the stage`() {
+        val schedule = OnboardingUiState(stepIndex = OnboardingStep.FLOW.indexOf(OnboardingStep.SCHEDULE))
+
+        assertEquals(2, schedule.stagePosition)
+        assertEquals(2, schedule.stageSteps.size)
+    }
+
+    @Test
+    fun `the first step only goes back when it came from the summary`() {
+        assertFalse(OnboardingUiState().canGoBack)
+        assertTrue(OnboardingUiState(reviewUntil = OnboardingStep.APPS).canGoBack)
+    }
 }

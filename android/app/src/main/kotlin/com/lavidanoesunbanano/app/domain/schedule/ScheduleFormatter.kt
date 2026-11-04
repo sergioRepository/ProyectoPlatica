@@ -23,6 +23,7 @@ object ScheduleFormatter {
         DayOfWeek.SATURDAY to "sáb",
         DayOfWeek.SUNDAY to "dom",
     )
+    private val WEEKDAY_NAMES = listOf("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
     private val MONTHS = listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
     private val WEEKDAYS = DayOfWeek.entries.take(5).toSet()
     private val WEEKEND = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
@@ -54,6 +55,20 @@ object ScheduleFormatter {
 
     /** "15 oct 08:00". */
     fun dateTime(at: LocalDateTime): String = "${at.dayOfMonth} ${MONTHS[at.monthValue - 1]} ${time(at.toLocalTime())}"
+
+    /** "miércoles 4 nov". */
+    fun longDate(date: LocalDate): String = "${WEEKDAY_NAMES[date.dayOfWeek.value - 1]} ${shortDate(date)}"
+
+    /** "jue 5 nov · 23:40". */
+    fun dayTime(at: LocalDateTime): String = "${date(at.toLocalDate())} · ${time(at.toLocalTime())}"
+
+    /** "las 06:00" si llega en menos de un día; si no, "el jue 08:00". */
+    fun until(at: LocalDateTime, now: LocalDateTime): String =
+        if (at < now.plusDays(1)) {
+            "las ${time(at.toLocalTime())}"
+        } else {
+            "el ${ABBREVIATIONS.getValue(at.dayOfWeek)} ${time(at.toLocalTime())}"
+        }
 
     fun range(range: BlockRange): String {
         val hours = if (range.isAllDay) "todo el día" else "${time(range.start)}-${time(range.end)}"

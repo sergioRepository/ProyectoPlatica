@@ -28,4 +28,12 @@ class AppOrderingTest {
         assertEquals(listOf(calculator, bank), AppOrdering.filter(apps, "example"))
         assertEquals(apps, AppOrdering.filter(apps, "  "))
     }
+
+    @Test
+    fun `names read like a sentence`() {
+        assertEquals("Instagram", AppOrdering.names(listOf("Instagram")))
+        assertEquals("Instagram y TikTok", AppOrdering.names(listOf("Instagram", "TikTok")))
+        assertEquals("Instagram, TikTok y X", AppOrdering.names(listOf("Instagram", "TikTok", "X")))
+        assertEquals("Instagram, TikTok y 3 más", AppOrdering.names(listOf("Instagram", "TikTok", "X", "YouTube", "Reddit")))
+    }
 }

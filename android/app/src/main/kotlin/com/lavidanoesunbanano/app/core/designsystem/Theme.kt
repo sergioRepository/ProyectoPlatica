@@ -28,31 +28,55 @@ data class LaVidaColors(
     val onAccent: Color,
     val approved: Color,
     val rejected: Color,
+    /** Texto de apoyo un punto más oscuro que `textSecondary`. */
+    val textBody: Color,
+    /** Etiquetas en mono. */
+    val textMuted: Color,
+    /** Fondo de avisos. */
+    val accentSoft: Color,
+    val approvedSoft: Color,
+    val rejectedSoft: Color,
+    /** Relleno y borde de lo que no se puede tocar. */
+    val disabled: Color,
+    val disabledBorder: Color,
+    /** Fila bajo llave. */
+    val dimmed: Color,
+    /** Línea punteada dentro de una tarjeta. */
+    val divider: Color,
 )
 
 val LaVidaPalette = LaVidaColors(
     background = Color(0xFFFFFDF7),
     surface = Color(0xFFFFFFFF),
-    textPrimary = Color(0xFF1E1E24),
-    textSecondary = Color(0xFF4D4632),
-    border = Color(0xFF1E1E24),
+    textPrimary = Color(0xFF1F1A14),
+    textSecondary = Color(0xFF4A4136),
+    border = Color(0xFF1F1A14),
     accent = Color(0xFFFACC15),
-    onAccent = Color(0xFF1E1E24),
+    onAccent = Color(0xFF1F1A14),
     approved = Color(0xFF1F7A3A),
     rejected = Color(0xFFBA1A1A),
+    textBody = Color(0xFF3D352B),
+    textMuted = Color(0xFF6B6255),
+    accentSoft = Color(0xFFFEF6D3),
+    approvedSoft = Color(0xFFE7F3EA),
+    rejectedSoft = Color(0xFFFDEDEC),
+    disabled = Color(0xFFF3EFE6),
+    disabledBorder = Color(0xFFA89F91),
+    dimmed = Color(0xFFF7F4EC),
+    divider = Color(0xFFD8D1C3),
 )
 
 private val LocalLaVidaColors = staticCompositionLocalOf { LaVidaPalette }
 private val LocalLaVidaType = staticCompositionLocalOf { LaVidaType() }
 private val DefaultType = LaVidaType()
 
-// Controles en píldora; tarjetas de 24 dp. `extraSmall` sirve para casillas y marcas.
+// Controles en píldora; tarjetas de 16 dp. `extraSmall` sirve para casillas y marcas.
 private val LaVidaShapes = Shapes(
     extraSmall = RoundedCornerShape(6.dp),
     small = RoundedCornerShape(percent = 50),
-    medium = RoundedCornerShape(24.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(32.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(24.dp),
 )
 
 @Composable

@@ -10,13 +10,18 @@ import com.lavidanoesunbanano.app.data.repository.BlockSessionRepository
 import com.lavidanoesunbanano.app.data.repository.DeviceRepository
 import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
+import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.data.repository.ProtectionRepository
+import com.lavidanoesunbanano.app.data.repository.QuotaToday
 import com.lavidanoesunbanano.app.data.system.CrisisLinesSource
+import com.lavidanoesunbanano.app.domain.blocking.SabotageGuard
 import com.lavidanoesunbanano.app.domain.excuse.CrisisLine
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
 import com.lavidanoesunbanano.app.domain.model.Verdict
 import com.lavidanoesunbanano.app.domain.model.VerdictReason
+import com.lavidanoesunbanano.app.domain.model.isBlockedAt
+import com.lavidanoesunbanano.app.domain.model.nextBlockChange
 import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import com.lavidanoesunbanano.app.service.notify.Notifier
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -83,8 +88,14 @@ sealed interface BlockStep {
         val judging: Boolean = false,
     ) : BlockStep
 
-    /** Salida con fricción. `scheduledAt`: cuándo se apaga, si ya está programado. */
-    data class Sabotage(val reason: String = "", val scheduledAt: String? = null) : BlockStep
+    /**
+     * Salida con fricción. `scheduledAt`: cuándo se apaga, si ya está programado.
+     * `scheduleAt`: cuándo se apagaría si se programa ahora.
+     */
+    data class Sabotage(val reason: String = "", val scheduledAt: String? = null, val scheduleAt: String = "") : BlockStep
+
+    /** Líneas de ayuda pedidas a mano: no piden razón ni desbloquean. */
+    data class Help(val lines: List<CrisisLine>) : BlockStep
 
     data class Decided(
         val type: ExcuseType,
@@ -103,6 +114,9 @@ data class BlockUiState(
     val attemptNumber: Int,
     /** `null`: no hay plantilla y se muestra la frase local. */
     val message: String?,
+    val quota: QuotaToday,
+    /** "las 06:00": cuándo termina el horario. `null` si no es por horario (enfoque del agente). */
+    val blockedUntil: String? = null,
     val step: BlockStep = BlockStep.Message,
     /** Resultado del último reporte; `null` si no se ha reportado nada en este paso. */
     val reported: Boolean? = null,
@@ -117,6 +131,7 @@ data class Unlock(val packageName: String, val until: Instant)
 class BlockViewModel @Inject constructor(
     private val sessions: BlockSessionRepository,
     private val excuses: ExcuseRepository,
+    private val profile: ProfileRepository,
     private val notifier: Notifier,
     private val events: EventRepository,
     private val deviceRepository: DeviceRepository,
@@ -153,8 +168,12 @@ class BlockViewModel @Inject constructor(
         opening = viewModelScope.launch {
             val opened = sessions.open(request.app, request.startedAt)
             session = opened
-            val step = if (request.sabotage) BlockStep.Sabotage(scheduledAt = scheduledOff()) else BlockStep.Message
-            _state.value = opened.toUiState().copy(step = step)
+            val step = if (request.sabotage) {
+                BlockStep.Sabotage(scheduledAt = scheduledOff(), scheduleAt = scheduleOffAt())
+            } else {
+                BlockStep.Message
+            }
+            _state.value = opened.toUiState(excuses.quotaToday(), blockedUntil()).copy(step = step)
             when {
                 !request.newAttempt -> Unit
                 request.sabotage -> protection.recordAttempt(opened.app.packageName)
@@ -165,6 +184,13 @@ class BlockViewModel @Inject constructor(
 
     fun askExcuse(type: ExcuseType) = updateStep { step ->
         if (step is BlockStep.Message) BlockStep.Excuse(type, drafts[type].orEmpty()) else step
+    }
+
+    fun askHelp() {
+        viewModelScope.launch {
+            val lines = crisisLines.lines()
+            updateStep { step -> if (step is BlockStep.Message) BlockStep.Help(lines) else step }
+        }
     }
 
     fun updateReason(reason: String) = updateStep { step ->
@@ -192,7 +218,17 @@ class BlockViewModel @Inject constructor(
     }
 
     private suspend fun scheduledOff(): String? = settings.antiSabotageOffAt.first()?.let {
-        ScheduleFormatter.dateTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(it), clock.zone))
+        ScheduleFormatter.dayTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(it), clock.zone))
+    }
+
+    private fun scheduleOffAt(): String =
+        ScheduleFormatter.dayTime(LocalDateTime.now(clock).plus(SabotageGuard.DISABLE_DELAY))
+
+    private suspend fun blockedUntil(): String? {
+        val now = LocalDateTime.now(clock)
+        val ranges = profile.getRanges()
+        if (!ranges.isBlockedAt(now)) return null
+        return ranges.nextBlockChange(now)?.let { ScheduleFormatter.until(it, now) }
     }
 
     fun back() {
@@ -202,6 +238,7 @@ class BlockViewModel @Inject constructor(
                 updateStep { BlockStep.Message }
             }
             is BlockStep.Decided -> if (!step.verdict.valid) dismissRejection()
+            is BlockStep.Help -> updateStep { BlockStep.Message }
             is BlockStep.Sabotage, BlockStep.Message, null -> Unit
         }
     }
@@ -267,12 +304,14 @@ class BlockViewModel @Inject constructor(
         _state.update { it?.copy(step = transform(it.step), reported = null) }
     }
 
-    private fun BlockSession.toUiState() = BlockUiState(
+    private fun BlockSession.toUiState(quota: QuotaToday, blockedUntil: String?) = BlockUiState(
         attemptId = attemptId,
         packageName = app.packageName,
         appLabel = app.label,
         time = ScheduleFormatter.time(time),
         attemptNumber = attemptNumber,
         message = message,
+        quota = quota,
+        blockedUntil = blockedUntil,
     )
 }

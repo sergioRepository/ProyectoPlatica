@@ -10,8 +10,20 @@ data class HistoryItem(val attempt: AttemptRecord, val excuses: List<ExcuseRecor
 
 data class HistoryDay(val date: LocalDate, val items: List<HistoryItem>)
 
+enum class HistoryFilter { ALL, APPROVED, REJECTED }
+
 /** Arma el historial: días del más nuevo al más viejo y, dentro de cada uno, igual. */
 object HistoryBuilder {
+
+    /** Deja los intentos con alguna excusa de ese resultado, y quita los días que quedan vacíos. */
+    fun filter(days: List<HistoryDay>, filter: HistoryFilter): List<HistoryDay> {
+        if (filter == HistoryFilter.ALL) return days
+        val valid = filter == HistoryFilter.APPROVED
+        return days.mapNotNull { day ->
+            val items = day.items.filter { item -> item.excuses.any { it.verdict.valid == valid } }
+            if (items.isEmpty()) null else day.copy(items = items)
+        }
+    }
 
     fun build(attempts: List<AttemptRecord>, excuses: List<ExcuseRecord>, zone: ZoneId): List<HistoryDay> {
         val excusesByAttempt = excuses.groupBy { it.attemptId }

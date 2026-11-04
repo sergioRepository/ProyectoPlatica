@@ -18,7 +18,9 @@ import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.JudgeConfig
 import com.lavidanoesunbanano.app.di.NetworkModule
 import com.lavidanoesunbanano.app.domain.model.AppInfo
+import com.lavidanoesunbanano.app.domain.model.Consents
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
+import com.lavidanoesunbanano.app.domain.model.UnlockLimits
 import com.lavidanoesunbanano.app.domain.model.Profile
 import com.lavidanoesunbanano.app.domain.model.VerdictReason
 import java.time.Clock
@@ -314,5 +316,19 @@ class ExcuseRepositoryTest {
         val result = excuses.judge(session(), ExcuseType.EXTRA_TIME, "Quiero ver un rato el celular")
 
         assertNull(result.verdict.message)
+    }
+
+    @Test
+    fun `quota today subtracts what was granted and never goes below zero`() = runBlocking {
+        settings.setConsents(Consents(excuses = false, phoneUsage = true, crossBorder = true, analytics = false))
+        val attempt = session()
+        repeat(3) { excuses.judge(attempt, ExcuseType.EMERGENCY, "Mi mamá está en cama") }
+
+        val quota = excuses.quotaToday()
+
+        assertEquals(0, quota.emergencyLeft)
+        assertEquals(UnlockLimits().emergencyDaily, quota.emergencyDaily)
+        assertEquals(UnlockLimits().extraTimeDaily, quota.extraTimeLeft)
+        assertFalse(quota.judged)
     }
 }

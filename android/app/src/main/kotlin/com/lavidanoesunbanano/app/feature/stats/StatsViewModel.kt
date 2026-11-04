@@ -29,7 +29,7 @@ class StatsViewModel @Inject constructor(
     private val selected = MutableStateFlow<Int?>(null)
 
     /** `null` mientras carga. */
-    val state: StateFlow<StatsUiState?> = combine(history.observe(), period, selected) { snapshot, days, selected ->
+    val state: StateFlow<StatsUiState?> = combine(history.observe(HistoryRepository.COMPARE_DAYS), period, selected) { snapshot, days, selected ->
         StatsUiState(
             days = days,
             stats = StatsCalculator.compute(snapshot.attempts, snapshot.excuses, snapshot.today, days, snapshot.zone),
