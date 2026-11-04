@@ -7,6 +7,7 @@ import com.lavidanoesunbanano.app.domain.blocking.TrackerAction
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.BlockRange
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -66,5 +67,22 @@ class SabotageGuardTest {
         // Las demás páginas de Ajustes no se tapan.
         assertEquals(TrackerAction.Idle, tracker.onWindow(settings.packageName, inside, rules))
         assertTrue(tracker.onWindow(settings.packageName, outside, rules.guarding(settings)) is TrackerAction.RecheckAt)
+    }
+
+    @Test
+    fun `a scheduled disable turns the protection off when its time comes`() {
+        val now = Instant.parse("2026-11-04T20:00:00Z")
+
+        assertTrue(SabotageGuard.protectionOn(enabled = true, offAt = null, now = now))
+        assertTrue(SabotageGuard.protectionOn(true, now.plusSeconds(1), now))
+        assertFalse(SabotageGuard.protectionOn(true, now, now))
+        assertFalse(SabotageGuard.protectionOn(false, null, now))
+    }
+
+    @Test
+    fun `disabling now only asks for a real sentence`() {
+        assertFalse(SabotageGuard.canDisableNow("porque si"))
+        assertFalse(SabotageGuard.canDisableNow("                    "))
+        assertTrue(SabotageGuard.canDisableNow("Necesito apagarla esta semana"))
     }
 }

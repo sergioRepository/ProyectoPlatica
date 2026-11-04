@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.core.designsystem.FadeIn
 import com.lavidanoesunbanano.app.core.designsystem.FadeOut
+import com.lavidanoesunbanano.app.core.designsystem.GhostButton
 import com.lavidanoesunbanano.app.core.designsystem.InfoRow
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
 import com.lavidanoesunbanano.app.core.designsystem.LinkRow
@@ -46,6 +47,7 @@ import com.lavidanoesunbanano.app.core.designsystem.SelectableRow
 import com.lavidanoesunbanano.app.core.designsystem.StepperRow
 import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
+import com.lavidanoesunbanano.app.feature.block.SabotageExitForm
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingRules
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingStep
 
@@ -71,6 +73,9 @@ fun SettingsScreen(
             onExcusesConsent = viewModel::setExcusesConsent,
             onAnalyticsConsent = viewModel::setAnalyticsConsent,
             onErase = { viewModel.eraseEverything(onErased) },
+            onDisableProtection = viewModel::disableProtectionNow,
+            onScheduleProtectionOff = viewModel::scheduleProtectionOff,
+            onCancelProtectionOff = viewModel::cancelProtectionOff,
             onOpenSetup = onOpenSetup,
             onNextPreview = viewModel::nextPreview,
             onRegenerate = onRegenerate,
@@ -88,6 +93,9 @@ private class SettingsActions(
     val onExcusesConsent: (Boolean) -> Unit,
     val onAnalyticsConsent: (Boolean) -> Unit,
     val onErase: () -> Unit,
+    val onDisableProtection: (String) -> Unit,
+    val onScheduleProtectionOff: () -> Unit,
+    val onCancelProtectionOff: () -> Unit,
     val onOpenSetup: () -> Unit,
     val onNextPreview: () -> Unit,
     val onRegenerate: () -> Unit,
@@ -170,14 +178,7 @@ private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
                 },
                 onClick = actions.onOpenSetup,
             )
-            SelectableRow(
-                title = stringResource(R.string.settings_anti_sabotage),
-                subtitle = stringResource(R.string.settings_anti_sabotage_desc),
-                selected = state.protection.on,
-                onClick = { actions.onAntiSabotageChange(!state.protection.on) },
-                multiple = true,
-                enabled = !locked,
-            )
+            ProtectionRow(state.protection, actions)
         }
 
         Section(R.string.settings_section_tone) {
@@ -276,6 +277,57 @@ private fun SettingsContent(state: SettingsUiState, actions: SettingsActions) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+/** Encendida y en horario de bloqueo, apagarla pasa por la salida con fricción. */
+@Composable
+private fun ProtectionRow(protection: Protection, actions: SettingsActions) {
+    var exiting by rememberSaveable { mutableStateOf(false) }
+    var reason by rememberSaveable { mutableStateOf("") }
+    SelectableRow(
+        title = stringResource(R.string.settings_anti_sabotage),
+        subtitle = stringResource(R.string.settings_anti_sabotage_desc),
+        selected = protection.on,
+        onClick = { if (protection.locked) exiting = true else actions.onAntiSabotageChange(!protection.on) },
+        multiple = true,
+    )
+    protection.offAt?.let { offAt ->
+        Text(
+            text = stringResource(R.string.sabotage_exit_scheduled, offAt),
+            style = LaVidaTheme.type.small,
+            color = LaVidaTheme.colors.textSecondary,
+        )
+        GhostButton(
+            text = stringResource(R.string.sabotage_exit_cancel),
+            onClick = actions.onCancelProtectionOff,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    if (exiting) {
+        AlertDialog(
+            onDismissRequest = { exiting = false },
+            title = { Text(stringResource(R.string.sabotage_exit_title)) },
+            text = {
+                SabotageExitForm(
+                    reason = reason,
+                    scheduledAt = protection.offAt,
+                    onReasonChange = { reason = it },
+                    onDisableNow = {
+                        actions.onDisableProtection(reason)
+                        exiting = false
+                        reason = ""
+                    },
+                    onSchedule = {
+                        actions.onScheduleProtectionOff()
+                        exiting = false
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { exiting = false }) { Text(stringResource(R.string.action_cancel)) }
+            },
+        )
     }
 }
 

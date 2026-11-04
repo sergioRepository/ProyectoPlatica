@@ -25,6 +25,9 @@ interface SettingsStore {
     /** Anti-autosabotaje: tapar en horario las ventanas desde donde se apaga el bloqueo. */
     val antiSabotage: Flow<Boolean>
 
+    /** Desactivación programada del anti-autosabotaje; `null` si no hay. */
+    val antiSabotageOffAt: Flow<Long?>
+
     /** El servicio se conectó alguna vez: desde ahí, si se apaga, se avisa. */
     val blockerSetUp: Flow<Boolean>
 
@@ -37,7 +40,9 @@ interface SettingsStore {
     suspend fun setExtraTimeDaily(value: Int)
     suspend fun setEmergencyDaily(value: Int)
     suspend fun markProfileChanged(at: Long)
+    /** También cancela cualquier desactivación programada. */
     suspend fun setAntiSabotage(enabled: Boolean)
+    suspend fun setAntiSabotageOffAt(at: Long?)
     suspend fun markBlockerSetUp()
     suspend fun setConsents(consents: Consents)
     suspend fun markConsentsSynced()
@@ -62,6 +67,8 @@ class DataStoreSettingsStore @Inject constructor(
     override val profileChangedAt: Flow<Long?> = dataStore.data.map { it[PROFILE_CHANGED_AT] }.distinctUntilChanged()
 
     override val antiSabotage: Flow<Boolean> = dataStore.data.map { it[ANTI_SABOTAGE] ?: false }.distinctUntilChanged()
+
+    override val antiSabotageOffAt: Flow<Long?> = dataStore.data.map { it[ANTI_SABOTAGE_OFF_AT] }.distinctUntilChanged()
 
     override val blockerSetUp: Flow<Boolean> = dataStore.data.map { it[BLOCKER_SET_UP] ?: false }.distinctUntilChanged()
 
@@ -92,7 +99,16 @@ class DataStoreSettingsStore @Inject constructor(
     }
 
     override suspend fun setAntiSabotage(enabled: Boolean) {
-        dataStore.edit { it[ANTI_SABOTAGE] = enabled }
+        dataStore.edit {
+            it[ANTI_SABOTAGE] = enabled
+            it.remove(ANTI_SABOTAGE_OFF_AT)
+        }
+    }
+
+    override suspend fun setAntiSabotageOffAt(at: Long?) {
+        dataStore.edit { prefs ->
+            if (at == null) prefs.remove(ANTI_SABOTAGE_OFF_AT) else prefs[ANTI_SABOTAGE_OFF_AT] = at
+        }
     }
 
     override suspend fun markBlockerSetUp() {
@@ -123,6 +139,7 @@ class DataStoreSettingsStore @Inject constructor(
         val EMERGENCY_DAILY = intPreferencesKey("emergency_daily")
         val PROFILE_CHANGED_AT = longPreferencesKey("profile_changed_at")
         val ANTI_SABOTAGE = booleanPreferencesKey("anti_sabotage")
+        val ANTI_SABOTAGE_OFF_AT = longPreferencesKey("anti_sabotage_off_at")
         val BLOCKER_SET_UP = booleanPreferencesKey("blocker_set_up")
         val CONSENT_EXCUSES = booleanPreferencesKey("consent_excuses")
         val CONSENT_PHONE_USAGE = booleanPreferencesKey("consent_phone_usage")

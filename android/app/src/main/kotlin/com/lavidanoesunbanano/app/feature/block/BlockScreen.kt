@@ -64,6 +64,8 @@ class BlockActions(
     val onBack: () -> Unit,
     val onOpenApp: () -> Unit,
     val onReport: (String, String, ReportSource) -> Unit,
+    val onDisableProtection: () -> Unit,
+    val onScheduleProtectionOff: () -> Unit,
 )
 
 /**
@@ -97,6 +99,7 @@ fun BlockScreen(state: BlockUiState?, actions: BlockActions, onShown: () -> Unit
                 when (val step = current.step) {
                     BlockStep.Message -> MessageStep(current, actions)
                     is BlockStep.Excuse -> ExcuseStep(step, actions)
+                    is BlockStep.Sabotage -> SabotageStep(step, actions)
                     is BlockStep.Decided -> DecidedStep(current, step, actions)
                 }
             }
@@ -113,6 +116,7 @@ fun BlockScreen(state: BlockUiState?, actions: BlockActions, onShown: () -> Unit
 private fun BlockUiState.contentKey(): String = when (val step = step) {
     BlockStep.Message -> "$attemptId:mensaje:$message"
     is BlockStep.Excuse -> "$attemptId:excusa:${step.type}"
+    is BlockStep.Sabotage -> "$attemptId:proteccion:${step.scheduledAt}"
     is BlockStep.Decided -> "$attemptId:veredicto"
 }
 
@@ -140,6 +144,37 @@ private fun ColumnScope.MessageStep(state: BlockUiState, actions: BlockActions) 
         )
         state.message?.let { ReportControl(it, ReportSource.MESSAGE, state.reported, actions) }
     }
+}
+
+/** Salir siempre es una opción: la protección da fricción, no encierra. */
+@Composable
+private fun ColumnScope.SabotageStep(step: BlockStep.Sabotage, actions: BlockActions) {
+    Spacer(Modifier.height(24.dp))
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Text(
+            text = stringResource(R.string.sabotage_exit_title),
+            style = LaVidaTheme.type.title,
+            color = LaVidaTheme.colors.textPrimary,
+        )
+        Spacer(Modifier.height(16.dp))
+        SabotageExitForm(
+            reason = step.reason,
+            scheduledAt = step.scheduledAt,
+            onReasonChange = actions.onReasonChange,
+            onDisableNow = actions.onDisableProtection,
+            onSchedule = actions.onScheduleProtectionOff,
+        )
+    }
+    Spacer(Modifier.height(12.dp))
+    PrimaryButton(
+        text = stringResource(R.string.block_exit),
+        onClick = actions.onExit,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -309,7 +344,7 @@ private fun ColumnScope.CenteredText(text: String) {
     }
 }
 
-private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, { _, _, _ -> })
+private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, { _, _, _ -> }, {}, {})
 
 private val PreviewState = BlockUiState(
     attemptId = 7,

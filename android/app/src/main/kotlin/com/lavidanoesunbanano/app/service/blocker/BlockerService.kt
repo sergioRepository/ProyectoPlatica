@@ -68,8 +68,9 @@ class BlockerService : AccessibilityService() {
     private var unlocks: Map<String, Instant> = emptyMap()
     private var recheck: Job? = null
 
-    /** Anti-autosabotaje activado en Ajustes. */
+    /** Anti-autosabotaje activado en Ajustes, y cuándo se apaga si está programado. */
     private var antiSabotage = false
+    private var antiSabotageOffAt: Instant? = null
 
     /**
      * Al encender la pantalla se revisa la app al frente: la espera programada no avanza
@@ -92,6 +93,9 @@ class BlockerService : AccessibilityService() {
         notifier.cancelBlockerOff()
         scope.launch { settings.markBlockerSetUp() }
         scope.launch { settings.antiSabotage.collect { antiSabotage = it } }
+        scope.launch {
+            settings.antiSabotageOffAt.collect { at -> antiSabotageOffAt = at?.let(Instant::ofEpochMilli) }
+        }
         ContextCompat.registerReceiver(
             this,
             screenReceiver,
@@ -130,7 +134,7 @@ class BlockerService : AccessibilityService() {
         val effectiveRules = if (guarded != null) rules.guarding(guarded) else rules
         val action = tracker.onWindow(packageName, clock.instant(), effectiveRules, unlocks)
         if (BuildConfig.DEBUG) Log.d(TAG, "ventana $packageName ${event.className} $texts -> $action")
-        perform(action, triggerUptime = event.eventTime)
+        perform(action, triggerUptime = event.eventTime, sabotage = guarded != null)
     }
 
     override fun onInterrupt() = Unit
@@ -169,7 +173,7 @@ class BlockerService : AccessibilityService() {
      * de desinstalar se tratan como una app bloqueada más; el horario decide si se tapan.
      */
     private fun guardedWindow(packageName: String, texts: List<String>): AppInfo? {
-        if (!antiSabotage) return null
+        if (!SabotageGuard.protectionOn(antiSabotage, antiSabotageOffAt, clock.instant())) return null
         if (!SabotageGuard.isSabotage(packageName, texts, getString(R.string.app_name))) return null
         return AppInfo(packageName, getString(R.string.sabotage_label))
     }
@@ -179,14 +183,14 @@ class BlockerService : AccessibilityService() {
         perform(tracker.recheck(clock.instant(), rules, unlocks), triggerUptime = SystemClock.uptimeMillis())
     }
 
-    private fun perform(action: TrackerAction, triggerUptime: Long) {
+    private fun perform(action: TrackerAction, triggerUptime: Long, sabotage: Boolean = false) {
         when (action) {
             TrackerAction.Ignore -> Unit
             TrackerAction.Idle -> cancelRecheck()
             is TrackerAction.RecheckAt -> scheduleRecheck(action.at)
             is TrackerAction.ShowBlock -> {
                 cancelRecheck()
-                val request = BlockRequest(action.app, action.at, action.newAttempt, triggerUptime)
+                val request = BlockRequest(action.app, action.at, action.newAttempt, triggerUptime, sabotage)
                 startActivity(BlockActivity.intent(this, request))
             }
         }

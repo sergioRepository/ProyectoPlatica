@@ -11,6 +11,7 @@ class FakeSettingsStore(
     override val limits = MutableStateFlow(limits)
     override val profileChangedAt = MutableStateFlow<Long?>(null)
     override val antiSabotage = MutableStateFlow(false)
+    override val antiSabotageOffAt = MutableStateFlow<Long?>(null)
     override val blockerSetUp = MutableStateFlow(false)
     override val consents = MutableStateFlow<Consents?>(
         Consents(excuses = true, phoneUsage = true, crossBorder = true, analytics = true),
@@ -31,6 +32,11 @@ class FakeSettingsStore(
 
     override suspend fun setAntiSabotage(enabled: Boolean) {
         antiSabotage.value = enabled
+        antiSabotageOffAt.value = null
+    }
+
+    override suspend fun setAntiSabotageOffAt(at: Long?) {
+        antiSabotageOffAt.value = at
     }
 
     override suspend fun markBlockerSetUp() {

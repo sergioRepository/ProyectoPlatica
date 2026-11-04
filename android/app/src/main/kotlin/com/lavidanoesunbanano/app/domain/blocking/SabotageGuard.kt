@@ -2,6 +2,8 @@ package com.lavidanoesunbanano.app.domain.blocking
 
 import com.lavidanoesunbanano.app.domain.model.BlockRange
 import com.lavidanoesunbanano.app.domain.model.isBlockedAt
+import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
 
 /**
@@ -12,6 +14,12 @@ import java.time.LocalDateTime
  * la app. "Info de la app" no se reconoce porque su título no dice de qué app es.
  */
 object SabotageGuard {
+
+    /** Quien programa la desactivación la tiene apagada después de esto. */
+    val DISABLE_DELAY: Duration = Duration.ofHours(24)
+
+    /** Lo mínimo que hay que escribir para desactivarla ya: fricción, no un examen. */
+    const val MIN_REASON_CHARS = 15
 
     private val SYSTEM_SETTINGS = setOf(
         "com.android.settings",
@@ -24,6 +32,13 @@ object SabotageGuard {
 
     fun isSabotage(packageName: String, windowTexts: List<String>, appLabel: String): Boolean =
         packageName in SYSTEM_SETTINGS && windowTexts.any { it.contains(appLabel, ignoreCase = true) }
+
+    /** Encendida, y sin una desactivación programada que ya haya llegado. */
+    fun protectionOn(enabled: Boolean, offAt: Instant?, now: Instant): Boolean =
+        enabled && (offAt == null || now < offAt)
+
+    /** El usuario siempre puede salir: nadie aprueba este texto y no se guarda en ningún lado. */
+    fun canDisableNow(reason: String): Boolean = reason.trim().length >= MIN_REASON_CHARS
 
     /**
      * Con la protección encendida y dentro del horario de bloqueo, las reglas no se editan

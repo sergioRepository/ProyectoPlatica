@@ -287,7 +287,7 @@
     <string name="setup_usage_desc">Para que el agente vea cuánto usas cada app. No lee lo que hay en la pantalla.</string>
     <string name="setup_usage_action">Abrir permiso</string>
     <string name="setup_battery_xiaomi">En Xiaomi, además: Seguridad, Permisos, Inicio automático, y actívalo para La vida no es un banano.</string>
-    <string name="setup_protection_note">La protección anti-autosabotaje está encendida: en tu horario de bloqueo, los ajustes que mencionan la app también se tapan. Configura fuera de ese horario.</string>
+    <string name="setup_protection_note">La protección anti-autosabotaje está encendida: en tu horario de bloqueo, los ajustes que mencionan la app piden una pausa antes. Configura fuera de ese horario o desactívala en Ajustes.</string>
 
     <string name="home_setup_title">Falta configurar el bloqueo</string>
     <string name="home_setup_hint">Sin estos pasos, las apps no se bloquean.</string>
@@ -304,9 +304,16 @@
     <!-- Protección -->
     <string name="settings_section_protection">protección</string>
     <string name="settings_anti_sabotage">Anti-autosabotaje</string>
-    <string name="settings_anti_sabotage_desc">En tu horario de bloqueo tapa la página del bloqueo en Accesibilidad y el diálogo para desinstalar, y no deja cambiar apps, horarios, cupos ni la protección.</string>
-    <string name="settings_locked">Protección activa: en tu horario de bloqueo no se pueden cambiar apps, horarios, cupos ni la protección.</string>
+    <string name="settings_anti_sabotage_desc">En tu horario de bloqueo pone una pausa antes de la página del bloqueo en Accesibilidad y del diálogo para desinstalar, y no deja cambiar apps, horarios ni cupos. Siempre puedes desactivarla: ya mismo escribiendo por qué, o programándola para dentro de 24 horas.</string>
+    <string name="settings_locked">Protección activa: en tu horario de bloqueo no se pueden cambiar apps, horarios ni cupos. Para cambiarlos, desactívala en la sección de protección.</string>
     <string name="sabotage_label">Ajustes</string>
+    <string name="sabotage_exit_title">¿Quieres apagar la protección?</string>
+    <string name="sabotage_exit_hint">Tú decides. Escribe por qué y se apaga ya, o prográmalo para dentro de 24 horas y lo piensas con calma. Lo que escribas no se guarda.</string>
+    <string name="sabotage_exit_placeholder">Por qué quiero apagarla</string>
+    <string name="sabotage_exit_now">Desactivar ahora</string>
+    <string name="sabotage_exit_schedule">Programar para dentro de 24 horas</string>
+    <string name="sabotage_exit_scheduled">Se apaga el %1$s.</string>
+    <string name="sabotage_exit_cancel">Cancelar la desactivación</string>
 
     <!-- Notificaciones -->
     <string name="notify_channel_unlocks">Desbloqueos</string>

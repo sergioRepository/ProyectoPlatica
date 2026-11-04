@@ -10,6 +10,7 @@ import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.MessagePreview
 import com.lavidanoesunbanano.app.data.repository.PrivacyRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
+import com.lavidanoesunbanano.app.data.repository.ProtectionRepository
 import com.lavidanoesunbanano.app.data.repository.TemplatePreviewer
 import com.lavidanoesunbanano.app.data.repository.TemplateRepository
 import com.lavidanoesunbanano.app.data.system.SetupStatusSource
@@ -22,6 +23,7 @@ import com.lavidanoesunbanano.app.domain.schedule.ScheduleFormatter
 import com.lavidanoesunbanano.app.domain.setup.SetupChecklist
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -44,8 +46,11 @@ data class TemplateInfo(
     val stale: Boolean = false,
 )
 
-/** Anti-autosabotaje y si ahora, en horario de bloqueo, las reglas están bajo llave. */
-data class Protection(val on: Boolean = false, val locked: Boolean = false)
+/**
+ * Anti-autosabotaje y si ahora, en horario de bloqueo, las reglas están bajo llave.
+ * `offAt`: cuándo se apaga, si hay una desactivación programada.
+ */
+data class Protection(val on: Boolean = false, val locked: Boolean = false, val offAt: String? = null)
 
 data class SettingsUiState(
     val profile: Profile? = null,
@@ -73,6 +78,7 @@ class SettingsViewModel @Inject constructor(
     private val deviceRepository: DeviceRepository,
     private val events: EventRepository,
     private val privacy: PrivacyRepository,
+    private val protectionRepository: ProtectionRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -107,8 +113,19 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private val protection = combine(settings.antiSabotage, profileRepository.observeRanges(), now) { on, ranges, now ->
-        Protection(on = on, locked = SabotageGuard.rulesLocked(on, ranges, now))
+    private val protection = combine(
+        settings.antiSabotage,
+        settings.antiSabotageOffAt,
+        profileRepository.observeRanges(),
+        now,
+    ) { enabled, offAt, ranges, now ->
+        val off = offAt?.let(Instant::ofEpochMilli)
+        val on = SabotageGuard.protectionOn(enabled, off, clock.instant())
+        Protection(
+            on = on,
+            locked = SabotageGuard.rulesLocked(on, ranges, now),
+            offAt = off?.takeIf { on }?.let { ScheduleFormatter.dateTime(LocalDateTime.ofInstant(it, clock.zone)) },
+        )
     }
 
     private val preferences = combine(settings.limits, protection, setupPending, device) { limits, protection, pending, device ->
@@ -187,9 +204,21 @@ class SettingsViewModel @Inject constructor(
         settings.setEmergencyDaily(settings.limits.first().emergencyDaily + delta)
     }
 
-    /** Encenderla siempre se puede; apagarla, solo fuera del horario de bloqueo. */
+    /** Encenderla siempre se puede; apagarla en horario de bloqueo pasa por la salida con fricción. */
     fun setAntiSabotage(enabled: Boolean) = unlessLocked {
         settings.setAntiSabotage(enabled)
+    }
+
+    fun disableProtectionNow(reason: String) {
+        viewModelScope.launch { protectionRepository.disableNow(reason) }
+    }
+
+    fun scheduleProtectionOff() {
+        viewModelScope.launch { protectionRepository.scheduleDisable() }
+    }
+
+    fun cancelProtectionOff() {
+        viewModelScope.launch { protectionRepository.cancelScheduled() }
     }
 
     fun nextPreview() {
