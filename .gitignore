@@ -28,3 +28,6 @@ graphify-out/
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Reporte de uso: trae identificadores de dispositivos
+reporte-de-uso.md

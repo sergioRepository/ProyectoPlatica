@@ -244,11 +244,13 @@ class BlockViewModel @Inject constructor(
 
     fun recordExit() {
         val current = session ?: return
+        val guarding = _state.value?.step is BlockStep.Sabotage
         // La pantalla se cierra justo después: el registro termina aunque se limpie el ViewModel.
         viewModelScope.launch {
             withContext(NonCancellable) {
                 sessions.recordExit(current.attemptId)
-                events.track(AppEvents.BLOCK_EXIT, current.app.packageName)
+                // Salir de la pantalla de protección no es salir de una app bloqueada.
+                if (!guarding) events.track(AppEvents.BLOCK_EXIT, current.app.packageName)
             }
         }
     }
