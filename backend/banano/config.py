@@ -98,6 +98,7 @@ class Settings(BaseSettings):
 
     # Retención, en días. La aplica el cron de vercel.json, que se autentica con CRON_SECRET.
     retention_days: int = 90
+    retention_reports_days: int = 180
     retention_daily_usage_days: int = 7
     cron_secret: SecretStr | None = None
 

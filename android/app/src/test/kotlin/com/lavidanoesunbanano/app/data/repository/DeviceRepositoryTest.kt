@@ -140,4 +140,24 @@ class DeviceRepositoryTest {
         assertNull(repository().status())
         assertNull(store.token)
     }
+
+    @Test
+    fun `a report travels with its reason and source`() = runTest {
+        store.token = "v1.abc.firma"
+        server.enqueue(MockResponse.Builder().code(201).build())
+
+        assertTrue(repository().report("Mensaje feo", "offensive", "verdict"))
+
+        val body = server.takeRequest().body!!.utf8()
+        assertTrue(body.contains(""""reason":"offensive""""), body)
+        assertTrue(body.contains(""""source":"verdict""""), body)
+    }
+
+    @Test
+    fun `a failed report says so`() = runTest {
+        store.token = "v1.abc.firma"
+        server.enqueue(MockResponse.Builder().code(503).build())
+
+        assertFalse(repository().report("Mensaje feo", "offensive", "verdict"))
+    }
 }

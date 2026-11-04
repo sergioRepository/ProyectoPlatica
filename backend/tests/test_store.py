@@ -87,7 +87,12 @@ async def contract(store) -> None:
     await store.save_events(device, [app_event])
     await store.save_events(device, [app_event])
 
-    await store.purge(utcnow() - timedelta(days=90), date(2020, 1, 1))
+    await store.save_report(
+        device, {"message": "Mensaje", "reason": "offensive", "source": "verdict"}
+    )
+    await store.purge(
+        utcnow() - timedelta(days=90), utcnow() - timedelta(days=90), date(2020, 1, 1)
+    )
     assert await store.recent(device, 10)
 
     today = date(2026, 11, 4)
@@ -125,7 +130,8 @@ async def contract(store) -> None:
     assert len(await store.recent(other, 10)) == 1
     await store.delete_device(device)
 
-    await store.purge(utcnow() + timedelta(days=1), tomorrow)
+    future = utcnow() + timedelta(days=1)
+    await store.purge(future, future, tomorrow)
     assert await store.recent(other, 10) == []
 
 

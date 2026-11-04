@@ -8,6 +8,7 @@ import com.lavidanoesunbanano.app.data.remote.dto.ConsentsDto
 import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
 import com.lavidanoesunbanano.app.data.remote.dto.PlanRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
+import com.lavidanoesunbanano.app.data.remote.dto.ReportRequestDto
 import com.lavidanoesunbanano.app.domain.model.Consents
 import java.io.IOException
 import javax.inject.Inject
@@ -83,6 +84,10 @@ class DeviceRepository @Inject constructor(
     suspend fun setPlan(plan: String, wouldPay: String?): DeviceStatusDto? =
         authorized { api.updatePlan(it, PlanRequestDto(plan, wouldPay)) }
 
+    /** Reporta un mensaje de la IA. `false` si no llegó, para que la pantalla lo diga. */
+    suspend fun report(message: String, reason: String, source: String): Boolean =
+        authorized { api.report(it, ReportRequestDto(message.take(MAX_REPORT_CHARS), reason, source)).isSuccessful } == true
+
     /** Borra todo lo del dispositivo en el servidor. `false` si no se pudo. */
     suspend fun deleteRemoteData(): Boolean {
         val deleted = authorized { api.deleteDevice(it).isSuccessful } == true
@@ -105,4 +110,9 @@ class DeviceRepository @Inject constructor(
     }
 
     private fun Consents.toDto() = ConsentsDto(excuses, phoneUsage, crossBorder, analytics, version)
+
+    private companion object {
+        /** Límite del backend (banano/schemas/reports.py). */
+        const val MAX_REPORT_CHARS = 500
+    }
 }

@@ -19,10 +19,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +63,7 @@ class BlockActions(
     val onSubmit: () -> Unit,
     val onBack: () -> Unit,
     val onOpenApp: () -> Unit,
+    val onReport: (String, String, ReportSource) -> Unit,
 )
 
 /**
@@ -131,6 +138,7 @@ private fun ColumnScope.MessageStep(state: BlockUiState, actions: BlockActions) 
             onClick = actions.onExit,
             modifier = Modifier.fillMaxWidth(),
         )
+        state.message?.let { ReportControl(it, ReportSource.MESSAGE, state.reported, actions) }
     }
 }
 
@@ -227,6 +235,49 @@ private fun ColumnScope.DecidedStep(state: BlockUiState, step: BlockStep.Decided
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        verdict.message?.let { ReportControl(it, ReportSource.VERDICT, state.reported, actions) }
+    }
+}
+
+private val REPORT_REASONS = listOf(
+    "offensive" to R.string.report_reason_offensive,
+    "harmful" to R.string.report_reason_harmful,
+    "wrong" to R.string.report_reason_wrong,
+    "other" to R.string.report_reason_other,
+)
+
+/** Reporta un mensaje de la IA dentro de la pantalla. Solo aparece si el mensaje vino de la IA. */
+@Composable
+private fun ReportControl(message: String, source: ReportSource, reported: Boolean?, actions: BlockActions) {
+    var choosing by rememberSaveable { mutableStateOf(false) }
+    when (reported) {
+        true -> Text(text = stringResource(R.string.report_sent), style = LaVidaTheme.type.small, color = LaVidaTheme.colors.textSecondary)
+        else -> GhostButton(
+            text = stringResource(if (reported == false) R.string.report_retry else R.string.report_action),
+            onClick = { choosing = true },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    if (choosing) {
+        AlertDialog(
+            onDismissRequest = { choosing = false },
+            title = { Text(stringResource(R.string.report_title)) },
+            text = {
+                Column {
+                    REPORT_REASONS.forEach { (reason, label) ->
+                        TextButton(
+                            onClick = {
+                                choosing = false
+                                actions.onReport(message, reason, source)
+                            },
+                        ) { Text(stringResource(label)) }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { choosing = false }) { Text(stringResource(R.string.action_cancel)) }
+            },
+        )
     }
 }
 
@@ -258,7 +309,7 @@ private fun ColumnScope.CenteredText(text: String) {
     }
 }
 
-private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {})
+private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, { _, _, _ -> })
 
 private val PreviewState = BlockUiState(
     attemptId = 7,

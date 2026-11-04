@@ -40,6 +40,7 @@ from banano.schemas.devices import (
 from banano.schemas.events import EventBatch, EventsAccepted
 from banano.schemas.judge import JudgeRequest, JudgeResponse
 from banano.schemas.profile import Profile
+from banano.schemas.reports import ContentReport
 from banano.schemas.template import TemplateResponse
 
 router = APIRouter()
@@ -168,6 +169,16 @@ async def receive_events(
     return EventsAccepted(accepted=len(body.events))
 
 
+@router.post("/reports", status_code=status.HTTP_201_CREATED)
+async def report_content(body: ContentReport, device_id: ManagedDevice, store: StoreDep) -> None:
+    try:
+        await store.save_report(device_id, body.model_dump())
+    except StoreError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail="No se pudo guardar el reporte."
+        ) from exc
+
+
 @router.delete("/devices/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_device(device_id: ManagedDevice, store: StoreDep) -> None:
     try:
@@ -190,10 +201,13 @@ async def apply_retention(
     expected = f"Bearer {settings.cron_secret.get_secret_value()}".encode()
     if not hmac.compare_digest((authorization or "").encode(), expected):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="No autorizado.")
+    now = utcnow()
     daily = timedelta(days=settings.retention_daily_usage_days)
     try:
         await store.purge(
-            utcnow() - timedelta(days=settings.retention_days), quota_day(settings) - daily
+            now - timedelta(days=settings.retention_days),
+            now - timedelta(days=settings.retention_reports_days),
+            quota_day(settings) - daily,
         )
     except StoreError as exc:
         raise HTTPException(

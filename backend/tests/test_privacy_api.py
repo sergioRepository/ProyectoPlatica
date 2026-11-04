@@ -1,6 +1,8 @@
 from datetime import timedelta
 from uuid import uuid4
 
+import pytest
+
 from banano.agent.store import utcnow
 from banano.quota import quota_day
 from tests.fakes import (
@@ -36,6 +38,7 @@ async def filled_store():
         store.daily[(device_id, TODAY)] = {"llm_calls": 1}
         await store.record_usage([{"id": uuid4(), "device_id": device_id}])
         await store.save_events(device_id, [{"id": uuid4(), "name": "block_exit"}])
+        await store.save_report(device_id, {"message": "m", "reason": "other", "source": "verdict"})
     return store
 
 
@@ -45,7 +48,13 @@ async def test_deleting_removes_everything_of_that_device_only(make_client) -> N
     response = make_client(store=store).delete("/devices/me", headers=auth_headers())
 
     assert response.status_code == 204
-    leftovers = [store.events, store.usage, store.consents, list(store.app_events.values())]
+    leftovers = [
+        store.events,
+        store.usage,
+        store.consents,
+        store.reports,
+        list(store.app_events.values()),
+    ]
     assert all(row["device_id"] == OTHER for rows in leftovers for row in rows)
     assert all(len(rows) == 1 for rows in leftovers)
     assert list(store.devices) == [OTHER]
@@ -64,6 +73,59 @@ async def test_a_deleted_device_can_no_longer_use_the_llm(make_client) -> None:
 
     assert response.status_code == 403
     assert llm.calls == []
+
+
+REPORT = {"message": "Eres un inútil", "reason": "offensive", "source": "verdict"}
+
+
+def test_a_report_is_saved_with_its_device(make_client) -> None:
+    store = consented_store()
+
+    response = make_client(store=store).post("/reports", json=REPORT, headers=auth_headers())
+
+    assert response.status_code == 201
+    assert store.reports[0]["device_id"] == TEST_DEVICE_ID
+    assert store.reports[0]["message"] == REPORT["message"]
+    assert store.reports[0]["created_at"]
+
+
+def test_a_report_works_without_analytics(make_client) -> None:
+    store = consented_store(consent_analytics=False, consent_excuses=False)
+
+    response = make_client(store=store).post("/reports", json=REPORT, headers=auth_headers())
+
+    assert response.status_code == 201
+
+
+def test_a_report_needs_a_token(make_client) -> None:
+    assert make_client(store=consented_store()).post("/reports", json=REPORT).status_code == 401
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"reason": "me contó algo de salud"},
+        {"source": "otra"},
+        {"message": ""},
+        {"message": "x" * 501},
+        {"comment": "texto libre"},
+    ],
+)
+def test_a_report_is_validated(make_client, bad: dict) -> None:
+    client = make_client(store=consented_store())
+
+    response = client.post("/reports", json={**REPORT, **bad}, headers=auth_headers())
+
+    assert response.status_code == 422
+
+
+def test_a_failed_report_is_not_hidden(make_client) -> None:
+    store = consented_store()
+    store.fail = True
+
+    response = make_client(store=store).post("/reports", json=REPORT, headers=auth_headers())
+
+    assert response.status_code == 503
 
 
 def test_deleting_is_idempotent(make_client) -> None:
@@ -92,6 +154,10 @@ def old_and_new_store():
     old, new = utcnow() - timedelta(days=91), utcnow() - timedelta(days=89)
     store.events += [event(TEST_DEVICE_ID, old), event(TEST_DEVICE_ID, new)]
     store.usage += [{"created_at": old}, {"created_at": new}]
+    store.reports += [
+        {"created_at": utcnow() - timedelta(days=181)},
+        {"created_at": utcnow() - timedelta(days=179)},
+    ]
     store.app_events = {"viejo": {"received_at": old}, "nuevo": {"received_at": new}}
     store.daily = {
         (TEST_DEVICE_ID, TODAY - timedelta(days=8)): {},
@@ -108,6 +174,7 @@ def test_retention_removes_only_what_expired(make_client) -> None:
     assert response.status_code == 200
     assert len(store.events) == len(store.usage) == 1
     assert list(store.app_events) == ["nuevo"]
+    assert len(store.reports) == 1
     assert len(store.daily) == 1
 
 

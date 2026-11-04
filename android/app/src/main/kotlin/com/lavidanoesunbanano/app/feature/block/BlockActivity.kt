@@ -50,6 +50,7 @@ class BlockActivity : ComponentActivity() {
             onSubmit = viewModel::submit,
             onBack = viewModel::back,
             onOpenApp = ::openApp,
+            onReport = viewModel::report,
         )
         setContent {
             LaVidaTheme {

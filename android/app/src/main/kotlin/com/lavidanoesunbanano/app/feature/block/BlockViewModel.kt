@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.lavidanoesunbanano.app.data.repository.AppEvents
 import com.lavidanoesunbanano.app.data.repository.BlockSession
 import com.lavidanoesunbanano.app.data.repository.BlockSessionRepository
+import com.lavidanoesunbanano.app.data.repository.DeviceRepository
 import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.domain.model.AppInfo
@@ -85,7 +86,11 @@ data class BlockUiState(
     /** `null`: no hay plantilla y se muestra la frase local. */
     val message: String?,
     val step: BlockStep = BlockStep.Message,
+    /** Resultado del último reporte; `null` si no se ha reportado nada en este paso. */
+    val reported: Boolean? = null,
 )
+
+enum class ReportSource(val wire: String) { MESSAGE("block_message"), VERDICT("verdict") }
 
 /** App y hora hasta la que queda desbloqueada, para abrirla después de un veredicto aprobado. */
 data class Unlock(val packageName: String, val until: Instant)
@@ -96,6 +101,7 @@ class BlockViewModel @Inject constructor(
     private val excuses: ExcuseRepository,
     private val notifier: Notifier,
     private val events: EventRepository,
+    private val deviceRepository: DeviceRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<BlockUiState?>(null)
@@ -175,7 +181,7 @@ class BlockViewModel @Inject constructor(
             val updated = sessions.afterRejection(current)
             if (session?.attemptId != current.attemptId) return@launch
             session = updated
-            _state.update { it?.copy(message = updated.message, step = BlockStep.Message) }
+            _state.update { it?.copy(message = updated.message, step = BlockStep.Message, reported = null) }
         }
     }
 
@@ -197,8 +203,16 @@ class BlockViewModel @Inject constructor(
         }
     }
 
+    /** Reportar un mensaje de la IA, sin salir de la pantalla. */
+    fun report(message: String, reason: String, source: ReportSource) {
+        viewModelScope.launch {
+            val sent = deviceRepository.report(message, reason, source.wire)
+            _state.update { it?.copy(reported = sent) }
+        }
+    }
+
     private fun updateStep(transform: (BlockStep) -> BlockStep) {
-        _state.update { it?.copy(step = transform(it.step)) }
+        _state.update { it?.copy(step = transform(it.step), reported = null) }
     }
 
     private fun BlockSession.toUiState() = BlockUiState(

@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime, timedelta
 from functools import cache
 from pathlib import Path
 from typing import Any, Literal, Protocol
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import psycopg
 from psycopg.rows import dict_row
@@ -60,6 +60,7 @@ DEVICE_TABLES = (
     "agent_events",
     "llm_usage",
     "app_events",
+    "content_reports",
     "device_daily_usage",
     "device_consents",
     "devices",
@@ -104,7 +105,9 @@ class DeviceStore(Protocol):
         """Borra todo lo del dispositivo, o nada si falla."""
         ...
 
-    async def purge(self, before: datetime, daily_before: date) -> None:
+    async def save_report(self, device_id: str, report: dict[str, Any]) -> None: ...
+
+    async def purge(self, before: datetime, reports_before: datetime, daily_before: date) -> None:
         """Aplica la retención."""
         ...
 
@@ -139,7 +142,7 @@ class UnconfiguredStore:
 
     get_by_request = recent = count_interventions_since = save = confirm = _fail
     get_device = save_consents = set_plan = increment = record_usage = save_events = _fail
-    delete_device = purge = _fail
+    delete_device = save_report = purge = _fail
 
 
 class MemoryStore:
@@ -153,6 +156,7 @@ class MemoryStore:
         self.daily: dict[tuple[str, date], dict[str, int]] = {}
         self.usage: list[dict[str, Any]] = []
         self.app_events: dict[UUID, dict[str, Any]] = {}
+        self.reports: list[dict[str, Any]] = []
         self.fail = False
 
     def _check(self) -> None:
@@ -235,14 +239,20 @@ class MemoryStore:
         self.events = [e for e in self.events if e["device_id"] != device_id]
         self.usage = [u for u in self.usage if u["device_id"] != device_id]
         self.consents = [c for c in self.consents if c["device_id"] != device_id]
+        self.reports = [r for r in self.reports if r["device_id"] != device_id]
         self.app_events = {
             key: e for key, e in self.app_events.items() if e["device_id"] != device_id
         }
         self.daily = {key: v for key, v in self.daily.items() if key[0] != device_id}
         self.devices.pop(device_id, None)
 
-    async def purge(self, before: datetime, daily_before: date) -> None:
+    async def save_report(self, device_id: str, report: dict[str, Any]) -> None:
         self._check()
+        self.reports.append({"device_id": device_id, "created_at": utcnow(), **report})
+
+    async def purge(self, before: datetime, reports_before: datetime, daily_before: date) -> None:
+        self._check()
+        self.reports = [r for r in self.reports if r["created_at"] >= reports_before]
         self.events = [e for e in self.events if e["created_at"] >= before]
         self.usage = [u for u in self.usage if u["created_at"] >= before]
         self.app_events = {
@@ -418,13 +428,21 @@ class PostgresStore:
         )
         await self._fetch(f"WITH {deletes} SELECT 1", (device_id,) * len(DEVICE_TABLES))
 
-    async def purge(self, before: datetime, daily_before: date) -> None:
+    async def save_report(self, device_id: str, report: dict[str, Any]) -> None:
+        await self._fetch(
+            "INSERT INTO content_reports (id, device_id, source, reason, message) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (uuid4(), device_id, report["source"], report["reason"], report["message"]),
+        )
+
+    async def purge(self, before: datetime, reports_before: datetime, daily_before: date) -> None:
         await self._fetch(
             "WITH a AS (DELETE FROM agent_events WHERE created_at < %s), "
             "b AS (DELETE FROM llm_usage WHERE created_at < %s), "
             "c AS (DELETE FROM app_events WHERE received_at < %s), "
-            "d AS (DELETE FROM device_daily_usage WHERE day < %s) SELECT 1",
-            (before, before, before, daily_before),
+            "d AS (DELETE FROM device_daily_usage WHERE day < %s), "
+            "e AS (DELETE FROM content_reports WHERE created_at < %s) SELECT 1",
+            (before, before, before, daily_before, reports_before),
         )
 
     async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool:

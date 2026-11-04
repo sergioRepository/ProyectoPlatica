@@ -359,6 +359,16 @@
     <string name="verdict_open_app">Abrir %1$s</string>
     <string name="verdict_back">Volver</string>
 
+    <!-- Reportes de contenido -->
+    <string name="report_action">Reportar este mensaje</string>
+    <string name="report_retry">No se pudo enviar. Reportar otra vez</string>
+    <string name="report_sent">Recibimos tu reporte. Gracias.</string>
+    <string name="report_title">¿Qué tiene de malo este mensaje?</string>
+    <string name="report_reason_offensive">Es ofensivo</string>
+    <string name="report_reason_harmful">Me hace daño</string>
+    <string name="report_reason_wrong">Es falso o no tiene sentido</string>
+    <string name="report_reason_other">Otro motivo</string>
+
     <!-- Servicio de accesibilidad -->
     <string name="blocker_service_description">Detecta qué app pasa al frente para mostrar la pantalla de bloqueo en tu horario. No lee el contenido de la pantalla ni lo que escribes.</string>
 </resources>

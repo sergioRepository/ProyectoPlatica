@@ -15,6 +15,7 @@ import com.lavidanoesunbanano.app.data.remote.dto.PlanRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.ProfileDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterResponseDto
+import com.lavidanoesunbanano.app.data.remote.dto.ReportRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.TemplateResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -40,6 +41,12 @@ interface LaVidaApi {
 
     @GET("devices/me")
     suspend fun deviceStatus(@Header("Authorization") authorization: String): DeviceStatusDto
+
+    @POST("reports")
+    suspend fun report(
+        @Header("Authorization") authorization: String,
+        @Body body: ReportRequestDto,
+    ): Response<Unit>
 
     @DELETE("devices/me")
     suspend fun deleteDevice(@Header("Authorization") authorization: String): Response<Unit>
