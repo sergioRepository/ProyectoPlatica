@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.lavidanoesunbanano.app.data.local.dao.AttemptDao
+import com.lavidanoesunbanano.app.data.local.dao.EventDao
 import com.lavidanoesunbanano.app.data.local.dao.ExcuseDao
 import com.lavidanoesunbanano.app.data.local.dao.FocusDao
 import com.lavidanoesunbanano.app.data.local.dao.ProfileDao
@@ -15,6 +16,7 @@ import com.lavidanoesunbanano.app.data.local.entity.BlockRangeEntity
 import com.lavidanoesunbanano.app.data.local.entity.BlockedAppEntity
 import com.lavidanoesunbanano.app.data.local.entity.ExcuseEntity
 import com.lavidanoesunbanano.app.data.local.entity.FocusSessionEntity
+import com.lavidanoesunbanano.app.data.local.entity.PendingEventEntity
 import com.lavidanoesunbanano.app.data.local.entity.ProfileEntity
 import com.lavidanoesunbanano.app.data.local.entity.TemplateMessageEntity
 import com.lavidanoesunbanano.app.data.local.entity.TemplateMetaEntity
@@ -31,14 +33,16 @@ import com.lavidanoesunbanano.app.data.local.entity.VerdictLineEntity
         AttemptEntity::class,
         ExcuseEntity::class,
         FocusSessionEntity::class,
+        PendingEventEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
     // Cada versión solo agrega una tabla: el perfil y la plantilla del teléfono se conservan.
     autoMigrations = [
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
+        AutoMigration(from = 5, to = 6),
     ],
 )
 @TypeConverters(Converters::class)
@@ -49,4 +53,5 @@ abstract class LaVidaDatabase : RoomDatabase() {
     abstract fun attemptDao(): AttemptDao
     abstract fun excuseDao(): ExcuseDao
     abstract fun focusDao(): FocusDao
+    abstract fun eventDao(): EventDao
 }

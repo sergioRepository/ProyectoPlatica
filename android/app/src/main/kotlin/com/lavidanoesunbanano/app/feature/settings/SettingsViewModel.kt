@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
+import com.lavidanoesunbanano.app.data.repository.AppEvents
 import com.lavidanoesunbanano.app.data.repository.DeviceRepository
+import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.MessagePreview
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.data.repository.TemplatePreviewer
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonPrimitive
 
 data class TemplateInfo(
     val messageCount: Int = 0,
@@ -64,6 +67,7 @@ class SettingsViewModel @Inject constructor(
     private val previewer: TemplatePreviewer,
     private val setupSource: SetupStatusSource,
     private val deviceRepository: DeviceRepository,
+    private val events: EventRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -132,12 +136,21 @@ class SettingsViewModel @Inject constructor(
 
     fun selectPlan(plan: String) {
         // La respuesta a "¿pagarías?" es sobre un plan: al cambiarlo se vuelve a preguntar.
-        viewModelScope.launch { deviceRepository.setPlan(plan, null)?.let { device.value = it } }
+        viewModelScope.launch {
+            deviceRepository.setPlan(plan, null)?.let { device.value = it }
+            events.track(AppEvents.PLAN_SELECTED, props = arrayOf("plan" to JsonPrimitive(plan)))
+        }
     }
 
     fun answerWouldPay(answer: String) {
         val current = device.value ?: return
-        viewModelScope.launch { deviceRepository.setPlan(current.plan, answer)?.let { device.value = it } }
+        viewModelScope.launch {
+            deviceRepository.setPlan(current.plan, answer)?.let { device.value = it }
+            events.track(
+                AppEvents.PLAN_SELECTED,
+                props = arrayOf("plan" to JsonPrimitive(current.plan), "would_pay" to JsonPrimitive(answer)),
+            )
+        }
     }
 
     fun changeExtraTimeDaily(delta: Int) = unlessLocked {

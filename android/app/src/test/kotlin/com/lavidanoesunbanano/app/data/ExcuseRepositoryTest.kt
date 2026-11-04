@@ -14,6 +14,7 @@ import com.lavidanoesunbanano.app.data.repository.BlockSession
 import com.lavidanoesunbanano.app.data.repository.BlockSessionRepository
 import com.lavidanoesunbanano.app.data.repository.DeviceRepository
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
+import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.JudgeConfig
 import com.lavidanoesunbanano.app.di.NetworkModule
 import com.lavidanoesunbanano.app.domain.model.AppInfo
@@ -57,6 +58,7 @@ class ExcuseRepositoryTest {
     private val settings = FakeSettingsStore()
 
     private val now = Instant.parse("2026-10-12T21:40:00Z")
+    private lateinit var events: EventRepository
     private val clock = Clock.fixed(now, ZoneOffset.UTC)
     private val instagram = AppInfo("com.instagram.android", "Instagram")
     private val profile = Profile(
@@ -94,6 +96,7 @@ class ExcuseRepositoryTest {
             database.profileDao(),
             clock,
         )
+        events = EventRepository(database.eventDao(), settings, DeviceRepository(store, api, config, settings), api, clock)
         excuses = ExcuseRepository(
             database,
             database.excuseDao(),
@@ -105,6 +108,7 @@ class ExcuseRepositoryTest {
             config,
             JudgeConfig(timeoutMillis = 500),
             settings,
+            events,
             clock,
         )
     }
@@ -269,5 +273,18 @@ class ExcuseRepositoryTest {
         assertTrue(result.verdict.offline)
         assertTrue(result.verdict.valid)
         assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `analytics keep the verdict and never the text of the excuse`() = runBlocking {
+        settings.consents.value = settings.consents.value?.copy(excuses = false)
+        val secret = "Tengo cita con el psiquiatra a las tres"
+
+        excuses.judge(session(), ExcuseType.EMERGENCY, secret)
+
+        val tracked = database.eventDao().due(now.toEpochMilli(), 10)
+        assertEquals(listOf("emergency_requested"), tracked.map { it.name })
+        assertTrue(tracked.single().props.contains("approved"))
+        assertFalse(tracked.single().props.contains("psiquiatra"))
     }
 }

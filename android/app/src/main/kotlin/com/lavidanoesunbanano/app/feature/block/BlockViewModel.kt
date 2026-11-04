@@ -3,8 +3,10 @@ package com.lavidanoesunbanano.app.feature.block
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lavidanoesunbanano.app.data.repository.AppEvents
 import com.lavidanoesunbanano.app.data.repository.BlockSession
 import com.lavidanoesunbanano.app.data.repository.BlockSessionRepository
+import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonPrimitive
 
 /** Lo que el servicio le pide a la pantalla. `triggerUptime` sirve para medir cuánto tardó. */
 data class BlockRequest(
@@ -92,6 +95,7 @@ class BlockViewModel @Inject constructor(
     private val sessions: BlockSessionRepository,
     private val excuses: ExcuseRepository,
     private val notifier: Notifier,
+    private val events: EventRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<BlockUiState?>(null)
@@ -122,6 +126,9 @@ class BlockViewModel @Inject constructor(
             val opened = sessions.open(request.app, request.startedAt)
             session = opened
             _state.value = opened.toUiState()
+            if (request.newAttempt) {
+                events.track(AppEvents.BLOCK_SHOWN, opened.app.packageName, "attempt" to JsonPrimitive(opened.attemptNumber))
+            }
         }
     }
 
@@ -180,9 +187,14 @@ class BlockViewModel @Inject constructor(
     }
 
     fun recordExit() {
-        val attemptId = session?.attemptId ?: return
+        val current = session ?: return
         // La pantalla se cierra justo después: el registro termina aunque se limpie el ViewModel.
-        viewModelScope.launch { withContext(NonCancellable) { sessions.recordExit(attemptId) } }
+        viewModelScope.launch {
+            withContext(NonCancellable) {
+                sessions.recordExit(current.attemptId)
+                events.track(AppEvents.BLOCK_EXIT, current.app.packageName)
+            }
+        }
     }
 
     private fun updateStep(transform: (BlockStep) -> BlockStep) {

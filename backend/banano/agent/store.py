@@ -87,6 +87,10 @@ class DeviceStore(Protocol):
 
     async def record_usage(self, rows: list[dict[str, Any]]) -> None: ...
 
+    async def save_events(self, device_id: str, events: list[dict[str, Any]]) -> None:
+        """Un evento repetido (mismo id) se ignora."""
+        ...
+
     async def increment(
         self,
         device_id: str,
@@ -117,7 +121,7 @@ class UnconfiguredStore:
         raise StoreError("not_configured")
 
     get_by_request = recent = count_interventions_since = save = confirm = _fail
-    get_device = save_consents = set_plan = increment = record_usage = _fail
+    get_device = save_consents = set_plan = increment = record_usage = save_events = _fail
 
 
 class MemoryStore:
@@ -130,6 +134,7 @@ class MemoryStore:
         self.consents: list[dict[str, Any]] = []
         self.daily: dict[tuple[str, date], dict[str, int]] = {}
         self.usage: list[dict[str, Any]] = []
+        self.app_events: dict[UUID, dict[str, Any]] = {}
         self.fail = False
 
     def _check(self) -> None:
@@ -200,6 +205,11 @@ class MemoryStore:
     async def record_usage(self, rows: list[dict[str, Any]]) -> None:
         self._check()
         self.usage.extend(rows)
+
+    async def save_events(self, device_id: str, events: list[dict[str, Any]]) -> None:
+        self._check()
+        for event in events:
+            self.app_events.setdefault(event["id"], {"device_id": device_id, **event})
 
     async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool:
         self._check()
@@ -340,6 +350,25 @@ class PostgresStore:
             f"INSERT INTO llm_usage ({', '.join(USAGE_COLUMNS)}) "
             f"VALUES {', '.join(row for _ in rows)}",
             tuple(r[column] for r in rows for column in USAGE_COLUMNS),
+        )
+
+    async def save_events(self, device_id: str, events: list[dict[str, Any]]) -> None:
+        rows = ", ".join("(%s, %s, %s, %s, %s, %s)" for _ in events)
+        await self._fetch(
+            f"INSERT INTO app_events (id, device_id, name, app, occurred_at, props) VALUES {rows} "
+            "ON CONFLICT (id) DO NOTHING",
+            tuple(
+                value
+                for e in events
+                for value in (
+                    e["id"],
+                    device_id,
+                    e["name"],
+                    e["app"],
+                    e["occurred_at"],
+                    Jsonb(e["props"]),
+                )
+            ),
         )
 
     async def set_plan(self, device_id: str, plan: str, would_pay: str | None) -> bool:

@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.JsonPrimitive
 import retrofit2.HttpException
 
 /** Lo último que pasó con el agente, tal como se muestra en Inicio. */
@@ -53,6 +54,7 @@ class AgentRepository @Inject constructor(
     private val focusDao: FocusDao,
     private val usage: UsageEvidenceSource,
     private val notifier: Notifier,
+    private val events: EventRepository,
     private val clock: Clock,
 ) {
     private val last = MutableStateFlow<AgentRun?>(null)
@@ -136,6 +138,9 @@ class AgentRepository @Inject constructor(
         } catch (e: SerializationException) {
             return null
         }
+        if (response.decision == DECISION_PLAN_QUOTA) {
+            events.track(AppEvents.QUOTA_REACHED, props = arrayOf("source" to JsonPrimitive("agent")))
+        }
         val order = response.intervention?.takeIf { it.status == "sent" && it.id != null }
         val applied = order?.let { apply(it, response.reason, apps, authorization) }
         return AgentRun.Done(response, applied)
@@ -151,6 +156,7 @@ class AgentRepository @Inject constructor(
             focusDao.insert(FocusSessionEntity(id, order.targetApps.joinToString(","), start.toEpochMilli(), end.toEpochMilli(), reason))
             val labels = apps.filter { it.packageName in order.targetApps }.map { it.label }
             notifier.showFocus(labels, end, reason)
+            trackFocus(order.durationMinutes, end)
             EXECUTED
         } else {
             FAILED
@@ -165,7 +171,15 @@ class AgentRepository @Inject constructor(
         return status
     }
 
+    /** Una sesión no se puede cancelar: su fin se anota ya, y la cola lo envía al llegar la hora. */
+    private suspend fun trackFocus(minutes: Int, end: Instant) {
+        val duration = "duration_minutes" to JsonPrimitive(minutes)
+        events.track(AppEvents.FOCUS_SESSION_STARTED, props = arrayOf(duration))
+        events.track(AppEvents.FOCUS_SESSION_COMPLETED, props = arrayOf(duration), at = end)
+    }
+
     private companion object {
+        const val DECISION_PLAN_QUOTA = "plan_quota"
         const val TRIGGER_PERIODIC = "periodic"
         const val TRIGGER_MANUAL = "manual"
         const val EXECUTED = "executed"

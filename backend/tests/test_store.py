@@ -77,6 +77,16 @@ async def contract(store) -> None:
         ]
     )
 
+    app_event = {
+        "id": uuid4(),
+        "name": "block_shown",
+        "app": "com.instagram.android",
+        "occurred_at": utcnow(),
+        "props": {"attempt": 2},
+    }
+    await store.save_events(device, [app_event])
+    await store.save_events(device, [app_event])
+
     today = date(2026, 11, 4)
     assert await store.get_device(device, today) is None
     consents = {

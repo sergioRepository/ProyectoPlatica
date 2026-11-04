@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.lavidanoesunbanano.app.data.local.LaVidaDatabase
 import com.lavidanoesunbanano.app.data.local.dao.AttemptDao
+import com.lavidanoesunbanano.app.data.local.dao.EventDao
 import com.lavidanoesunbanano.app.data.local.dao.ExcuseDao
 import com.lavidanoesunbanano.app.data.local.dao.FocusDao
 import com.lavidanoesunbanano.app.data.local.dao.ProfileDao
@@ -46,4 +47,7 @@ object DatabaseModule {
 
     @Provides
     fun provideFocusDao(database: LaVidaDatabase): FocusDao = database.focusDao()
+
+    @Provides
+    fun provideEventDao(database: LaVidaDatabase): EventDao = database.eventDao()
 }

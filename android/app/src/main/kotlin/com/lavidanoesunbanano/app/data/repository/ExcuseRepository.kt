@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.JsonPrimitive
 import retrofit2.HttpException
 
 /** Cuánto se espera al juez antes de aplicar la regla sin conexión. Los cupos están en Ajustes. */
@@ -56,6 +57,7 @@ class ExcuseRepository @Inject constructor(
     private val backend: BackendConfig,
     private val config: JudgeConfig,
     private val settings: SettingsStore,
+    private val events: EventRepository,
     private val clock: Clock,
 ) {
     /** Último desbloqueo de cada app. Los vencidos los descarta `BlockPolicy`. */
@@ -102,7 +104,22 @@ class ExcuseRepository @Inject constructor(
             )
             if (verdict.valid) attemptDao.setOutcome(session.attemptId, type.wire)
         }
+        track(session, type, verdict)
         return ExcuseResult(verdict, unlockedUntil)
+    }
+
+    /** Solo el veredicto y su código: el texto de la excusa nunca entra a la analítica. */
+    private suspend fun track(session: BlockSession, type: ExcuseType, verdict: Verdict) {
+        val app = session.app.packageName
+        events.track(
+            if (type == ExcuseType.EMERGENCY) AppEvents.EMERGENCY_REQUESTED else AppEvents.EXTRA_TIME_REQUESTED,
+            app,
+            "verdict" to JsonPrimitive(if (verdict.valid) "approved" else "rejected"),
+            "reason_code" to JsonPrimitive(verdict.reason.wire),
+        )
+        if (verdict.reason == VerdictReason.PLAN_QUOTA) {
+            events.track(AppEvents.QUOTA_REACHED, app, "source" to JsonPrimitive("judge"))
+        }
     }
 
     private suspend fun request(

@@ -36,6 +36,7 @@ from banano.schemas.devices import (
     RegisterRequest,
     RegisterResponse,
 )
+from banano.schemas.events import EventBatch, EventsAccepted
 from banano.schemas.judge import JudgeRequest, JudgeResponse
 from banano.schemas.profile import Profile
 from banano.schemas.template import TemplateResponse
@@ -147,6 +148,23 @@ async def update_plan(
     if not known:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dispositivo desconocido.")
     return await read_status(store, device_id, settings)
+
+
+@router.post("/events")
+async def receive_events(
+    body: EventBatch, device_id: ManagedDevice, settings: SettingsDep, store: StoreDep
+) -> EventsAccepted:
+    try:
+        device = await store.get_device(device_id, quota_day(settings))
+        # Sin la autorización no se guarda nada, aunque el teléfono lo envíe.
+        if device is None or not device["consent_analytics"]:
+            return EventsAccepted(accepted=0)
+        await store.save_events(device_id, [event.model_dump() for event in body.events])
+    except StoreError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail="No se pudieron guardar los eventos."
+        ) from exc
+    return EventsAccepted(accepted=len(body.events))
 
 
 GenerateDevice = Annotated[
