@@ -484,7 +484,7 @@ PENDIENTE: publicar esa rama si se quieren enlazar estos commits.
 **Pendientes**
 
 - Video de demostración S2: PENDIENTE: agregar enlace.
-- Evidencia de las 10 ejecuciones (salida de `smoke_grok` o exportación de `agent_events`): PENDIENTE: agregar enlace o archivo.
+- Evidencia de las 10 ejecuciones: [s2-ejecuciones.md](s2-ejecuciones.md), exportación de `agent_events` sin `device_id`.
 - Nota de entrega del hito: PENDIENTE: agregar enlace.
 
 ## 11. Conclusión

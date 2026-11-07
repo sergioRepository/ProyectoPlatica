@@ -306,7 +306,9 @@ No está en Play Store; se instala por APK.
 
 Por USB: `adb install -r apk/la-vida-no-es-un-banano.apk`.
 
-El APK está firmado con la llave de debug de la máquina que lo compiló. Para instalar uno compilado en otra máquina hay que desinstalar antes la versión anterior, y eso borra el perfil y el historial.
+Las versiones hasta la 0.3.0 están firmadas con la llave de debug de la máquina que las compiló. Desde la 0.4.0, los APK para distribuir usan la llave de release del proyecto, que se configura en `android/keystore.properties` (no versionado). Al pasar de una firma a otra hay que desinstalar la versión anterior, y eso borra el perfil y el historial.
+
+Android o Play Protect pueden bloquear la instalación desde internet porque la app usa el servicio de accesibilidad para bloquear otras apps. Por USB no aplica ese bloqueo.
 
 ## Cómo probar
 

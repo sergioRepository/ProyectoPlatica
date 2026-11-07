@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -14,6 +15,9 @@ plugins {
 // o en gradle.properties (no es un secreto: la llave del gateway nunca vive en la app).
 val apiBaseUrlDebug = providers.gradleProperty("lavida.apiBaseUrl.debug").getOrElse("http://127.0.0.1:8000/")
 val apiBaseUrlRelease = providers.gradleProperty("lavida.apiBaseUrl.release").getOrElse("")
+
+// Datos de la llave de release; el archivo no se versiona.
+val keystoreFile = rootProject.file("keystore.properties")
 
 kotlin {
     compilerOptions {
@@ -79,14 +83,25 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    signingConfigs {
+        if (keystoreFile.exists()) {
+            val keystore = Properties().apply { keystoreFile.inputStream().use { load(it) } }
+            create("release") {
+                storeFile = file(keystore.getProperty("storeFile"))
+                storePassword = keystore.getProperty("storePassword")
+                keyAlias = keystore.getProperty("keyAlias")
+                keyPassword = keystore.getProperty("keyPassword")
+            }
+        }
+    }
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrlDebug\"")
         }
         release {
-            // La app no se publica: el APK de release se firma con la llave de debug de esta
-            // máquina para poder instalarlo encima de la versión de desarrollo.
-            signingConfig = signingConfigs.getByName("debug")
+            // Sin keystore.properties se firma con debug, para que cualquiera pueda compilar;
+            // ese APK no sirve para distribuir.
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
