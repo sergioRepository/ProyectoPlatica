@@ -8,7 +8,7 @@
   <img alt="FastAPI + LangGraph" src="https://img.shields.io/badge/Backend-FastAPI_·_LangGraph-1E1E24?style=flat-square&logo=fastapi&logoColor=FACC15">
   <img alt="Grok vía gateway del reto" src="https://img.shields.io/badge/LLM-Grok_vía_gateway-1E1E24?style=flat-square">
   <img alt="PostgreSQL en Neon" src="https://img.shields.io/badge/Datos-PostgreSQL_·_Neon-1E1E24?style=flat-square&logo=postgresql&logoColor=FACC15">
-  <a href="apk/la-vida-no-es-un-banano.apk"><img alt="APK 0.3.0" src="https://img.shields.io/badge/APK-0.3.0-FACC15?style=flat-square&labelColor=1E1E24"></a>
+  <a href="https://la-vida-no-es-un-banano.vercel.app"><img alt="Descargar APK 0.4.0" src="https://img.shields.io/badge/APK-0.4.0-FACC15?style=flat-square&labelColor=1E1E24"></a>
 </p>
 
 <p align="center">
@@ -18,8 +18,8 @@
 
 <p align="center">
   <a href="https://www.youtube.com/watch?v=uU0Go189CdI"><b>Video de demostración</b></a> ·
-  <a href="apk/la-vida-no-es-un-banano.apk"><b>Descargar el APK</b></a> ·
-  <a href="#reto-agente-2026"><b>Bitácora del reto</b></a>
+  <a href="https://la-vida-no-es-un-banano.vercel.app"><b>Descargar la app</b></a> ·
+  <a href="#reto-agente-2026"><b>Hitos del reto (jueces)</b></a>
 </p>
 
 ---
@@ -28,14 +28,82 @@ Bloqueador de apps para Android con un agente de IA de sarcasmo personalizado. C
 
 La idea central: la vida es mucho más que estar en el celular. La app no compite por tu atención; aparece, dice lo que tiene que decir y se quita del camino.
 
+## Reto Agente 2026
+
+<p align="center">
+  <img src="docs/assets/hitos.svg" alt="Progreso de hitos: S1 y S2 implementados con aprobación por confirmar; S3 y S4 próximos" width="100%">
+</p>
+
+Este proyecto participa en el **[Reto Agente 2026 de PLATICA MX](https://reto.pltk.mx/)**, Track 1: cuatro hitos semanales a partir del 5 de octubre. Cada hito se documenta con la misma estructura. Lo que no tiene evidencia en el repositorio aparece como **Pendiente de completar**.
+
+**Para jueces:** cada hito tiene una tabla **Requerimientos** que enlaza la evidencia de cada requerimiento del reto: [S1](#hito-1-agente-corriendo-end-to-end) · [S2](#hito-2-3-herramientas-y-video-de-2-min) · [siguientes](#hitos-siguientes).
+
+| Hito | Nombre | Estado | Commit | Video | Reporte | Nota de entrega |
+|---|---|---|---|---|---|---|
+| [S1](#hito-1-agente-corriendo-end-to-end) | Agente corriendo end-to-end | Implementado · aprobación por confirmar | [`0af6038`](https://github.com/sergioRepository/ProyectoPlatica/commit/0af6038a61448ea9b6545cf723548ca44a0f569c) | [YouTube](https://www.youtube.com/watch?v=uU0Go189CdI) | [Reporte](docs/reporte-tecnico-hito-1.md) | Pendiente |
+| [S2](#hito-2-3-herramientas-y-video-de-2-min) | 3 herramientas y video de 2 min | Implementado · aprobación por confirmar | [`f9760fe`](https://github.com/sergioRepository/ProyectoPlatica/commit/f9760fe81f73925e900a7bc02388cf25979eef2d) | Pendiente | [Reporte](docs/reporte-tecnico-hito-2.md) | Pendiente |
+| S3 | Datos reales | Próximo | | | | |
+| S4 | Semana de carga | Próximo | | | | |
+
+### Hito 1: Agente corriendo end-to-end
+
+| | |
+|---|---|
+| **Descripción general** | Primera versión completa del producto: backend en FastAPI con dos grafos de LangGraph (generador de mensajes y juez de excusas) que llaman a Grok a través del gateway, y app Android que los consume desde el onboarding hasta la pantalla de bloqueo. El backend se desplegó en Vercel y el APK de release apunta a producción. |
+| **Objetivos** | Demostrar un agente funcionando de punta a punta contra Grok, con el repositorio público y un README que explique el problema. |
+| **Implementación y resultados** | Se construyó por fases, cada una en su commit: monorepo y esqueleto (`af7c9d8`), backend con grafos, API y pruebas (`a926fd7`), onboarding y generación de la plantilla (`6d49bf9`), servicio de accesibilidad y pantalla de bloqueo (`f29e893`), juez de excusas con cupos y modo sin conexión (`2d99c35`), estadísticas, historial y ajustes (`893f751`), endurecimiento, guía de permisos y anti-autosabotaje (`b5ab6a0`), y APK de release contra Vercel (`0af6038`). |
+| **Commit asociado** | [`0af6038`: APK de release contra Vercel, enlazado en el README](https://github.com/sergioRepository/ProyectoPlatica/commit/0af6038a61448ea9b6545cf723548ca44a0f569c) |
+| **Video de demostración** | [youtube.com/watch?v=uU0Go189CdI](https://www.youtube.com/watch?v=uU0Go189CdI) |
+| **Reporte técnico** | [docs/reporte-tecnico-hito-1.md](docs/reporte-tecnico-hito-1.md) |
+| **Nota de entrega** | Pendiente de completar |
+
+**Requerimientos**
+
+| Requerimiento del reto | Cómo se abordó |
+|---|---|
+| Agente funcionando de punta a punta contra Grok | Grafos de plantilla y juez llamando a Grok por el gateway, consumidos por la app con el backend en Vercel ([El agente](#el-agente)). |
+| Repositorio público | [github.com/sergioRepository/ProyectoPlatica](https://github.com/sergioRepository/ProyectoPlatica) |
+| README que describa el problema | Sección [El problema](#el-problema). |
+
+### Hito 2: 3 herramientas y video de 2 min
+
+| | |
+|---|---|
+| **Descripción general** | Agente de intervención: un tercer grafo de LangGraph que decide con llamadas nativas a herramientas si consulta el uso real del teléfono, el historial de intervenciones o si ejecuta una sesión de enfoque. Se integra con el bloqueador existente: la orden viaja en la respuesta, Android la aplica con las reglas de bloqueo que ya tenía y confirma el resultado. |
+| **Objetivos** | Pasar de decisiones predefinidas a un agente que observa evidencia real, elige qué herramientas necesita, actúa dentro de límites explícitos y registra lo que ocurrió, incluida la decisión de no actuar. |
+| **Implementación y resultados** | Evidencia de uso con `UsageStatsManager` y el permiso `PACKAGE_USAGE_STATS` como paso de la guía; historial en PostgreSQL (Neon en producción) con creación automática de tablas; selección de herramientas con `bind_tools`; política determinista e idempotencia por `request_id`; confirmación desde Android y APK 0.3.0. Las pruebas usan dobles del LLM y de la base (`test_agent_graph.py`, `test_agent_tools.py`, `test_agent_api.py` y `test_store.py`, que también corre contra Postgres real). Queda sin hacer: el resultado observado (`observed_outcome`) existe en la tabla pero queda vacío. |
+| **Commit asociado** | [`f9760fe`: La vida no es un banano, versión de producción](https://github.com/sergioRepository/ProyectoPlatica/commit/f9760fe81f73925e900a7bc02388cf25979eef2d) |
+| **Video de demostración** | Pendiente de completar |
+| **Reporte técnico** | [docs/reporte-tecnico-hito-2.md](docs/reporte-tecnico-hito-2.md) |
+| **Evidencia de ejecuciones** | [docs/s2-ejecuciones.md](docs/s2-ejecuciones.md) |
+| **Nota de entrega** | Pendiente de completar |
+
+**Requerimientos**
+
+| Requerimiento del reto | Cómo se abordó |
+|---|---|
+| 3 herramientas | `consultar_evidencia_uso`, `consultar_historial_intervenciones` y `ejecutar_intervencion`, conectadas a datos y acciones reales ([Agente de intervención](#3-agente-de-intervención-post-agentanalyze)). |
+| Manejo de errores | `permission_missing`, `no_data` frente a `unavailable`, `agent_unavailable` ante fallo o timeout del LLM, códigos de política y `unknown` cuando falta la confirmación. |
+| 10 ejecuciones | [docs/s2-ejecuciones.md](docs/s2-ejecuciones.md): 10 ejecuciones reales exportadas de `agent_events` en producción (34 en total, 5 teléfonos), sin `device_id`. |
+| Video de 2 minutos | Pendiente de completar. |
+
+### Hitos siguientes
+
+| Hito | Requerimientos del reto | Entregable |
+|---|---|---|
+| S3 · Datos reales | Set de evaluación propio de más de 30 casos | Reporte de costo por tarea |
+| S4 · Semana de carga | 1,000 unidades de trabajo y 12 horas de ejecución desatendida | Bitácora completa |
+
+> Para documentar un hito nuevo, copia la tabla de un hito anterior, agrega su fila al resumen y cambia su estado en `docs/assets/hitos.svg`.
+
 ## Contenido
 
+- [Reto Agente 2026: hitos y requerimientos](#reto-agente-2026)
 - [El problema](#el-problema)
 - [Funcionalidades](#funcionalidades)
 - [Arquitectura](#arquitectura)
 - [El agente](#el-agente)
 - [Tecnologías](#tecnologías)
-- [Reto Agente 2026](#reto-agente-2026)
 - [Estructura del repositorio](#estructura-del-repositorio)
 - [Conexión con el gateway del reto](#conexión-con-el-gateway-del-reto)
 - [Instalar en el teléfono](#instalar-en-el-teléfono)
@@ -182,71 +250,6 @@ Teléfono:   valida, inserta la sesión de enfoque, notifica
 | **Datos** | Room en el teléfono y PostgreSQL para el historial del agente: Neon en producción y el servicio `db` de `docker-compose.yml` en local. |
 | **Infraestructura** | Vercel para el backend en producción, Docker y `docker-compose` en local, y LangGraph Studio (`langgraph dev`) para inspeccionar los grafos. |
 
-## Reto Agente 2026
-
-<p align="center">
-  <img src="docs/assets/hitos.svg" alt="Progreso de hitos: S1 y S2 implementados con aprobación por confirmar; S3 y S4 próximos" width="100%">
-</p>
-
-Este proyecto participa en el **[Reto Agente 2026 de PLATICA MX](https://reto.pltk.mx/)**, Track 1: cuatro hitos semanales a partir del 5 de octubre. Cada hito se documenta con la misma estructura. Lo que no tiene evidencia en el repositorio aparece como **Pendiente de completar**.
-
-| Hito | Nombre | Estado | Commit | Video | Reporte | Nota de entrega |
-|---|---|---|---|---|---|---|
-| [S1](#hito-1-agente-corriendo-end-to-end) | Agente corriendo end-to-end | Implementado · aprobación por confirmar | [`0af6038`](https://github.com/sergioRepository/ProyectoPlatica/commit/0af6038a61448ea9b6545cf723548ca44a0f569c) | [YouTube](https://www.youtube.com/watch?v=uU0Go189CdI) | Pendiente | Pendiente |
-| [S2](#hito-2-3-herramientas-y-video-de-2-min) | 3 herramientas y video de 2 min | Implementado · aprobación por confirmar | [`f9760fe`](https://github.com/sergioRepository/ProyectoPlatica/commit/f9760fe81f73925e900a7bc02388cf25979eef2d) | Pendiente | Pendiente | Pendiente |
-| S3 | Datos reales | Próximo | | | | |
-| S4 | Semana de carga | Próximo | | | | |
-
-### Hito 1: Agente corriendo end-to-end
-
-| | |
-|---|---|
-| **Descripción general** | Primera versión completa del producto: backend en FastAPI con dos grafos de LangGraph (generador de mensajes y juez de excusas) que llaman a Grok a través del gateway, y app Android que los consume desde el onboarding hasta la pantalla de bloqueo. El backend se desplegó en Vercel y el APK de release apunta a producción. |
-| **Objetivos** | Demostrar un agente funcionando de punta a punta contra Grok, con el repositorio público y un README que explique el problema. |
-| **Implementación y resultados** | Se construyó por fases, cada una en su commit: monorepo y esqueleto (`af7c9d8`), backend con grafos, API y pruebas (`a926fd7`), onboarding y generación de la plantilla (`6d49bf9`), servicio de accesibilidad y pantalla de bloqueo (`f29e893`), juez de excusas con cupos y modo sin conexión (`2d99c35`), estadísticas, historial y ajustes (`893f751`), endurecimiento, guía de permisos y anti-autosabotaje (`b5ab6a0`), y APK de release contra Vercel (`0af6038`). |
-| **Commit asociado** | [`0af6038`: APK de release contra Vercel, enlazado en el README](https://github.com/sergioRepository/ProyectoPlatica/commit/0af6038a61448ea9b6545cf723548ca44a0f569c) |
-| **Video de demostración** | [youtube.com/watch?v=uU0Go189CdI](https://www.youtube.com/watch?v=uU0Go189CdI) |
-| **Reporte técnico** | Pendiente de completar |
-| **Nota de entrega** | Pendiente de completar |
-
-**Requerimientos**
-
-| Requerimiento del reto | Cómo se abordó |
-|---|---|
-| Agente funcionando de punta a punta contra Grok | Grafos de plantilla y juez llamando a Grok por el gateway, consumidos por la app con el backend en Vercel ([El agente](#el-agente)). |
-| Repositorio público | [github.com/sergioRepository/ProyectoPlatica](https://github.com/sergioRepository/ProyectoPlatica) |
-| README que describa el problema | Sección [El problema](#el-problema). |
-
-### Hito 2: 3 herramientas y video de 2 min
-
-| | |
-|---|---|
-| **Descripción general** | Agente de intervención: un tercer grafo de LangGraph que decide con llamadas nativas a herramientas si consulta el uso real del teléfono, el historial de intervenciones o si ejecuta una sesión de enfoque. Se integra con el bloqueador existente: la orden viaja en la respuesta, Android la aplica con las reglas de bloqueo que ya tenía y confirma el resultado. |
-| **Objetivos** | Pasar de decisiones predefinidas a un agente que observa evidencia real, elige qué herramientas necesita, actúa dentro de límites explícitos y registra lo que ocurrió, incluida la decisión de no actuar. |
-| **Implementación y resultados** | Evidencia de uso con `UsageStatsManager` y el permiso `PACKAGE_USAGE_STATS` como paso de la guía; historial en PostgreSQL (Neon en producción) con creación automática de tablas; selección de herramientas con `bind_tools`; política determinista e idempotencia por `request_id`; confirmación desde Android y APK 0.3.0. Las pruebas usan dobles del LLM y de la base (`test_agent_graph.py`, `test_agent_tools.py`, `test_agent_api.py` y `test_store.py`, que también corre contra Postgres real). Queda sin hacer: el resultado observado (`observed_outcome`) existe en la tabla pero queda vacío. |
-| **Commit asociado** | [`f9760fe`: La vida no es un banano, versión de producción](https://github.com/sergioRepository/ProyectoPlatica/commit/f9760fe81f73925e900a7bc02388cf25979eef2d) |
-| **Video de demostración** | Pendiente de completar |
-| **Reporte técnico** | Pendiente de completar |
-| **Nota de entrega** | Pendiente de completar |
-
-**Requerimientos**
-
-| Requerimiento del reto | Cómo se abordó |
-|---|---|
-| 3 herramientas | `consultar_evidencia_uso`, `consultar_historial_intervenciones` y `ejecutar_intervencion`, conectadas a datos y acciones reales ([Agente de intervención](#3-agente-de-intervención-post-agentanalyze)). |
-| Manejo de errores | `permission_missing`, `no_data` frente a `unavailable`, `agent_unavailable` ante fallo o timeout del LLM, códigos de política y `unknown` cuando falta la confirmación. |
-| 10 ejecuciones | Pendiente de completar: no hay evidencia en el repositorio. |
-| Video de 2 minutos | Pendiente de completar. |
-
-### Hitos siguientes
-
-| Hito | Requerimientos del reto | Entregable |
-|---|---|---|
-| S3 · Datos reales | Set de evaluación propio de más de 30 casos | Reporte de costo por tarea |
-| S4 · Semana de carga | 1,000 unidades de trabajo y 12 horas de ejecución desatendida | Bitácora completa |
-
-> Para documentar un hito nuevo, copia la tabla de un hito anterior, agrega su fila al resumen y cambia su estado en `docs/assets/hitos.svg`.
-
 ## Estructura del repositorio
 
 ```text
@@ -295,7 +298,7 @@ No está en Play Store; se instala por APK.
 
 **Requisitos:** Android 8.0 o superior. Internet solo para el onboarding, el juez y el agente; los mensajes de bloqueo funcionan sin conexión.
 
-**[Descargar el APK](apk/la-vida-no-es-un-banano.apk)** (versión 0.3.0, con el agente de intervención, 11 MB). Usa el backend de producción en Vercel. La versión 0.2.0, sin el agente, sigue en [MediaFire](https://www.mediafire.com/file/t1x19xrl4jngmfi/la-vida-no-es-un-banano.apk/file).
+**[Descargar desde la página oficial](https://la-vida-no-es-un-banano.vercel.app)** (versión 0.4.0, con el agente de intervención). La página trae los pasos de instalación. Usa el backend de producción en Vercel. La versión 0.2.0, sin el agente, sigue en [MediaFire](https://www.mediafire.com/file/t1x19xrl4jngmfi/la-vida-no-es-un-banano.apk/file).
 
 > La versión 0.4.0, con autorizaciones de datos y registro automático, se compila desde este repositorio y aún no está publicada aquí. Cuando el backend se actualice, la 0.3.0 dejará de usar el juez y el agente: seguirá bloqueando, pero con la regla sin conexión.
 

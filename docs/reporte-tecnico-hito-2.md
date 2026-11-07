@@ -15,7 +15,7 @@
 
 | Verificado en este reporte | Pendiente o no verificable desde el repositorio |
 |---|---|
-| Las tres herramientas existen en el código y están conectadas al grafo del agente. | Las 10 ejecuciones que pide el reto: no hay registro en el repositorio. |
+| Las tres herramientas existen en el código y están conectadas al grafo del agente. | Las 10 ejecuciones que pide el reto: agregadas el 2026-11-07 en [s2-ejecuciones.md](s2-ejecuciones.md), exportadas de `agent_events` en producción. |
 | 122 pruebas del backend pasan y 1 se omite (contrato de Postgres sin `TEST_DATABASE_URL`). | El video de 2 minutos del hito S2. |
 | 15 pruebas JVM de Android pasan (`AgentRulesTest`, `UsageSessionsTest`, `BlockPolicyTest`). | Una ejecución real contra Grok (`smoke_grok`) y contra PostgreSQL: no se ejecutaron para este reporte. |
 | `ruff check` sin hallazgos en `banano` y `tests`. | Funcionamiento en un teléfono físico con el APK 0.3.0. |
@@ -388,8 +388,8 @@ Todas las pruebas del grafo y de la API usan dobles de prueba: `FakeToolLLM` rep
 
 ### Comprobaciones pendientes
 
-- Ejecución de punta a punta contra Grok y Postgres reales, con evidencia guardada (salida de `smoke_grok` o filas de `agent_events`).
-- Las 10 ejecuciones que pide el reto.
+- Ejecución de punta a punta contra Grok y Postgres reales, con evidencia guardada: resuelto el 2026-11-07 con filas de `agent_events` en [s2-ejecuciones.md](s2-ejecuciones.md).
+- Las 10 ejecuciones que pide el reto: resuelto el 2026-11-07 en [s2-ejecuciones.md](s2-ejecuciones.md).
 - Prueba en un dispositivo físico: permiso de uso, sesión de enfoque aplicada y confirmación `executed`.
 
 ## 8. Cumplimiento de los requisitos del hito
@@ -400,7 +400,7 @@ Los requisitos oficiales vienen del sitio del reto: *"3 herramientas, manejo de 
 |---|---|---|---|
 | **Oficial:** 3 herramientas | `consultar_evidencia_uso`, `consultar_historial_intervenciones`, `ejecutar_intervencion`, más `concluir` como control | `tools.py`, `agent_graph.py`, `test_agent_tools.py`, `test_agent_graph.py` | Cumplido en código y pruebas con dobles |
 | **Oficial:** manejo de errores | `permission_missing`, `no_data`/`unavailable`, argumentos inválidos, `unknown_tool`, `agent_unavailable` (`llm_unavailable`, `timeout`, `max_cycles`, `invalid_output`), códigos de política, `unknown` por falta de confirmación, 401/404/422/429/503 | `test_agent_graph.py`, `test_agent_api.py`, `test_store.py` (pasan) | Cumplido en pruebas |
-| **Oficial:** 10 ejecuciones | No hay registros, logs ni script de ejecuciones en el repositorio | Ninguna | No verificable |
+| **Oficial:** 10 ejecuciones | Exportación de `agent_events` de producción: 34 ejecuciones de 5 teléfonos, 10 seleccionadas que cubren los cuatro resultados | [s2-ejecuciones.md](s2-ejecuciones.md) (agregado el 2026-11-07) | Cumplido |
 | **Oficial:** video de 2 minutos | No hay enlace para S2. El video del README (`uU0Go189CdI`) corresponde al hito S1 | Ninguna | Pendiente |
 | SPEC 1: herramientas conectadas a operaciones reales | `UsageStatsManager`, `SELECT` en Postgres, sesión en Room confirmada | Código Android y backend | Cumplido en código; no verificado en vivo |
 | SPEC 2: no se invocan todas las herramientas siempre | Selección con `bind_tools`, sin secuencia fija | `test_carlos_legit_use_ends_without_history_or_execution` | Cumplido (con LLM falso) |
@@ -422,7 +422,7 @@ Los requisitos oficiales vienen del sitio del reto: *"3 herramientas, manejo de 
 5. **Las confirmaciones perdidas no se reintentan.** El resultado queda como `unknown`; es un comportamiento documentado, no un fallo oculto.
 6. **El valor de `aperturas` es aproximado** (sección 4.1).
 7. **Una conexión a Postgres por consulta.** Son 3 o 4 conexiones por análisis, y está marcado como `shortcut:`.
-8. **No hay evidencia de ejecuciones reales ni del video** en el repositorio.
+8. **No hay video del hito** en el repositorio. Las ejecuciones reales se agregaron el 2026-11-07 en [s2-ejecuciones.md](s2-ejecuciones.md).
 
 ### Riesgos deducidos del código, sin reproducir
 
@@ -432,7 +432,6 @@ Los requisitos oficiales vienen del sitio del reto: *"3 herramientas, manejo de 
 ### Recomendaciones (no implementadas)
 
 - Publicar la rama `desarrollo` o copiar `SPEC_S2.md` a `docs/`, para que el evaluador pueda rastrear los commits del hito.
-- Guardar la salida de `smoke_grok --api` y una exportación de `agent_events`, sin `device_id`, como evidencia de las 10 ejecuciones.
 - Actualizar el README para mencionar `concluir`.
 - Hacer atómico el cupo diario, por ejemplo contando e insertando dentro de una misma transacción.
 - Llenar `observed_outcome` con el uso de la ventana siguiente a la intervención.
@@ -502,6 +501,5 @@ El manejo de errores está implementado y cubierto por pruebas que pasan: 122 en
 **Para dar el hito por documentado y validado ante el reto faltan:**
 
 1. El video de 2 minutos.
-2. La evidencia de 10 ejecuciones reales contra Grok y Postgres.
-3. Una corrida de la prueba de contrato contra Postgres real.
-4. Publicar la especificación y los commits detallados del hito, que hoy solo existen en la rama local `desarrollo`.
+2. Una corrida de la prueba de contrato contra Postgres real.
+3. Publicar la especificación y los commits detallados del hito, que hoy solo existen en la rama local `desarrollo`.
