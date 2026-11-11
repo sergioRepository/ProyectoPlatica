@@ -28,6 +28,9 @@ from tests.fakes import (
 )
 
 ANDROID_DIR = Path(__file__).resolve().parents[2] / "android"
+# Marcas de la interfaz, no emojis: el diseño las usa en veredictos, listas y contadores.
+# Solo se admiten en los textos fijos de la app; lo que escribe la IA sigue sin símbolos.
+UI_MARKS = {"✓", "✕"}
 
 
 def assert_no_emoji(text: str) -> None:
@@ -88,4 +91,5 @@ def test_android_strings_have_no_emojis() -> None:
         pytest.skip("No está la carpeta android (por ejemplo, dentro de Docker)")
     for path, text in strings:
         assert emoji.emoji_count(text) == 0, f"{path.name}: {text}"
-        assert not [c for c in text if unicodedata.category(c) == "So"], f"{path.name}: {text}"
+        symbols = [c for c in text if unicodedata.category(c) == "So" and c not in UI_MARKS]
+        assert not symbols, f"{path.name}: {text}"
