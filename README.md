@@ -24,7 +24,7 @@
 
 ---
 
-Bloqueador de apps para Android con un agente de IA de sarcasmo personalizado. Cuando abres una app bloqueada en horario restringido, aparece una pantalla con un mensaje hecho a tu medida y tres salidas: salir, emergencia o 10 minutos más. Las dos últimas las decide un juez de IA. Desde la versión 0.3.0, un agente de intervención revisa además tu uso real del teléfono y decide si hace falta actuar.
+Bloqueador de apps para Android con un agente de IA de sarcasmo personalizado. Cuando abres una app bloqueada en horario restringido, aparece una pantalla con un mensaje hecho a tu medida y tres salidas: salir, emergencia o 10 minutos más. Las dos últimas las decide un juez de IA, Peel. Desde la versión 0.3.0, un agente de intervención revisa además tu uso real del teléfono y decide si hace falta actuar.
 
 La idea central: la vida es mucho más que estar en el celular. La app no compite por tu atención; aparece, dice lo que tiene que decir y se quita del camino.
 

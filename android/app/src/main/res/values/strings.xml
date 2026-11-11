@@ -19,7 +19,7 @@
     <string name="consent_brand">la vida no es un banano</string>
     <string name="consent_title">Antes de empezar</string>
     <string name="consent_intro">Para bloquearte apps y escribirte mensajes, necesitamos ver cómo usas el teléfono. Aquí decides qué compartes.</string>
-    <string name="consent_not_medical">La Vida te ayuda a usar menos el teléfono. No es atención médica ni psicológica.</string>
+    <string name="consent_not_medical">La vida no es un banano te ayuda a usar menos el teléfono. No es atención médica ni psicológica.</string>
     <string name="consent_section_required">Para que funcione</string>
     <string name="consent_section_optional">Si quieres</string>
     <string name="consent_phone_usage_title">Ver qué apps usas</string>
@@ -105,7 +105,7 @@
     <string name="sarcasm_4_desc">Sin anestesia.</string>
     <string name="sarcasm_5">5 · Despiadado</string>
     <string name="sarcasm_5_desc">Que duela un poco.</string>
-    <string name="onboarding_sarcasm_insults_warning">Ojo: desde el nivel 4, el juez puede insultarte a ti, no solo a tu excusa. Tu cuerpo, tu familia y los temas que prohíbas siguen fuera de límites.</string>
+    <string name="onboarding_sarcasm_insults_warning">Ojo: desde el nivel 4, Peel puede insultarte a ti, no solo a tu excusa. Tu cuerpo, tu familia y los temas que prohíbas siguen fuera de límites.</string>
 
     <string name="onboarding_profanity_title">¿Groserías?</string>
     <string name="onboarding_profanity_hint">Para cuando el sarcasmo solo no alcanza.</string>
@@ -170,7 +170,7 @@
     <string name="generation_done_back">Volver a ajustes</string>
 
     <!-- Inicio -->
-    <string name="home_brand">la vida · %1$s</string>
+    <string name="home_brand">la vida no es un banano · %1$s</string>
     <string name="home_free_until">Libre hasta %1$s</string>
     <string name="home_free_sub">A esa hora se bloquean %1$s.</string>
     <string name="home_blocked_until">Bloqueado hasta %1$s</string>
@@ -184,7 +184,7 @@
     <string name="home_stopped_action">Volver a activarlo</string>
     <string name="home_checking">Revisando el bloqueo</string>
     <string name="home_offline_title">Sin internet</string>
-    <string name="home_disconnected_title">Sin conexión con el juez</string>
+    <string name="home_disconnected_title">Sin conexión con Peel</string>
     <string name="home_offline_hint">El bloqueo sigue funcionando. Mientras tanto, las emergencias se aprueban solas y los 10 minutos se rechazan.</string>
     <plurals name="home_recommended_pending">
         <item quantity="one">Te falta %1$d paso recomendado</item>
@@ -250,7 +250,7 @@
     <string name="outcome_emergency_offline">Emergencia · sin internet</string>
     <string name="history_approved">✓ aprobada</string>
     <string name="history_rejected">✕ rechazada</string>
-    <string name="history_judge_banana">El banano:</string>
+    <string name="history_judge_banana">Peel:</string>
     <string name="history_judge_rule">Regla sin internet:</string>
 
     <!-- Resumen -->
@@ -338,9 +338,9 @@
     <string name="plan_monthly">Mensual</string>
     <string name="plan_semester">Semestral</string>
     <plurals name="settings_plan_limit">
-        <item quantity="one">El banano evalúa hasta %1$d razón al día. Hoy te quedan %2$d.</item>
-        <item quantity="many">El banano evalúa hasta %1$d razones al día. Hoy te quedan %2$d.</item>
-        <item quantity="other">El banano evalúa hasta %1$d razones al día. Hoy te quedan %2$d.</item>
+        <item quantity="one">Peel evalúa hasta %1$d razón al día. Hoy te quedan %2$d.</item>
+        <item quantity="many">Peel evalúa hasta %1$d razones al día. Hoy te quedan %2$d.</item>
+        <item quantity="other">Peel evalúa hasta %1$d razones al día. Hoy te quedan %2$d.</item>
     </plurals>
     <string name="settings_plans">Ver planes</string>
     <string name="settings_plan_hint">Por ahora ningún plan tiene costo. Sin evaluaciones, las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
@@ -382,7 +382,7 @@
     <string name="setup_required_badge">necesario · %1$d de %2$d</string>
     <string name="setup_what_to_do">Qué hacer allá</string>
     <string name="setup_warning">Android te va a mostrar un aviso que suena fuerte. Es normal: lo muestra para todas las apps de este tipo.</string>
-    <string name="setup_accessibility_title">Deja que La Vida vea qué app abres</string>
+    <string name="setup_accessibility_title">Deja que veamos qué app abres</string>
     <string name="setup_accessibility_desc">Así podemos poner el bloqueo encima de tus apps. Usamos el permiso de Accesibilidad solo para saber qué app está en pantalla. No leemos lo que escribes, tus mensajes ni tus contraseñas.</string>
     <string name="setup_accessibility_stopped_desc">Está activado, pero Android lo detuvo. Apágalo y vuélvelo a encender en Accesibilidad.</string>
     <string name="setup_accessibility_step_1">Toca «Apps instaladas».</string>
@@ -474,7 +474,7 @@
     <string name="excuse_extra_time_placeholder">Responder un mensaje del trabajo</string>
     <string name="excuse_submit">Enviar mi razón</string>
     <string name="excuse_cancel">Mejor no</string>
-    <string name="excuse_judging">El banano está leyendo tu razón…</string>
+    <string name="excuse_judging">Peel está leyendo tu razón…</string>
     <string name="excuse_judging_hint">Tarda unos segundos.</string>
     <string name="verdict_approved">✓ APROBADA · %1$d min</string>
     <string name="verdict_approved_offline">✓ APROBADA · %1$d min · sin internet</string>
@@ -505,7 +505,7 @@
     <string name="verdict_rule_title">Sin compartir tus razones, decide una regla: las emergencias se aprueban.</string>
     <string name="verdict_offline_note">Nadie leyó tu razón. Queda marcada en el Historial para que la revises después.</string>
     <string name="verdict_offline_emergency">Aprobada sin leerla. Las emergencias se aprueban cuando no hay conexión.</string>
-    <string name="verdict_offline_rejected">Sin juez no hay minutos extra. Vuelve cuando haya conexión.</string>
+    <string name="verdict_offline_rejected">Sin Peel no hay minutos extra. Vuelve cuando haya conexión.</string>
     <string name="verdict_crisis">Te damos %1$d minutos. Si estás pasando por un momento difícil, no tienes que hacerlo solo.</string>
     <string name="crisis_title">Te damos %1$d minutos.</string>
     <string name="help_title">Aquí hay ayuda.</string>

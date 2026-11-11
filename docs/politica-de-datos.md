@@ -35,7 +35,7 @@ Guardamos qué autorizaste, la versión del texto y la fecha.
 | Dato | Para qué | Dónde queda |
 |---|---|---|
 | Perfil: nombre o apodo, metas, excusas típicas, apps y horarios, tono, temas vetados | Escribir tus mensajes de bloqueo | En tu teléfono. El servidor lo procesa y no lo guarda |
-| Texto de tus excusas, si lo autorizas | Que el juez de IA decida si te da tiempo | En tu teléfono. El servidor lo procesa y **no lo guarda** |
+| Texto de tus excusas, si lo autorizas | Que el juez de IA (Peel) decida si te da tiempo | En tu teléfono. El servidor lo procesa y **no lo guarda** |
 | Uso de las últimas 24 horas: qué apps y cuántos minutos | Que el agente decida si intervenir | El detalle no se guarda; en el servidor queda un resumen por app (`agent_events`) |
 | Decisiones del agente y su motivo | Historial y confirmación de intervenciones | Servidor (`agent_events`) |
 | Identificador aleatorio del dispositivo, plan, respuesta a "¿Pagarías?" | Aplicar los topes diarios | Servidor (`devices`, `device_daily_usage`) |

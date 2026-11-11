@@ -54,10 +54,10 @@ PREFILTER_LINES: dict[str, tuple[str, ...]] = {
     ),
 }
 QUOTA_LINES: dict[str, tuple[str, ...]] = {
-    "plan_quota": ("Por hoy no quedan llamadas al juez. Sin juez no hay minutos extra.",),
-    "rejection_cap": ("Ya fueron muchos rechazos por hoy. Sin juez no hay minutos extra.",),
+    "plan_quota": ("Por hoy no quedan evaluaciones. Sin Peel no hay minutos extra.",),
+    "rejection_cap": ("Ya fueron muchos rechazos por hoy. Sin Peel no hay minutos extra.",),
 }
-QUOTA_APPROVED = "Por hoy no hay juez, así que te creo. Queda anotado para revisarlo después."
+QUOTA_APPROVED = "Por hoy Peel no está, así que te creo. Queda anotado para revisarlo después."
 APPROVED_FALLBACK = ("Aprobado. Que valga la pena.",)
 REJECTED_FALLBACK = ("Rechazado. Vuelve a lo tuyo.",)
 
