@@ -20,7 +20,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -36,7 +35,7 @@ class Notifier @Inject constructor(
     fun showUnlock(app: AppInfo, until: Instant) {
         val remaining = Duration.between(clock.instant(), until).toMillis()
         if (remaining <= 0) return
-        val time = ScheduleFormatter.time(LocalTime.ofInstant(until, clock.zone))
+        val time = ScheduleFormatter.time(until.atZone(clock.zone).toLocalTime())
         notify(
             unlockId(app.packageName),
             NotificationCompat.Builder(context, CHANNEL_UNLOCKS)
@@ -78,7 +77,7 @@ class Notifier @Inject constructor(
     fun showFocus(labels: List<String>, until: Instant, reason: String) {
         val remaining = Duration.between(clock.instant(), until).toMillis()
         if (remaining <= 0) return
-        val time = ScheduleFormatter.time(LocalTime.ofInstant(until, clock.zone))
+        val time = ScheduleFormatter.time(until.atZone(clock.zone).toLocalTime())
         notify(
             FOCUS_ID,
             NotificationCompat.Builder(context, CHANNEL_STATUS)

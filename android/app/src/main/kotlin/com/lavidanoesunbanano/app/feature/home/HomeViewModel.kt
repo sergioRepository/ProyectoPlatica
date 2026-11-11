@@ -24,7 +24,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.LocalTime
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -106,7 +105,7 @@ class HomeViewModel @Inject constructor(
         unlocks.filterValues { it > now }.map { (packageName, until) ->
             ActiveUnlock(
                 label = labels[packageName] ?: packageName,
-                until = ScheduleFormatter.time(LocalTime.ofInstant(until, clock.zone)),
+                until = ScheduleFormatter.time(until.atZone(clock.zone).toLocalTime()),
             )
         }.sortedBy { it.until }
     }
