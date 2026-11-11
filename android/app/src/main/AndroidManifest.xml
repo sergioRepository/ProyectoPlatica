@@ -7,8 +7,6 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Seguro para abrir la pantalla de bloqueo desde segundo plano si el sistema lo restringe. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-    <!-- La app no se publica: puede pedir quedar fuera de la optimización de batería. -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <!-- Evidencia de uso para el agente (S2). Se concede a mano en Acceso a datos de uso. -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
                      tools:ignore="ProtectedPermissions"/>
@@ -29,7 +27,7 @@
 
     <application
             android:name=".LaVidaApp"
-            android:allowBackup="true"
+            android:allowBackup="false"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"

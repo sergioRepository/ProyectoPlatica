@@ -124,7 +124,7 @@ Abrir TikTok o Instagram "solo un ratito" es un gesto automático. Los bloqueado
 | **Juez de excusas** | Decide si una emergencia o un "10 minutos más" se justifica, con cupos diarios y una regla sin conexión. | `POST /excuses/judge` y `OfflineVerdict` |
 | **Agente de intervención** | Revisa el uso real de las últimas 24 h y el historial, y puede iniciar una sesión de enfoque dentro de límites fijos, o decidir no actuar. | `POST /agent/analyze` y `AgentCheckWorker` |
 | **Estadísticas e historial** | Intentos por app, excusas aprobadas y rechazadas, e historial de bloqueos. | `feature/stats` y `feature/history` |
-| **Anti-autosabotaje** | Pone una pausa cuando intentas desactivar el bloqueador desde Ajustes. Siempre puedes salir: ya mismo escribiendo por qué, o programándolo para dentro de 24 horas. | `SabotageGuard` y `ProtectionRepository` |
+| **Anti-autosabotaje** | En tu horario de bloqueo deja bajo llave las apps, el horario y los cupos dentro de la app. Siempre puedes quitar la llave: ya mismo escribiendo una frase de confirmación, o programándolo para dentro de 24 horas. No tapa ninguna pantalla del sistema. | `SabotageGuard` y `ProtectionRepository` |
 | **Planes sin cobro** | Gratis, Mensual y Semestral, con topes diarios de llamadas de IA y la pregunta opcional "¿Pagarías por este plan?". Por ahora ningún plan tiene costo. | `PUT /devices/me/plan` y `banano/quota.py` |
 | **Medición** | Tokens, costo y latencia de cada llamada a Grok, y eventos de uso de la app si los autorizas. | `llm_usage`, `app_events` y `backend/sql/queries/` |
 | **Privacidad** | Autorizaciones por separado, borrado total de tus datos y reporte de mensajes de la IA. | `feature/consent`, `DELETE /devices/me` y `POST /reports` |
@@ -339,7 +339,7 @@ La app te ayuda a reducir el uso del celular. No es un servicio médico ni de sa
 - **Qué se guarda.** Perfil, plantilla e historial viven en el teléfono. El servidor procesa el perfil, las excusas autorizadas y el uso de 24 h, pero no guarda el texto de las excusas. Sí guarda decisiones del agente, consumo de tokens, plan, autorizaciones, eventos autorizados y reportes. Quién más procesa esos datos, con Vercel, Neon, el gateway de PLATICA MX y xAI, está en la política.
 - **Retención y borrado.** `llm_usage`, `app_events` y `agent_events` se borran a los 90 días, y los reportes a los 180, con un cron diario. "Borrar mis datos" en Ajustes elimina todo en el servidor y en el teléfono.
 - **Reportar contenido de la IA.** Se puede reportar un mensaje desde la pantalla de bloqueo y desde el veredicto, sin salir de la app.
-- **Siempre se puede salir.** El anti-autosabotaje da fricción, no encierra: se desactiva ya escribiendo por qué, sin aprobación de nadie, o se programa para dentro de 24 horas.
+- **Siempre se puede salir.** El anti-autosabotaje da fricción, no encierra: se desactiva ya escribiendo una frase de confirmación, sin aprobación de nadie, o se programa para dentro de 24 horas. La app nunca impide desactivar el servicio ni desinstalarla.
 - **Crisis.** Si una excusa describe una emergencia o autolesión, se apaga el sarcasmo y se aprueba con tono humano, también sin internet, y aparecen líneas de ayuda de Colombia. Solo se muestran las verificadas en [`crisis_lines.json`](android/app/src/main/assets/crisis_lines.json).
 - **Tono bajo tu control.** Bajar el sarcasmo aplica de inmediato a los mensajes ya generados, y el modo amable lo apaga del todo.
 - **Permisos.** La Accesibilidad solo detecta qué app pasa a primer plano. No lee la pantalla ni lo que escribes.

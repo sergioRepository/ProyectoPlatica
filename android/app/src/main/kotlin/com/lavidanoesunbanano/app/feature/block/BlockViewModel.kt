@@ -3,7 +3,6 @@ package com.lavidanoesunbanano.app.feature.block
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.data.repository.AppEvents
 import com.lavidanoesunbanano.app.data.repository.BlockSession
 import com.lavidanoesunbanano.app.data.repository.BlockSessionRepository
@@ -11,10 +10,8 @@ import com.lavidanoesunbanano.app.data.repository.DeviceRepository
 import com.lavidanoesunbanano.app.data.repository.EventRepository
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
-import com.lavidanoesunbanano.app.data.repository.ProtectionRepository
 import com.lavidanoesunbanano.app.data.repository.QuotaToday
 import com.lavidanoesunbanano.app.data.system.CrisisLinesSource
-import com.lavidanoesunbanano.app.domain.blocking.SabotageGuard
 import com.lavidanoesunbanano.app.domain.excuse.CrisisLine
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
@@ -34,7 +31,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,8 +42,6 @@ data class BlockRequest(
     val startedAt: Instant,
     val newAttempt: Boolean,
     val triggerUptime: Long,
-    /** Tapa una ventana desde donde se apaga el bloqueo: se ofrece la salida con fricción. */
-    val sabotage: Boolean = false,
 ) {
     fun writeTo(intent: Intent): Intent = intent
         .putExtra(EXTRA_PACKAGE, app.packageName)
@@ -55,7 +49,6 @@ data class BlockRequest(
         .putExtra(EXTRA_STARTED_AT, startedAt.toEpochMilli())
         .putExtra(EXTRA_NEW_ATTEMPT, newAttempt)
         .putExtra(EXTRA_TRIGGER_UPTIME, triggerUptime)
-        .putExtra(EXTRA_SABOTAGE, sabotage)
 
     companion object {
         private const val EXTRA_PACKAGE = "package"
@@ -63,7 +56,6 @@ data class BlockRequest(
         private const val EXTRA_STARTED_AT = "started_at"
         private const val EXTRA_NEW_ATTEMPT = "new_attempt"
         private const val EXTRA_TRIGGER_UPTIME = "trigger_uptime"
-        private const val EXTRA_SABOTAGE = "sabotage"
 
         fun from(intent: Intent): BlockRequest? {
             val packageName = intent.getStringExtra(EXTRA_PACKAGE) ?: return null
@@ -72,7 +64,6 @@ data class BlockRequest(
                 startedAt = Instant.ofEpochMilli(intent.getLongExtra(EXTRA_STARTED_AT, 0)),
                 newAttempt = intent.getBooleanExtra(EXTRA_NEW_ATTEMPT, true),
                 triggerUptime = intent.getLongExtra(EXTRA_TRIGGER_UPTIME, 0),
-                sabotage = intent.getBooleanExtra(EXTRA_SABOTAGE, false),
             )
         }
     }
@@ -87,12 +78,6 @@ sealed interface BlockStep {
         val reason: String = "",
         val judging: Boolean = false,
     ) : BlockStep
-
-    /**
-     * Salida con fricción. `scheduledAt`: cuándo se apaga, si ya está programado.
-     * `scheduleAt`: cuándo se apagaría si se programa ahora.
-     */
-    data class Sabotage(val reason: String = "", val scheduledAt: String? = null, val scheduleAt: String = "") : BlockStep
 
     /** Líneas de ayuda pedidas a mano: no piden razón ni desbloquean. */
     data class Help(val lines: List<CrisisLine>) : BlockStep
@@ -135,8 +120,6 @@ class BlockViewModel @Inject constructor(
     private val notifier: Notifier,
     private val events: EventRepository,
     private val deviceRepository: DeviceRepository,
-    private val protection: ProtectionRepository,
-    private val settings: SettingsStore,
     private val crisisLines: CrisisLinesSource,
     private val clock: Clock,
 ) : ViewModel() {
@@ -168,16 +151,9 @@ class BlockViewModel @Inject constructor(
         opening = viewModelScope.launch {
             val opened = sessions.open(request.app, request.startedAt)
             session = opened
-            val step = if (request.sabotage) {
-                BlockStep.Sabotage(scheduledAt = scheduledOff(), scheduleAt = scheduleOffAt())
-            } else {
-                BlockStep.Message
-            }
-            _state.value = opened.toUiState(excuses.quotaToday(), blockedUntil()).copy(step = step)
-            when {
-                !request.newAttempt -> Unit
-                request.sabotage -> protection.recordAttempt(opened.app.packageName)
-                else -> events.track(AppEvents.BLOCK_SHOWN, opened.app.packageName, "attempt" to JsonPrimitive(opened.attemptNumber))
+            _state.value = opened.toUiState(excuses.quotaToday(), blockedUntil())
+            if (request.newAttempt) {
+                events.track(AppEvents.BLOCK_SHOWN, opened.app.packageName, "attempt" to JsonPrimitive(opened.attemptNumber))
             }
         }
     }
@@ -196,33 +172,9 @@ class BlockViewModel @Inject constructor(
     fun updateReason(reason: String) = updateStep { step ->
         when {
             step is BlockStep.Excuse && !step.judging -> step.copy(reason = reason)
-            step is BlockStep.Sabotage -> step.copy(reason = reason)
             else -> step
         }
     }
-
-    /** Apaga la protección. `onDone`: la pantalla se quita y deja ver lo que tapaba. */
-    fun disableProtection(onDone: () -> Unit) {
-        val step = _state.value?.step as? BlockStep.Sabotage ?: return
-        viewModelScope.launch {
-            if (protection.disableNow(step.reason, session?.app?.packageName)) onDone()
-        }
-    }
-
-    fun scheduleProtectionOff() {
-        viewModelScope.launch {
-            protection.scheduleDisable(session?.app?.packageName)
-            val at = scheduledOff()
-            updateStep { step -> if (step is BlockStep.Sabotage) step.copy(scheduledAt = at) else step }
-        }
-    }
-
-    private suspend fun scheduledOff(): String? = settings.antiSabotageOffAt.first()?.let {
-        ScheduleFormatter.dayTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(it), clock.zone))
-    }
-
-    private fun scheduleOffAt(): String =
-        ScheduleFormatter.dayTime(LocalDateTime.now(clock).plus(SabotageGuard.DISABLE_DELAY))
 
     private suspend fun blockedUntil(): String? {
         val now = LocalDateTime.now(clock)
@@ -239,7 +191,7 @@ class BlockViewModel @Inject constructor(
             }
             is BlockStep.Decided -> if (!step.verdict.valid) dismissRejection()
             is BlockStep.Help -> updateStep { BlockStep.Message }
-            is BlockStep.Sabotage, BlockStep.Message, null -> Unit
+            BlockStep.Message, null -> Unit
         }
     }
 
@@ -281,13 +233,11 @@ class BlockViewModel @Inject constructor(
 
     fun recordExit() {
         val current = session ?: return
-        val guarding = _state.value?.step is BlockStep.Sabotage
         // La pantalla se cierra justo después: el registro termina aunque se limpie el ViewModel.
         viewModelScope.launch {
             withContext(NonCancellable) {
                 sessions.recordExit(current.attemptId)
-                // Salir de la pantalla de protección no es salir de una app bloqueada.
-                if (!guarding) events.track(AppEvents.BLOCK_EXIT, current.app.packageName)
+                events.track(AppEvents.BLOCK_EXIT, current.app.packageName)
             }
         }
     }

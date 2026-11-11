@@ -69,4 +69,7 @@ object SetupChecklist {
     fun blockerReady(items: List<SetupItem>): Boolean = items.filter { it.required }.all { it.done }
 
     fun pending(items: List<SetupItem>): Int = items.count { !it.done }
+
+    /** Antes de abrir Accesibilidad sin haber aceptado, se muestra la divulgación. */
+    fun needsDisclosure(step: SetupStep, consented: Boolean): Boolean = step == SetupStep.ACCESSIBILITY && !consented
 }

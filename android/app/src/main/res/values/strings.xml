@@ -307,8 +307,8 @@
     <string name="settings_emergency_hint">Cada vez son 15 min · máximo %1$d</string>
     <string name="settings_decrease">Restar %1$s</string>
     <string name="settings_increase">Sumar %1$s</string>
-    <string name="settings_anti_sabotage">No dejarme apagar el bloqueo fácil</string>
-    <string name="settings_anti_sabotage_desc">En horario de bloqueo, para apagarlo tendrás que escribir por qué o esperar 24 horas.</string>
+    <string name="settings_anti_sabotage">Reglas bajo llave en horario de bloqueo</string>
+    <string name="settings_anti_sabotage_desc">En tu horario de bloqueo no podrás cambiar apps, horario ni cupos. Para quitar la llave tendrás que escribir una frase de confirmación o esperar 24 horas.</string>
     <string name="settings_permissions">Permisos del teléfono</string>
     <string name="settings_kind_mode">Mensajes amables</string>
     <string name="settings_kind_mode_desc">Sin sarcasmo ni groserías. El bloqueo funciona igual.</string>
@@ -409,6 +409,7 @@
     <string name="setup_done">✓ listo</string>
     <string name="setup_battery_title">Batería sin restricciones</string>
     <string name="setup_battery_risk">Android puede apagar el bloqueo sin avisar.</string>
+    <string name="setup_battery_hint">En la lista que se abre, busca La vida no es un banano y elige que no se optimice su batería.</string>
     <string name="setup_overlay_title">Mostrar sobre otras apps</string>
     <string name="setup_overlay_risk">la app bloqueada puede verse un segundo.</string>
     <string name="setup_notifications_title">Notificaciones</string>
@@ -417,20 +418,26 @@
     <string name="setup_usage_risk">no habrá estadísticas ni revisión automática.</string>
     <string name="setup_battery_samsung">En Samsung, además: Ajustes, Batería, Límites de uso en segundo plano, Apps que nunca se suspenden, y agrega La vida no es un banano.</string>
     <string name="setup_battery_xiaomi">En Xiaomi, además: Seguridad, Permisos, Inicio automático, y actívalo para La vida no es un banano.</string>
-    <string name="setup_protection_note">La protección está encendida: en tu horario de bloqueo, los ajustes que mencionan la app piden una pausa antes. Configura fuera de ese horario o apágala en Ajustes.</string>
+
+    <!-- Divulgación de Accesibilidad (requisito de Google Play) -->
+    <string name="disclosure_title">Antes de activar Accesibilidad</string>
+    <string name="disclosure_what">La vida no es un banano usa el servicio de accesibilidad de Android (AccessibilityService API) para una sola cosa: detectar qué app pasa al frente y mostrar la pantalla de bloqueo cuando es una de las que elegiste, en tu horario o durante una sesión de enfoque.</string>
+    <string name="disclosure_data_title">Qué dato se usa</string>
+    <string name="disclosure_data">Solo el nombre de la app que abres. No leemos el contenido de la pantalla, lo que escribes, tus mensajes ni tus contraseñas.</string>
+    <string name="disclosure_use_title">Qué pasa con ese dato</string>
+    <string name="disclosure_use">Se usa en tu teléfono para decidir el bloqueo y queda en tu historial. Lo que detecta este servicio sale del teléfono únicamente en funciones que tú autorizas: cuando pides tiempo, el nombre de la app viaja con tu razón para que Peel la evalúe; y si autorizaste ayudarnos a mejorar la app, se registra qué app se bloqueó, si saliste o pediste tiempo y con qué resultado. No lo vendemos ni lo usamos para publicidad.</string>
+    <string name="disclosure_accept">Acepto</string>
+    <string name="disclosure_decline">No acepto</string>
+    <string name="disclosure_declined">Sin tu aceptación no activamos el bloqueo. Puedes aceptarla cuando quieras desde aquí.</string>
 
     <!-- Protección -->
-    <string name="sabotage_label">Ajustes</string>
-    <string name="sabotage_brand">La Vida · protección</string>
     <string name="sabotage_exit_title">¿Quieres apagar la protección?</string>
-    <string name="sabotage_exit_hint">Estás en horario de bloqueo. Puedes programarla para mañana a esta hora, o apagarla ahora si escribes por qué.</string>
     <string name="sabotage_exit_schedule">Programar para mañana a esta hora</string>
     <string name="sabotage_exit_schedule_at">se apaga el %1$s</string>
     <string name="sabotage_exit_now_title">Apagarla ahora</string>
-    <string name="sabotage_exit_now_hint">Escribe por qué, con al menos %1$d letras. No guardamos lo que escribas.</string>
-    <string name="sabotage_exit_placeholder">Por qué quiero apagarla</string>
-    <string name="sabotage_exit_count">%1$d / %2$d letras mínimo</string>
-    <string name="sabotage_exit_ready">%1$d letras · listo</string>
+    <string name="sabotage_exit_phrase">Soy consciente de que estoy apagando la protección</string>
+    <string name="sabotage_exit_now_hint">Escribe esta frase tal cual: «%1$s»</string>
+    <string name="sabotage_exit_placeholder">Escribe la frase aquí</string>
     <string name="sabotage_exit_now">Apagar la protección ahora</string>
     <string name="sabotage_exit_keep">Dejarla encendida</string>
     <string name="sabotage_exit_scheduled">Se apaga el %1$s</string>

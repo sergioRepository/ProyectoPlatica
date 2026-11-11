@@ -11,16 +11,13 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import com.lavidanoesunbanano.app.BuildConfig
-import com.lavidanoesunbanano.app.R
 import com.lavidanoesunbanano.app.data.prefs.SettingsStore
 import com.lavidanoesunbanano.app.data.repository.AgentRepository
 import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.domain.blocking.BlockRules
 import com.lavidanoesunbanano.app.domain.blocking.ForegroundTracker
-import com.lavidanoesunbanano.app.domain.blocking.SabotageGuard
 import com.lavidanoesunbanano.app.domain.blocking.TrackerAction
-import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.feature.block.BlockActivity
 import com.lavidanoesunbanano.app.feature.block.BlockRequest
 import com.lavidanoesunbanano.app.service.health.HealthCheckWorker
@@ -68,10 +65,6 @@ class BlockerService : AccessibilityService() {
     private var unlocks: Map<String, Instant> = emptyMap()
     private var recheck: Job? = null
 
-    /** Anti-autosabotaje activado en Ajustes, y cuándo se apaga si está programado. */
-    private var antiSabotage = false
-    private var antiSabotageOffAt: Instant? = null
-
     /**
      * Al encender la pantalla se revisa la app al frente: la espera programada no avanza
      * mientras el teléfono duerme, y un bloqueo pudo empezar con la pantalla apagada.
@@ -92,10 +85,6 @@ class BlockerService : AccessibilityService() {
         // Desde ahora, si el servicio se apaga, se avisa.
         notifier.cancelBlockerOff()
         scope.launch { settings.markBlockerSetUp() }
-        scope.launch { settings.antiSabotage.collect { antiSabotage = it } }
-        scope.launch {
-            settings.antiSabotageOffAt.collect { at -> antiSabotageOffAt = at?.let(Instant::ofEpochMilli) }
-        }
         ContextCompat.registerReceiver(
             this,
             screenReceiver,
@@ -129,12 +118,9 @@ class BlockerService : AccessibilityService() {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val tracker = tracker ?: return
         val packageName = event.packageName?.toString() ?: return
-        val texts = event.text.mapNotNull { it?.toString() } + listOfNotNull(event.contentDescription?.toString())
-        val guarded = guardedWindow(packageName, texts)
-        val effectiveRules = if (guarded != null) rules.guarding(guarded) else rules
-        val action = tracker.onWindow(packageName, clock.instant(), effectiveRules, unlocks)
-        if (BuildConfig.DEBUG) Log.d(TAG, "ventana $packageName ${event.className} $texts -> $action")
-        perform(action, triggerUptime = event.eventTime, sabotage = guarded != null)
+        val action = tracker.onWindow(packageName, clock.instant(), rules, unlocks)
+        if (BuildConfig.DEBUG) Log.d(TAG, "ventana $packageName ${event.className} -> $action")
+        perform(action, triggerUptime = event.eventTime)
     }
 
     override fun onInterrupt() = Unit
@@ -168,29 +154,19 @@ class BlockerService : AccessibilityService() {
         if (current == null || current < until) unlocks = unlocks + (packageName to until)
     }
 
-    /**
-     * Con el anti-autosabotaje encendido, la página del servicio en Accesibilidad y el diálogo
-     * de desinstalar se tratan como una app bloqueada más; el horario decide si se tapan.
-     */
-    private fun guardedWindow(packageName: String, texts: List<String>): AppInfo? {
-        if (!SabotageGuard.protectionOn(antiSabotage, antiSabotageOffAt, clock.instant())) return null
-        if (!SabotageGuard.isSabotage(packageName, texts, getString(R.string.app_name))) return null
-        return AppInfo(packageName, getString(R.string.sabotage_label))
-    }
-
     private fun recheckNow() {
         val tracker = tracker ?: return
         perform(tracker.recheck(clock.instant(), rules, unlocks), triggerUptime = SystemClock.uptimeMillis())
     }
 
-    private fun perform(action: TrackerAction, triggerUptime: Long, sabotage: Boolean = false) {
+    private fun perform(action: TrackerAction, triggerUptime: Long) {
         when (action) {
             TrackerAction.Ignore -> Unit
             TrackerAction.Idle -> cancelRecheck()
             is TrackerAction.RecheckAt -> scheduleRecheck(action.at)
             is TrackerAction.ShowBlock -> {
                 cancelRecheck()
-                val request = BlockRequest(action.app, action.at, action.newAttempt, triggerUptime, sabotage)
+                val request = BlockRequest(action.app, action.at, action.newAttempt, triggerUptime)
                 startActivity(BlockActivity.intent(this, request))
             }
         }

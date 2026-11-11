@@ -52,8 +52,6 @@ class BlockActivity : ComponentActivity() {
             onBack = viewModel::back,
             onOpenApp = ::openApp,
             onReport = viewModel::report,
-            onDisableProtection = { viewModel.disableProtection(::finish) },
-            onScheduleProtectionOff = viewModel::scheduleProtectionOff,
         )
         setContent {
             LaVidaTheme {

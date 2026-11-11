@@ -31,6 +31,7 @@ import retrofit2.create
 @Config(sdk = [35], application = Application::class)
 class ProtectionRepositoryTest {
 
+    private val phrase = "Soy consciente de que estoy apagando la protección"
     private val now = Instant.parse("2026-11-04T20:00:00Z")
     private val settings = FakeSettingsStore().apply { antiSabotage.value = true }
     private lateinit var database: LaVidaDatabase
@@ -56,20 +57,18 @@ class ProtectionRepositoryTest {
     private suspend fun tracked() = database.eventDao().due(Long.MAX_VALUE, 10)
 
     @Test
-    fun `a reason turns the protection off at once and is not kept`() = runBlocking {
-        val reason = "Tengo que usar Ajustes para algo del trabajo"
-
-        assertTrue(protection.disableNow(reason, "com.android.settings"))
+    fun `the phrase turns the protection off at once and is not kept`() = runBlocking {
+        assertTrue(protection.disableNow("  soy CONSCIENTE de que estoy apagando la protección ", phrase))
 
         assertFalse(settings.antiSabotage.value)
         assertEquals(listOf("sabotage_attempt"), tracked().map { it.name })
         assertTrue(tracked().single().props.contains("disabled_now"))
-        assertFalse(tracked().single().props.contains("trabajo"))
+        assertFalse(tracked().single().props.contains("consciente"))
     }
 
     @Test
-    fun `a short reason keeps the protection on`() = runBlocking {
-        assertFalse(protection.disableNow("porque si"))
+    fun `another text keeps the protection on`() = runBlocking {
+        assertFalse(protection.disableNow("porque si", phrase))
 
         assertTrue(settings.antiSabotage.value)
     }
@@ -96,7 +95,7 @@ class ProtectionRepositoryTest {
     fun `turning it off clears what was scheduled`() = runBlocking {
         protection.scheduleDisable()
 
-        protection.disableNow("Ya lo pensé y la quiero apagar")
+        protection.disableNow(phrase, phrase)
 
         assertNull(settings.antiSabotageOffAt.value)
     }

@@ -80,13 +80,11 @@ class BlockActions(
     val onBack: () -> Unit,
     val onOpenApp: () -> Unit,
     val onReport: (String, String, ReportSource) -> Unit,
-    val onDisableProtection: () -> Unit,
-    val onScheduleProtectionOff: () -> Unit,
 )
 
 /**
  * Fondo plano; arriba la app, la hora y el intento en mono. Según el paso: el mensaje con
- * sus opciones, la pregunta de una razón, el veredicto, la ayuda o la salida de la protección.
+ * sus opciones, la pregunta de una razón, el veredicto o la ayuda.
  *
  * `onShown` se llama en el primer cuadro con el mensaje, para medir la latencia.
  */
@@ -115,7 +113,6 @@ fun BlockScreen(state: BlockUiState?, actions: BlockActions, onShown: () -> Unit
                 when (val step = current.step) {
                     BlockStep.Message -> MessageStep(current, actions)
                     is BlockStep.Excuse -> ExcuseStep(current, step, actions)
-                    is BlockStep.Sabotage -> SabotageStep(step, actions)
                     is BlockStep.Decided -> DecidedStep(current, step, actions)
                     is BlockStep.Help -> HelpStep(current, step, actions)
                 }
@@ -133,7 +130,6 @@ fun BlockScreen(state: BlockUiState?, actions: BlockActions, onShown: () -> Unit
 private fun BlockUiState.contentKey(): String = when (val step = step) {
     BlockStep.Message -> "$attemptId:mensaje:$message"
     is BlockStep.Excuse -> "$attemptId:excusa:${step.type}"
-    is BlockStep.Sabotage -> "$attemptId:proteccion:${step.scheduledAt}"
     is BlockStep.Decided -> "$attemptId:veredicto"
     is BlockStep.Help -> "$attemptId:ayuda"
 }
@@ -222,48 +218,6 @@ private fun ColumnScope.MessageStep(state: BlockUiState, actions: BlockActions) 
             state.message?.let { ReportControl(it, ReportSource.MESSAGE, state.reported, actions) }
         }
     }
-}
-
-/** Salir siempre es una opción: la protección da fricción, no encierra. */
-@Composable
-private fun ColumnScope.SabotageStep(step: BlockStep.Sabotage, actions: BlockActions) {
-    val colors = LaVidaTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Banana(BananaMood.PLAIN, 28.dp)
-        Text(
-            text = stringResource(R.string.sabotage_brand),
-            style = LaVidaTheme.type.mono.copy(fontWeight = FontWeight.SemiBold),
-            color = colors.textPrimary,
-        )
-    }
-    Column(
-        modifier = Modifier
-            .weight(1f)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = stringResource(R.string.sabotage_exit_title),
-                style = LaVidaTheme.type.display,
-                color = colors.textPrimary,
-            )
-            Text(text = stringResource(R.string.sabotage_exit_hint), style = LaVidaTheme.type.body, color = colors.textBody)
-        }
-        SabotageExitForm(
-            reason = step.reason,
-            scheduledAt = step.scheduledAt,
-            scheduleAt = step.scheduleAt,
-            onReasonChange = actions.onReasonChange,
-            onDisableNow = actions.onDisableProtection,
-            onSchedule = actions.onScheduleProtectionOff,
-        )
-    }
-    SecondaryButton(
-        text = stringResource(R.string.sabotage_exit_keep),
-        onClick = actions.onExit,
-        modifier = Modifier.fillMaxWidth(),
-    )
 }
 
 @Composable
@@ -557,7 +511,7 @@ private fun ReportControl(
     }
 }
 
-private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, {}, { _, _, _ -> }, {}, {})
+private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, {}, { _, _, _ -> })
 
 private val PreviewState = BlockUiState(
     attemptId = 7,

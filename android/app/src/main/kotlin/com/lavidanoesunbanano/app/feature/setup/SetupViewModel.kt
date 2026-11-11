@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class SetupUiState(
     val items: List<SetupItem>,
@@ -25,15 +26,16 @@ data class SetupUiState(
     val manufacturer: Manufacturer,
     /** Ya se pidió el permiso de notificaciones: si sigue negado, se abren sus ajustes. */
     val notificationsAsked: Boolean,
-    val protectionOn: Boolean,
     /** Pasos cuyo ajuste ya se abrió y de los que ya se volvió: si siguen pendientes, se negó. */
     val opened: Set<SetupStep> = emptySet(),
+    /** El usuario aceptó la divulgación de Accesibilidad. */
+    val accessibilityConsent: Boolean = false,
 )
 
 @HiltViewModel
 class SetupViewModel @Inject constructor(
     private val source: SetupStatusSource,
-    settings: SettingsStore,
+    private val settings: SettingsStore,
 ) : ViewModel() {
 
     private val status = MutableStateFlow<SetupStatus?>(null)
@@ -47,16 +49,16 @@ class SetupViewModel @Inject constructor(
     val state: StateFlow<SetupUiState?> = combine(
         status.filterNotNull(),
         notificationsAsked,
-        settings.antiSabotage,
         opened,
-    ) { status, asked, protectionOn, opened ->
+        settings.accessibilityConsent,
+    ) { status, asked, opened, consent ->
         SetupUiState(
             items = SetupChecklist.items(status),
             service = status.service,
             manufacturer = source.manufacturer,
             notificationsAsked = asked,
-            protectionOn = protectionOn,
             opened = opened,
+            accessibilityConsent = consent,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -69,6 +71,10 @@ class SetupViewModel @Inject constructor(
 
     fun onOpened(step: SetupStep) {
         leaving = step
+    }
+
+    fun acceptAccessibility() {
+        viewModelScope.launch { settings.setAccessibilityConsent(true) }
     }
 
     fun onNotificationsAsked() {

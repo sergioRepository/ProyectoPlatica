@@ -218,8 +218,8 @@ class SettingsViewModel @Inject constructor(
         settings.setAntiSabotage(enabled)
     }
 
-    fun disableProtectionNow(reason: String) {
-        viewModelScope.launch { protectionRepository.disableNow(reason) }
+    fun disableProtectionNow(typed: String, phrase: String) {
+        viewModelScope.launch { protectionRepository.disableNow(typed, phrase) }
     }
 
     fun scheduleProtectionOff() {

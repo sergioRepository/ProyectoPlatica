@@ -20,9 +20,6 @@ data class BlockRules(
     constructor(apps: List<AppInfo>, ranges: List<BlockRange>, focus: Map<String, Instant> = emptyMap()) :
         this(apps.associateBy { it.packageName }, ranges, focus)
 
-    /** Las mismas reglas, con una app más protegida (por ejemplo, Ajustes en la página del bloqueo). */
-    fun guarding(app: AppInfo): BlockRules = copy(apps = apps + (app.packageName to app))
-
     companion object {
         val EMPTY = BlockRules(emptyMap(), emptyList())
     }

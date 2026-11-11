@@ -49,6 +49,7 @@ import com.lavidanoesunbanano.app.core.designsystem.ScreenColumn
 import com.lavidanoesunbanano.app.core.designsystem.TextLink
 import com.lavidanoesunbanano.app.data.system.Manufacturer
 import com.lavidanoesunbanano.app.domain.setup.ServiceHealth
+import com.lavidanoesunbanano.app.domain.setup.SetupChecklist
 import com.lavidanoesunbanano.app.domain.setup.SetupItem
 import com.lavidanoesunbanano.app.domain.setup.SetupStep
 
@@ -61,7 +62,29 @@ fun SetupScreen(onContinue: () -> Unit, viewModel: SetupViewModel = hiltViewMode
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         viewModel.onNotificationsAsked()
     }
-    SetupContent(state, onContinue) { step ->
+    var disclosing by rememberSaveable { mutableStateOf(false) }
+    var declined by rememberSaveable { mutableStateOf(false) }
+    if (disclosing) {
+        AccessibilityDisclosure(
+            onAccept = {
+                viewModel.acceptAccessibility()
+                disclosing = false
+                declined = false
+                viewModel.onOpened(SetupStep.ACCESSIBILITY)
+                SetupIntents.openAccessibility(context)
+            },
+            onDecline = {
+                disclosing = false
+                declined = true
+            },
+        )
+        return
+    }
+    SetupContent(state, declined, onContinue) { step ->
+        if (SetupChecklist.needsDisclosure(step, state?.accessibilityConsent == true)) {
+            disclosing = true
+            return@SetupContent
+        }
         viewModel.onOpened(step)
         when (step) {
             SetupStep.RESTRICTED_SETTINGS -> SetupIntents.openAppDetails(context)
@@ -74,14 +97,14 @@ fun SetupScreen(onContinue: () -> Unit, viewModel: SetupViewModel = hiltViewMode
                     SetupIntents.openNotificationSettings(context)
                 }
             SetupStep.OVERLAY -> SetupIntents.openOverlay(context)
-            SetupStep.BATTERY -> SetupIntents.requestBatteryExemption(context)
+            SetupStep.BATTERY -> SetupIntents.openBatterySettings(context)
             SetupStep.USAGE_ACCESS -> SetupIntents.openUsageAccess(context)
         }
     }
 }
 
 @Composable
-private fun SetupContent(state: SetupUiState?, onContinue: () -> Unit, onAction: (SetupStep) -> Unit) {
+private fun SetupContent(state: SetupUiState?, declined: Boolean, onContinue: () -> Unit, onAction: (SetupStep) -> Unit) {
     val colors = LaVidaTheme.colors
     val type = LaVidaTheme.type
     ScreenColumn {
@@ -107,10 +130,10 @@ private fun SetupContent(state: SetupUiState?, onContinue: () -> Unit, onAction:
                     )
                 }
             }
-            if (state == null) return@Column
-            if (state.protectionOn) {
-                IconNotice(R.drawable.ic_ui_info, stringResource(R.string.setup_protection_note), tone = NoticeTone.NOTE)
+            if (declined) {
+                IconNotice(R.drawable.ic_ui_info, stringResource(R.string.disclosure_declined), tone = NoticeTone.NOTE)
             }
+            if (state == null) return@Column
             RequiredCard(state, onContinue, onAction)
             RecommendedList(state, onAction)
         }
@@ -252,6 +275,9 @@ private fun RecommendedRow(item: SetupItem, manufacturer: Manufacturer, onAction
                 style = type.caption,
                 color = colors.textSecondary,
             )
+            if (item.step == SetupStep.BATTERY) {
+                Text(text = stringResource(R.string.setup_battery_hint), style = type.caption, color = colors.textSecondary)
+            }
             manufacturerHint(item.step, manufacturer)?.let { hint ->
                 Text(text = stringResource(hint), style = type.caption, color = colors.textSecondary)
             }

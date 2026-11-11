@@ -116,7 +116,7 @@ private class SettingsActions(
     val onAnalyticsConsent: (Boolean) -> Unit,
     val onKindMode: (Boolean) -> Unit,
     val onErase: () -> Unit,
-    val onDisableProtection: (String) -> Unit,
+    val onDisableProtection: (String, String) -> Unit,
     val onScheduleProtectionOff: () -> Unit,
     val onCancelProtectionOff: () -> Unit,
     val onOpenSetup: () -> Unit,
@@ -266,8 +266,8 @@ private fun ProtectionCard(protection: Protection, actions: SettingsActions) {
                         scheduledAt = protection.offAt,
                         scheduleAt = protection.scheduleAt,
                         onReasonChange = { reason = it },
-                        onDisableNow = {
-                            actions.onDisableProtection(reason)
+                        onDisableNow = { phrase ->
+                            actions.onDisableProtection(reason, phrase)
                             exiting = false
                             reason = ""
                         },

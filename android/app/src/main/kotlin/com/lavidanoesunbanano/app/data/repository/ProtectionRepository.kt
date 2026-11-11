@@ -9,37 +9,34 @@ import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Salida con fricción del anti-autosabotaje: el usuario siempre puede desactivarlo, ya mismo
- * escribiendo por qué o programándolo para dentro de 24 horas. El motivo no se guarda.
+ * escribiendo la frase de confirmación o programándolo para dentro de 24 horas. Lo escrito no se guarda.
  */
 class ProtectionRepository @Inject constructor(
     private val settings: SettingsStore,
     private val events: EventRepository,
     private val clock: Clock,
 ) {
-    suspend fun recordAttempt(app: String) = track(app, ACTION_ATTEMPT)
-
-    /** `false` si el motivo es muy corto. */
-    suspend fun disableNow(reason: String, app: String? = null): Boolean {
-        if (!SabotageGuard.canDisableNow(reason)) return false
+    /** `false` si lo escrito no es la frase. */
+    suspend fun disableNow(typed: String, phrase: String): Boolean {
+        if (!SabotageGuard.canDisableNow(typed, phrase)) return false
         settings.setAntiSabotage(false)
-        track(app, ACTION_DISABLED_NOW)
+        track(ACTION_DISABLED_NOW)
         return true
     }
 
-    suspend fun scheduleDisable(app: String? = null): Instant {
+    suspend fun scheduleDisable(): Instant {
         val at = clock.instant().plus(SabotageGuard.DISABLE_DELAY)
         settings.setAntiSabotageOffAt(at.toEpochMilli())
-        track(app, ACTION_SCHEDULED)
+        track(ACTION_SCHEDULED)
         return at
     }
 
     suspend fun cancelScheduled() = settings.setAntiSabotageOffAt(null)
 
-    private suspend fun track(app: String?, action: String) =
-        events.track(AppEvents.SABOTAGE_ATTEMPT, app, "action" to JsonPrimitive(action))
+    private suspend fun track(action: String) =
+        events.track(AppEvents.SABOTAGE_ATTEMPT, null, "action" to JsonPrimitive(action))
 
     private companion object {
-        const val ACTION_ATTEMPT = "attempt"
         const val ACTION_DISABLED_NOW = "disabled_now"
         const val ACTION_SCHEDULED = "scheduled"
     }

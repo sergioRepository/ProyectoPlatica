@@ -40,6 +40,10 @@ interface SettingsStore {
     /** El servidor ya tiene las autorizaciones vigentes. */
     val consentsSynced: Flow<Boolean>
 
+    /** El usuario aceptó la divulgación de Accesibilidad. */
+    val accessibilityConsent: Flow<Boolean>
+
+    suspend fun setAccessibilityConsent(accepted: Boolean)
     suspend fun setExtraTimeDaily(value: Int)
     suspend fun setEmergencyDaily(value: Int)
     suspend fun markProfileChanged(at: Long)
@@ -91,6 +95,13 @@ class DataStoreSettingsStore @Inject constructor(
     }.distinctUntilChanged()
 
     override val consentsSynced: Flow<Boolean> = dataStore.data.map { it[CONSENTS_SYNCED] ?: false }.distinctUntilChanged()
+
+    override val accessibilityConsent: Flow<Boolean> =
+        dataStore.data.map { it[ACCESSIBILITY_CONSENT] ?: false }.distinctUntilChanged()
+
+    override suspend fun setAccessibilityConsent(accepted: Boolean) {
+        dataStore.edit { it[ACCESSIBILITY_CONSENT] = accepted }
+    }
 
     override suspend fun setExtraTimeDaily(value: Int) {
         dataStore.edit { it[EXTRA_TIME_DAILY] = value.coerceIn(0, UnlockLimits.MAX_EXTRA_TIME_DAILY) }
@@ -151,7 +162,8 @@ class DataStoreSettingsStore @Inject constructor(
         val ANTI_SABOTAGE = booleanPreferencesKey("anti_sabotage")
         val ANTI_SABOTAGE_OFF_AT = longPreferencesKey("anti_sabotage_off_at")
         val BLOCKER_SET_UP = booleanPreferencesKey("blocker_set_up")
-        val KIND_MODE = booleanPreferencesKey("kind_mode")
+        val ACCESSIBILITY_CONSENT = booleanPreferencesKey("accessibility_consent")
+        val KIND_MODE =booleanPreferencesKey("kind_mode")
         val CONSENT_EXCUSES = booleanPreferencesKey("consent_excuses")
         val CONSENT_PHONE_USAGE = booleanPreferencesKey("consent_phone_usage")
         val CONSENT_CROSS_BORDER = booleanPreferencesKey("consent_cross_border")

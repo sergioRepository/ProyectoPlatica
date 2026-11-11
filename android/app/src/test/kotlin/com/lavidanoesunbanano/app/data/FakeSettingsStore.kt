@@ -19,6 +19,12 @@ class FakeSettingsStore(
     )
     override val consentsSynced = MutableStateFlow(false)
 
+    override val accessibilityConsent = MutableStateFlow(false)
+
+    override suspend fun setAccessibilityConsent(accepted: Boolean) {
+        accessibilityConsent.value = accepted
+    }
+
     override suspend fun setExtraTimeDaily(value: Int) {
         limits.value = limits.value.copy(extraTimeDaily = value)
     }

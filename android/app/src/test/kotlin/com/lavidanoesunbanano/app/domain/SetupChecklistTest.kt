@@ -72,4 +72,13 @@ class SetupChecklistTest {
         assertEquals(2, SetupChecklist.pending(missingExtras))
         assertEquals(0, SetupChecklist.pending(SetupChecklist.items(ready)))
     }
+
+    @Test
+    fun `the disclosure is needed only for accessibility without consent`() {
+        assertTrue(SetupChecklist.needsDisclosure(SetupStep.ACCESSIBILITY, consented = false))
+        assertFalse(SetupChecklist.needsDisclosure(SetupStep.ACCESSIBILITY, consented = true))
+        SetupStep.entries.filter { it != SetupStep.ACCESSIBILITY }.forEach {
+            assertFalse(SetupChecklist.needsDisclosure(it, consented = false))
+        }
+    }
 }

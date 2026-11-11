@@ -1,6 +1,5 @@
 package com.lavidanoesunbanano.app.feature.setup
 
-import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -24,10 +23,9 @@ object SetupIntents {
     fun openOverlay(context: Context) =
         start(context, Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri(context)))
 
-    // La app no se publica en Play Store: pedir la exención directamente es lo más claro.
-    @SuppressLint("BatteryLife")
-    fun requestBatteryExemption(context: Context) =
-        start(context, Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri(context)))
+    // Google Play no deja pedir la exención directa a un bloqueador: se abre la lista del sistema.
+    fun openBatterySettings(context: Context) =
+        start(context, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
 
     fun openUsageAccess(context: Context) =
         start(context, Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))

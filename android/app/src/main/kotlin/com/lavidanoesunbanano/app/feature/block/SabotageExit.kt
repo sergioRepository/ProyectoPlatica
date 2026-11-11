@@ -8,7 +8,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.lavidanoesunbanano.app.R
@@ -23,9 +22,9 @@ import com.lavidanoesunbanano.app.domain.blocking.SabotageGuard
 private const val MAX_SABOTAGE_REASON_CHARS = 300
 
 /**
- * Las dos salidas del anti-autosabotaje, en la pantalla de bloqueo y en Ajustes. Nadie juzga
- * lo que se escribe. `scheduledAt`: cuándo se apaga, si ya está programado. `scheduleAt`:
- * cuándo se apagaría si se programa ahora.
+ * Las dos salidas del anti-autosabotaje, en Ajustes. La frase es fija: fricción, no un examen.
+ * `scheduledAt`: cuándo se apaga, si ya está programado. `scheduleAt`: cuándo se apagaría si
+ * se programa ahora.
  */
 @Composable
 fun SabotageExitForm(
@@ -33,12 +32,12 @@ fun SabotageExitForm(
     scheduledAt: String?,
     scheduleAt: String,
     onReasonChange: (String) -> Unit,
-    onDisableNow: () -> Unit,
+    onDisableNow: (phrase: String) -> Unit,
     onSchedule: () -> Unit,
 ) {
     val colors = LaVidaTheme.colors
     val type = LaVidaTheme.type
-    val length = reason.trim().length
+    val phrase = stringResource(R.string.sabotage_exit_phrase)
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (scheduledAt != null) {
             IconNotice(R.drawable.ic_ui_history, stringResource(R.string.sabotage_exit_scheduled, scheduledAt))
@@ -53,7 +52,7 @@ fun SabotageExitForm(
         Panel(spacing = 10.dp) {
             Text(text = stringResource(R.string.sabotage_exit_now_title), style = type.subhead, color = colors.textPrimary)
             Text(
-                text = stringResource(R.string.sabotage_exit_now_hint, SabotageGuard.MIN_REASON_CHARS),
+                text = stringResource(R.string.sabotage_exit_now_hint, phrase),
                 style = type.caption,
                 color = colors.textSecondary,
             )
@@ -67,20 +66,11 @@ fun SabotageExitForm(
                 showCounter = false,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             )
-            Text(
-                text = if (SabotageGuard.canDisableNow(reason)) {
-                    stringResource(R.string.sabotage_exit_ready, length)
-                } else {
-                    stringResource(R.string.sabotage_exit_count, length, SabotageGuard.MIN_REASON_CHARS)
-                },
-                style = type.mono.copy(fontWeight = FontWeight.Medium),
-                color = colors.textSecondary,
-            )
             SecondaryButton(
                 text = stringResource(R.string.sabotage_exit_now),
-                onClick = onDisableNow,
+                onClick = { onDisableNow(phrase) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = SabotageGuard.canDisableNow(reason),
+                enabled = SabotageGuard.canDisableNow(reason, phrase),
             )
         }
     }
