@@ -14,6 +14,8 @@ En la base hay **34 ejecuciones de 5 teléfonos**, desde el 2026-10-23 hasta el 
 21 ejecuciones fueron periódicas, lanzadas solas por la app, y 13 manuales, pedidas por el usuario desde la app.
 Ninguna terminó en `failed` ni quedó sin confirmar.
 
+**Actualización 2026-11-10.** Durante la grabación del video del hito se hicieron 4 ejecuciones más desde un emulador Android (Teléfono F), todas manuales: 18:36 `executed`; 18:38 `insufficient_evidence` porque la evidencia devolvió `permission_missing`; 18:39 `rejected` con `focus_already_active`; 18:52 `executed`. La base queda en **38 ejecuciones de 6 teléfonos**: 13 `executed`, 12 `rejected`, 7 `no_action` y 6 `insufficient_evidence`. La tabla de abajo no cambia.
+
 **Selección.** Las 10 de abajo se eligieron a mano para cubrir los cinco teléfonos, los dos disparadores y los cuatro resultados. No son las 10 más recientes: esas son casi todas del Teléfono A.
 Los teléfonos aparecen como A–E; no se publica `device_id`, `request_id` ni el id del evento.
 

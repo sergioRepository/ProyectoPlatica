@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=uU0Go189CdI"><b>Video de demostración</b></a> ·
+  <a href="https://youtu.be/lcLKj5QDe-Y"><b>Video del agente</b></a> ·
   <a href="https://la-vida-no-es-un-banano.vercel.app"><b>Descargar la app</b></a> ·
   <a href="#reto-agente-2026"><b>Hitos del reto (jueces)</b></a>
 </p>
@@ -41,7 +41,7 @@ Este proyecto participa en el **[Reto Agente 2026 de PLATICA MX](https://reto.pl
 | Hito | Nombre | Estado | Commit | Video | Reporte | Nota de entrega |
 |---|---|---|---|---|---|---|
 | [S1](#hito-1-agente-corriendo-end-to-end) | Agente corriendo end-to-end | Implementado · aprobación por confirmar | [`0af6038`](https://github.com/sergioRepository/ProyectoPlatica/commit/0af6038a61448ea9b6545cf723548ca44a0f569c) | [YouTube](https://www.youtube.com/watch?v=uU0Go189CdI) | [Reporte](docs/reporte-tecnico-hito-1.md) | Pendiente |
-| [S2](#hito-2-3-herramientas-y-video-de-2-min) | 3 herramientas y video de 2 min | Implementado · aprobación por confirmar | [`f9760fe`](https://github.com/sergioRepository/ProyectoPlatica/commit/f9760fe81f73925e900a7bc02388cf25979eef2d) | Pendiente | [Reporte](docs/reporte-tecnico-hito-2.md) | Pendiente |
+| [S2](#hito-2-3-herramientas-y-video-de-2-min) | 3 herramientas y video de 2 min | Implementado · aprobación por confirmar | [`f9760fe`](https://github.com/sergioRepository/ProyectoPlatica/commit/f9760fe81f73925e900a7bc02388cf25979eef2d) | [YouTube](https://youtu.be/lcLKj5QDe-Y) | [Reporte](docs/reporte-tecnico-hito-2.md) | Pendiente |
 | S3 | Datos reales | Próximo | | | | |
 | S4 | Semana de carga | Próximo | | | | |
 
@@ -73,7 +73,7 @@ Este proyecto participa en el **[Reto Agente 2026 de PLATICA MX](https://reto.pl
 | **Objetivos** | Pasar de decisiones predefinidas a un agente que observa evidencia real, elige qué herramientas necesita, actúa dentro de límites explícitos y registra lo que ocurrió, incluida la decisión de no actuar. |
 | **Implementación y resultados** | Evidencia de uso con `UsageStatsManager` y el permiso `PACKAGE_USAGE_STATS` como paso de la guía; historial en PostgreSQL (Neon en producción) con creación automática de tablas; selección de herramientas con `bind_tools`; política determinista e idempotencia por `request_id`; confirmación desde Android y APK 0.3.0. Las pruebas usan dobles del LLM y de la base (`test_agent_graph.py`, `test_agent_tools.py`, `test_agent_api.py` y `test_store.py`, que también corre contra Postgres real). Queda sin hacer: el resultado observado (`observed_outcome`) existe en la tabla pero queda vacío. |
 | **Commit asociado** | [`f9760fe`: La vida no es un banano, versión de producción](https://github.com/sergioRepository/ProyectoPlatica/commit/f9760fe81f73925e900a7bc02388cf25979eef2d) |
-| **Video de demostración** | Pendiente de completar |
+| **Video de demostración** | [youtu.be/lcLKj5QDe-Y](https://youtu.be/lcLKj5QDe-Y) |
 | **Reporte técnico** | [docs/reporte-tecnico-hito-2.md](docs/reporte-tecnico-hito-2.md) |
 | **Evidencia de ejecuciones** | [docs/s2-ejecuciones.md](docs/s2-ejecuciones.md) |
 | **Nota de entrega** | Pendiente de completar |
@@ -84,8 +84,8 @@ Este proyecto participa en el **[Reto Agente 2026 de PLATICA MX](https://reto.pl
 |---|---|
 | 3 herramientas | `consultar_evidencia_uso`, `consultar_historial_intervenciones` y `ejecutar_intervencion`, conectadas a datos y acciones reales ([Agente de intervención](#3-agente-de-intervención-post-agentanalyze)). |
 | Manejo de errores | `permission_missing`, `no_data` frente a `unavailable`, `agent_unavailable` ante fallo o timeout del LLM, códigos de política y `unknown` cuando falta la confirmación. |
-| 10 ejecuciones | [docs/s2-ejecuciones.md](docs/s2-ejecuciones.md): 10 ejecuciones reales exportadas de `agent_events` en producción (34 en total, 5 teléfonos), sin `device_id`. |
-| Video de 2 minutos | Pendiente de completar. |
+| 10 ejecuciones | [docs/s2-ejecuciones.md](docs/s2-ejecuciones.md): 10 ejecuciones reales exportadas de `agent_events` en producción (38 en total al 2026-11-10, 6 teléfonos), sin `device_id`. |
+| Video de 2 minutos | [youtu.be/lcLKj5QDe-Y](https://youtu.be/lcLKj5QDe-Y) (1:58): grabado en vivo contra producción; muestra las 3 herramientas, el error `permission_missing` y la recuperación en la siguiente ejecución, el modo sin red y las 38 ejecuciones registradas. |
 
 ### Hitos siguientes
 

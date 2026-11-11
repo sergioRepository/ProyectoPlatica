@@ -16,7 +16,7 @@
 | Verificado en este reporte | Pendiente o no verificable desde el repositorio |
 |---|---|
 | Las tres herramientas existen en el código y están conectadas al grafo del agente. | Las 10 ejecuciones que pide el reto: agregadas el 2026-11-07 en [s2-ejecuciones.md](s2-ejecuciones.md), exportadas de `agent_events` en producción. |
-| 122 pruebas del backend pasan y 1 se omite (contrato de Postgres sin `TEST_DATABASE_URL`). | El video de 2 minutos del hito S2. |
+| 122 pruebas del backend pasan y 1 se omite (contrato de Postgres sin `TEST_DATABASE_URL`). | El video de 2 minutos del hito S2: agregado el 2026-11-10, [youtu.be/lcLKj5QDe-Y](https://youtu.be/lcLKj5QDe-Y). |
 | 15 pruebas JVM de Android pasan (`AgentRulesTest`, `UsageSessionsTest`, `BlockPolicyTest`). | Una ejecución real contra Grok (`smoke_grok`) y contra PostgreSQL: no se ejecutaron para este reporte. |
 | `ruff check` sin hallazgos en `banano` y `tests`. | Funcionamiento en un teléfono físico con el APK 0.3.0. |
 
@@ -400,8 +400,8 @@ Los requisitos oficiales vienen del sitio del reto: *"3 herramientas, manejo de 
 |---|---|---|---|
 | **Oficial:** 3 herramientas | `consultar_evidencia_uso`, `consultar_historial_intervenciones`, `ejecutar_intervencion`, más `concluir` como control | `tools.py`, `agent_graph.py`, `test_agent_tools.py`, `test_agent_graph.py` | Cumplido en código y pruebas con dobles |
 | **Oficial:** manejo de errores | `permission_missing`, `no_data`/`unavailable`, argumentos inválidos, `unknown_tool`, `agent_unavailable` (`llm_unavailable`, `timeout`, `max_cycles`, `invalid_output`), códigos de política, `unknown` por falta de confirmación, 401/404/422/429/503 | `test_agent_graph.py`, `test_agent_api.py`, `test_store.py` (pasan) | Cumplido en pruebas |
-| **Oficial:** 10 ejecuciones | Exportación de `agent_events` de producción: 34 ejecuciones de 5 teléfonos, 10 seleccionadas que cubren los cuatro resultados | [s2-ejecuciones.md](s2-ejecuciones.md) (agregado el 2026-11-07) | Cumplido |
-| **Oficial:** video de 2 minutos | No hay enlace para S2. El video del README (`uU0Go189CdI`) corresponde al hito S1 | Ninguna | Pendiente |
+| **Oficial:** 10 ejecuciones | Exportación de `agent_events` de producción: 34 ejecuciones de 5 teléfonos al 2026-11-07 (38 de 6 al 2026-11-10), 10 seleccionadas que cubren los cuatro resultados | [s2-ejecuciones.md](s2-ejecuciones.md) (agregado el 2026-11-07) | Cumplido |
+| **Oficial:** video de 2 minutos | Video de 1:58 grabado en vivo contra producción (agregado el 2026-11-10) | [youtu.be/lcLKj5QDe-Y](https://youtu.be/lcLKj5QDe-Y) | Cumplido |
 | SPEC 1: herramientas conectadas a operaciones reales | `UsageStatsManager`, `SELECT` en Postgres, sesión en Room confirmada | Código Android y backend | Cumplido en código; no verificado en vivo |
 | SPEC 2: no se invocan todas las herramientas siempre | Selección con `bind_tools`, sin secuencia fija | `test_carlos_legit_use_ends_without_history_or_execution` | Cumplido (con LLM falso) |
 | SPEC 3: un caso con intervención y otro sin | `intervene` y `no_action` | Pruebas Andrés y Carlos | Cumplido (con LLM falso) |
@@ -409,7 +409,7 @@ Los requisitos oficiales vienen del sitio del reto: *"3 herramientas, manejo de 
 | SPEC 7: se distingue lo solicitado de lo confirmado | `sent` frente a `executed`/`failed`/`unknown` | `test_analyze_then_confirm_executed`, `test_unconfirmed_sent_reads_as_unknown` | Cumplido |
 | SPEC 9: el modo local funciona sin Internet | El bloqueo no depende del backend; el worker exige red | Código (`BlockPolicy`, restricción de red en `AgentCheckWorker`) | Parcial: no hay prueba automatizada del modo sin conexión |
 | SPEC 10: no hay secretos en el cliente | La llave del gateway solo vive en el backend | `test_no_secrets.py` (pasa) | Cumplido en el repositorio |
-| SPEC 12: la demostración muestra herramientas, decisión y resultado real | Ninguna | Ninguna | Pendiente (depende del video) |
+| SPEC 12: la demostración muestra herramientas, decisión y resultado real | Las 3 herramientas, la decisión, `executed`, el error `permission_missing` y su recuperación | [Video](https://youtu.be/lcLKj5QDe-Y) | Cumplido |
 
 ## 9. Limitaciones y mejoras futuras
 
@@ -422,7 +422,7 @@ Los requisitos oficiales vienen del sitio del reto: *"3 herramientas, manejo de 
 5. **Las confirmaciones perdidas no se reintentan.** El resultado queda como `unknown`; es un comportamiento documentado, no un fallo oculto.
 6. **El valor de `aperturas` es aproximado** (sección 4.1).
 7. **Una conexión a Postgres por consulta.** Son 3 o 4 conexiones por análisis, y está marcado como `shortcut:`.
-8. **No hay video del hito** en el repositorio. Las ejecuciones reales se agregaron el 2026-11-07 en [s2-ejecuciones.md](s2-ejecuciones.md).
+8. ~~No hay video ni ejecuciones reales del hito.~~ Resuelto: ejecuciones en [s2-ejecuciones.md](s2-ejecuciones.md) (2026-11-07) y [video](https://youtu.be/lcLKj5QDe-Y) (2026-11-10).
 
 ### Riesgos deducidos del código, sin reproducir
 
@@ -482,7 +482,7 @@ PENDIENTE: publicar esa rama si se quieren enlazar estos commits.
 
 **Pendientes**
 
-- Video de demostración S2: PENDIENTE: agregar enlace.
+- Video de demostración S2: [youtu.be/lcLKj5QDe-Y](https://youtu.be/lcLKj5QDe-Y).
 - Evidencia de las 10 ejecuciones: [s2-ejecuciones.md](s2-ejecuciones.md), exportación de `agent_events` sin `device_id`.
 - Nota de entrega del hito: PENDIENTE: agregar enlace.
 
@@ -500,6 +500,5 @@ El manejo de errores está implementado y cubierto por pruebas que pasan: 122 en
 
 **Para dar el hito por documentado y validado ante el reto faltan:**
 
-1. El video de 2 minutos.
-2. Una corrida de la prueba de contrato contra Postgres real.
-3. Publicar la especificación y los commits detallados del hito, que hoy solo existen en la rama local `desarrollo`.
+1. Una corrida de la prueba de contrato contra Postgres real.
+2. Publicar la especificación y los commits detallados del hito, que hoy solo existen en la rama local `desarrollo`.
