@@ -410,8 +410,6 @@
     <string name="setup_battery_title">Batería sin restricciones</string>
     <string name="setup_battery_risk">Android puede apagar el bloqueo sin avisar.</string>
     <string name="setup_battery_hint">En la lista que se abre, busca La vida no es un banano y elige que no se optimice su batería.</string>
-    <string name="setup_overlay_title">Mostrar sobre otras apps</string>
-    <string name="setup_overlay_risk">la app bloqueada puede verse un segundo.</string>
     <string name="setup_notifications_title">Notificaciones</string>
     <string name="setup_notifications_risk">no verás cuántos minutos te quedan.</string>
     <string name="setup_usage_title">Datos de uso</string>

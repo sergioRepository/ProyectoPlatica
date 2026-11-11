@@ -96,7 +96,6 @@ fun SetupScreen(onContinue: () -> Unit, viewModel: SetupViewModel = hiltViewMode
                 } else {
                     SetupIntents.openNotificationSettings(context)
                 }
-            SetupStep.OVERLAY -> SetupIntents.openOverlay(context)
             SetupStep.BATTERY -> SetupIntents.openBatterySettings(context)
             SetupStep.USAGE_ACCESS -> SetupIntents.openUsageAccess(context)
         }
@@ -319,7 +318,6 @@ internal val SetupStep.titleRes: Int
         SetupStep.RESTRICTED_SETTINGS -> R.string.setup_restricted_title
         SetupStep.ACCESSIBILITY -> R.string.setup_accessibility_title
         SetupStep.NOTIFICATIONS -> R.string.setup_notifications_title
-        SetupStep.OVERLAY -> R.string.setup_overlay_title
         SetupStep.BATTERY -> R.string.setup_battery_title
         SetupStep.USAGE_ACCESS -> R.string.setup_usage_title
     }
@@ -329,7 +327,6 @@ internal val SetupStep.titleRes: Int
 internal val SetupStep.riskRes: Int
     get() = when (this) {
         SetupStep.NOTIFICATIONS -> R.string.setup_notifications_risk
-        SetupStep.OVERLAY -> R.string.setup_overlay_risk
         SetupStep.USAGE_ACCESS -> R.string.setup_usage_risk
         SetupStep.RESTRICTED_SETTINGS, SetupStep.ACCESSIBILITY, SetupStep.BATTERY -> R.string.setup_battery_risk
     }

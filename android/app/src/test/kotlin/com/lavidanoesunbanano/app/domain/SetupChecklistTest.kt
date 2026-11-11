@@ -17,7 +17,6 @@ class SetupChecklistTest {
         installedFromFile = false,
         service = ServiceHealth.ACTIVE,
         notificationsAllowed = true,
-        overlayAllowed = true,
         batteryUnrestricted = true,
         usageAccessAllowed = true,
     )
@@ -37,7 +36,6 @@ class SetupChecklistTest {
             listOf(
                 SetupStep.ACCESSIBILITY,
                 SetupStep.NOTIFICATIONS,
-                SetupStep.OVERLAY,
                 SetupStep.BATTERY,
                 SetupStep.USAGE_ACCESS,
             ),
@@ -59,17 +57,17 @@ class SetupChecklistTest {
     fun `before android 13 neither notifications nor restricted settings appear`() {
         val steps = SetupChecklist.items(ready.copy(sdk = 31, installedFromFile = true)).map { it.step }
 
-        assertEquals(listOf(SetupStep.ACCESSIBILITY, SetupStep.OVERLAY, SetupStep.BATTERY, SetupStep.USAGE_ACCESS), steps)
+        assertEquals(listOf(SetupStep.ACCESSIBILITY, SetupStep.BATTERY, SetupStep.USAGE_ACCESS), steps)
     }
 
     @Test
     fun `the blocker is ready only with the required steps`() {
         val stopped = SetupChecklist.items(ready.copy(service = ServiceHealth.STOPPED))
-        val missingExtras = SetupChecklist.items(ready.copy(overlayAllowed = false, batteryUnrestricted = false))
+        val missingExtras = SetupChecklist.items(ready.copy(batteryUnrestricted = false))
 
         assertFalse(SetupChecklist.blockerReady(stopped))
         assertTrue(SetupChecklist.blockerReady(missingExtras))
-        assertEquals(2, SetupChecklist.pending(missingExtras))
+        assertEquals(1, SetupChecklist.pending(missingExtras))
         assertEquals(0, SetupChecklist.pending(SetupChecklist.items(ready)))
     }
 

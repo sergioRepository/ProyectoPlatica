@@ -20,9 +20,6 @@ object SetupIntents {
         Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
     )
 
-    fun openOverlay(context: Context) =
-        start(context, Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri(context)))
-
     // Google Play no deja pedir la exención directa a un bloqueador: se abre la lista del sistema.
     fun openBatterySettings(context: Context) =
         start(context, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))

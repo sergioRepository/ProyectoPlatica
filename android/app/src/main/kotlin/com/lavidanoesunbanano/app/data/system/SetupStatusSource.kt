@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.pm.PackageInstaller
 import android.os.Build
 import android.os.PowerManager
-import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import com.lavidanoesunbanano.app.domain.setup.SetupStatus
 import com.lavidanoesunbanano.app.service.blocker.AccessibilityState
@@ -25,7 +24,6 @@ class SetupStatusSource @Inject constructor(
         installedFromFile = installedFromFile(),
         service = AccessibilityState.health(context),
         notificationsAllowed = NotificationManagerCompat.from(context).areNotificationsEnabled(),
-        overlayAllowed = Settings.canDrawOverlays(context),
         batteryUnrestricted = context.getSystemService(PowerManager::class.java)
             ?.isIgnoringBatteryOptimizations(context.packageName) == true,
         usageAccessAllowed = usageAccessAllowed(context),

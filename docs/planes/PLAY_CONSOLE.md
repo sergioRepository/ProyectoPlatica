@@ -1,6 +1,6 @@
 # Prueba cerrada en Google Play: pasos y datos que debes preparar
 
-Para: Sergio. Versión que se sube: **0.5.0 (versionCode 5)**, sin facturación todavía.
+Para: Sergio. Versión que se sube: **0.5.1 (versionCode 6)** si pasa las pruebas en el teléfono, sin facturación todavía.
 
 Por qué ahora: tu cuenta de desarrollador es personal y nueva. Google exige una prueba cerrada con **12 testers inscritos durante 14 días seguidos** antes de dejarte pedir el acceso a producción ([requisito oficial](https://support.google.com/googleplay/android-developer/answer/14151465)). El plazo empieza cuando los 12 aceptan la invitación, no cuando subes el archivo.
 
@@ -14,22 +14,19 @@ Lo marcado «NO VERIFICADO» no lo pude confirmar en una fuente oficial; Play Co
 | 12 correos de cuentas de Google de personas que instalarán la app | 6 | PENDIENTE (tú) |
 | URL pública de la política de privacidad | 3 | PENDIENTE (tú): ver abajo |
 | Correo de contacto del responsable, para la política y para la ficha | 2 y 3 | PENDIENTE (tú) |
-| Vídeo corto de la divulgación de Accesibilidad, subido a YouTube o Drive con enlace | 4 | PENDIENTE (tú), se graba con la 0.5.0 |
+| Vídeo corto de la divulgación de Accesibilidad, subido a YouTube o Drive con enlace | 4 | PENDIENTE (tú), se graba con la 0.5.1 |
 | Nombre, descripción corta y descripción completa de la ficha | 2 | PENDIENTE (tú); abajo va un párrafo obligatorio |
 | Icono, gráfico de funciones y capturas de pantalla | 2 | PENDIENTE (tú). Tamaños: NO VERIFICADO |
 
 **Política de privacidad.** Hoy la app enlaza a la página de GitHub de `docs/politica-de-datos.md`. Google exige una URL pública, sin restricción por país y que no sea un PDF ([política de Datos de usuario](https://support.google.com/googleplay/android-developer/answer/10144311)). Sirve la de GitHub solo si el repositorio es público. Antes de enviarla a revisión hay que completar el contacto del responsable, que hoy dice «pendiente de completar», y pasar la revisión legal que el propio documento marca como pendiente.
 
-## Decisión pendiente antes de enviar a revisión: «Mostrar sobre otras apps»
+## Antes de subir nada: probar la 0.5.1 en tu teléfono
 
-El manifest declara `SYSTEM_ALERT_WINDOW`, pero la app no dibuja ninguna ventana encima de otras. El permiso solo sirve de seguro para que la pantalla de bloqueo pueda abrirse desde segundo plano. El revisor de cumplimiento lo marcó como IMPORTANTE: Google puede verlo como un permiso sin uso real ([política de permisos](https://support.google.com/googleplay/android-developer/answer/9888170)). La regla exacta para este permiso: NO VERIFICADO.
+La 0.5.1 (versionCode 6) quita el permiso `SYSTEM_ALERT_WINDOW` y el paso «Mostrar sobre otras apps». La app no dibujaba ninguna ventana encima de otras; el permiso solo servía de seguro para abrir la pantalla de bloqueo desde segundo plano, y Google puede verlo como un permiso sin uso real ([política de permisos](https://support.google.com/googleplay/android-developer/answer/9888170)).
 
-Tienes dos caminos:
+No está comprobado en un teléfono que el bloqueo abra igual sin él. La lista de pruebas está en `ESTADO.md`. Si algún bloqueo falla, el permiso vuelve y se justifica en la revisión: «se usa para abrir la pantalla de bloqueo desde segundo plano».
 
-- **Quitarlo**, junto con el paso «Mostrar sobre otras apps» del asistente. Antes hay que probar en un teléfono que la pantalla de bloqueo sigue abriendo bien sin él.
-- **Conservarlo** y explicar en la revisión que se usa para abrir la pantalla de bloqueo desde segundo plano.
-
-No se cambió nada en la 0.5.0: decide antes de enviar la versión a revisión.
+La versión que se sube a la prueba cerrada es la que pase esas pruebas.
 
 ## 1. Crear la app
 
@@ -72,10 +69,10 @@ Google permite usar la API de Accesibilidad sin ser una herramienta de accesibil
 - ¿Para qué necesita la app la API? Un solo propósito: detectar la app en primer plano para mostrar una pantalla de bloqueo en las apps y horarios que el usuario configura.
 - ¿Recoge o comparte datos personales con esa capacidad? Sí, uno: el nombre de la app bloqueada. Queda en el historial del teléfono. Sale del teléfono solo en funciones que el usuario autoriza: cuando pide tiempo, viaja con su razón para que la IA la evalúe; y si autorizó la analítica, se registra qué app se bloqueó, si salió o pidió tiempo y con qué resultado.
 - Añade esta aclaración: el servicio aplica una regla fija («app elegida en primer plano dentro del horario: mostrar la pantalla de bloqueo»). La IA no maneja el servicio, no ejecuta gestos ni navega por el teléfono. La política prohíbe usar la API para acciones autónomas y permite la automatización por reglas.
-- La app no impide desactivar el servicio ni desinstalarla: desde la 0.5.0 no tapa ninguna pantalla del sistema.
+- La app no impide desactivar el servicio ni desinstalarla: desde la 0.5.1 no tapa ninguna pantalla del sistema.
 - No marques la app como herramienta de accesibilidad.
 
-**Vídeo.** Corto, grabado con la 0.5.0, mostrando en este orden:
+**Vídeo.** Corto, grabado con la 0.5.1, mostrando en este orden:
 
 1. Abrir la app y llegar a «Activa el bloqueo».
 2. La pantalla de divulgación completa, legible.
@@ -133,7 +130,7 @@ Cuando se cumpla el requisito, en el Panel aparece «Solicitar acceso a producci
 
 ## Lo que esta versión no incluye
 
-La 0.5.0 no trae Play Billing. Queda PENDIENTE para cuando terminen los pasos 2 a 8:
+La 0.5.1 no trae Play Billing. Queda PENDIENTE para cuando terminen los pasos 2 a 8:
 
 - suscripción `premium` con los base plans `monthly` y `semester`, y consumible `creditos_10`, con sus precios por país;
 - período de gracia, suspensión de cuenta y pausa;

@@ -26,7 +26,6 @@ enum class SetupStep {
     RESTRICTED_SETTINGS,
     ACCESSIBILITY,
     NOTIFICATIONS,
-    OVERLAY,
     BATTERY,
 
     /** Acceso a datos de uso: la evidencia que revisa el agente. */
@@ -39,7 +38,6 @@ data class SetupStatus(
     val installedFromFile: Boolean,
     val service: ServiceHealth,
     val notificationsAllowed: Boolean,
-    val overlayAllowed: Boolean,
     val batteryUnrestricted: Boolean,
     val usageAccessAllowed: Boolean,
 )
@@ -60,7 +58,6 @@ object SetupChecklist {
         if (status.sdk >= TIRAMISU) {
             add(SetupItem(SetupStep.NOTIFICATIONS, done = status.notificationsAllowed, required = false))
         }
-        add(SetupItem(SetupStep.OVERLAY, done = status.overlayAllowed, required = false))
         add(SetupItem(SetupStep.BATTERY, done = status.batteryUnrestricted, required = false))
         add(SetupItem(SetupStep.USAGE_ACCESS, done = status.usageAccessAllowed, required = false))
     }
