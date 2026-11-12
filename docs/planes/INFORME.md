@@ -67,7 +67,7 @@ Guía paso a paso en [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 - [ ] Testers de licencia.
 - [ ] Declaración de Accesibilidad y vídeo de la divulgación.
 - [ ] Seguridad de los datos (añadir «Historial de compras»).
-- [ ] URL pública de la política de privacidad.
+- [x] URL pública de la política de privacidad: `https://la-vida-no-es-un-banano.vercel.app/privacidad` (después de desplegar la web a producción).
 - [ ] Clasificación de contenido y público objetivo (18+).
 
 ## 4. Pendiente en el backend y la infraestructura
@@ -121,7 +121,7 @@ Guía paso a paso en [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 | Revisión legal de la política y los Términos | PENDIENTE |
 | Revisión pr-review-toolkit | HECHA |
 | Contacto del responsable en la política y los Términos | IMPLEMENTADO: sergioflorez422@gmail.com |
-| `docs/terminos.md` y la política nueva publicados: `policy_url` y `terms_url` apuntan a `production` en GitHub, que todavía no los tiene | PENDIENTE: fusionar antes de subir la versión con facturación |
+| Política y Términos publicados | IMPLEMENTADO en la web de descarga (`/privacidad`, `/terminos`); la app enlaza ahí. PENDIENTE: `npx vercel --prod` en `pageofficial` |
 | versionCode 7 (0.6.0) para el próximo AAB con facturación | IMPLEMENTADO con tu autorización |
 | Manifest fusionado con Play Billing revisado | HECHO en la 0.6.0: incluye `com.android.vending.BILLING`, sin `SYSTEM_ALERT_WINDOW` ni permiso de batería |
 | ¿Volver a pedir las autorizaciones por los pagos? | IMPLEMENTADO: versión `2026-11-v3`; al actualizar, la app vuelve a mostrar la pantalla de autorizaciones, ahora con un aviso de pagos. Confirmarlo en la revisión legal |

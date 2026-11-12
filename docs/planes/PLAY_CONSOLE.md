@@ -12,13 +12,13 @@ Lo marcado «NO VERIFICADO» no lo pude confirmar en una fuente oficial; Play Co
 |---|---|---|
 | AAB firmado: `android/app/build/outputs/bundle/release/app-release.aab` | 7 | Lo genera el Paso 9 |
 | 12 correos de cuentas de Google de personas que instalarán la app | 6 | PENDIENTE (tú) |
-| URL pública de la política de privacidad | 3 | PENDIENTE (tú): ver abajo |
+| URL pública de la política de privacidad | 3 | `https://la-vida-no-es-un-banano.vercel.app/privacidad` (Términos en `/terminos`) |
 | Correo de contacto del responsable, para la política y para la ficha | 2 y 3 | PENDIENTE (tú) |
 | Vídeo corto de la divulgación de Accesibilidad, subido a YouTube o Drive con enlace | 4 | PENDIENTE (tú), se graba con la 0.5.1 |
 | Nombre, descripción corta y descripción completa de la ficha | 2 | PENDIENTE (tú); abajo va un párrafo obligatorio |
 | Icono, gráfico de funciones y capturas de pantalla | 2 | PENDIENTE (tú). Tamaños: NO VERIFICADO |
 
-**Política de privacidad.** Hoy la app enlaza a la página de GitHub de `docs/politica-de-datos.md`. Google exige una URL pública, sin restricción por país y que no sea un PDF ([política de Datos de usuario](https://support.google.com/googleplay/android-developer/answer/10144311)). Sirve la de GitHub solo si el repositorio es público. El contacto del responsable ya está (sergioflorez422@gmail.com); falta la revisión legal que el propio documento marca como pendiente.
+**Política de privacidad.** Google exige una URL pública, sin restricción por país y que no sea un PDF ([política de Datos de usuario](https://support.google.com/googleplay/android-developer/answer/10144311)). La política y los Términos se publican como páginas en la web de descarga (`pageofficial`, Vercel, dominio de producción): `https://la-vida-no-es-un-banano.vercel.app/privacidad` y `/terminos`. La app enlaza ahí desde la 0.6.0. Si cambia `docs/politica-de-datos.md` o `docs/terminos.md`, hay que copiarlos a `pageofficial/data/legal/` y desplegar con `npx vercel --prod`. Nunca uses una URL de vista previa: piden iniciar sesión en Vercel. El contacto del responsable ya está (sergioflorez422@gmail.com); falta la revisión legal que el propio documento marca como pendiente.
 
 ## Antes de subir nada: probar la 0.5.1 en tu teléfono
 

@@ -36,7 +36,7 @@
     <string name="consent_payments">Si compras un plan o créditos, Google Play te cobra y nos confirma la compra. Guardamos el código de la compra, su estado y tu saldo de créditos. Nunca vemos tu tarjeta.</string>
     <string name="consent_controller">Responsable de tus datos: Sergio Daniel Flórez López</string>
     <string name="policy_link">Leer la política de datos</string>
-    <string name="policy_url" translatable="false">https://github.com/sergioRepository/ProyectoPlatica/blob/production/docs/politica-de-datos.md</string>
+    <string name="policy_url" translatable="false">https://la-vida-no-es-un-banano.vercel.app/privacidad</string>
     <string name="consent_required_hint">Marca las 2 casillas de «Para que funcione» para seguir.</string>
     <string name="consent_continue">Tengo 18 años o más, continuar</string>
 
@@ -607,5 +607,5 @@
     <string name="plans_buy_credits">Comprar 10 créditos · %1$s</string>
     <string name="settings_included_today">Accesos incluidos hoy: %1$d de %2$d</string>
     <string name="settings_credits">Créditos: %1$d</string>
-    <string name="terms_url" translatable="false">https://github.com/sergioRepository/ProyectoPlatica/blob/production/docs/terminos.md</string>
+    <string name="terms_url" translatable="false">https://la-vida-no-es-un-banano.vercel.app/terminos</string>
 </resources>
