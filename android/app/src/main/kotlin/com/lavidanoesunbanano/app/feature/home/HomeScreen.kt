@@ -57,17 +57,18 @@ import com.lavidanoesunbanano.app.feature.setup.titleRes
 fun HomeScreen(
     onTab: (MainTab) -> Unit,
     onOpenSetup: () -> Unit,
+    onOpenPlans: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshOnResume() }
     MainScaffold(MainTab.HOME, onTab) {
-        HomeContent(state = state, onOpenSetup = onOpenSetup, onAnalyze = viewModel::analyzeNow)
+        HomeContent(state = state, onOpenSetup = onOpenSetup, onOpenPlans = onOpenPlans, onAnalyze = viewModel::analyzeNow)
     }
 }
 
 @Composable
-private fun HomeContent(state: HomeUiState, onOpenSetup: () -> Unit, onAnalyze: () -> Unit) {
+private fun HomeContent(state: HomeUiState, onOpenSetup: () -> Unit, onOpenPlans: () -> Unit, onAnalyze: () -> Unit) {
     val colors = LaVidaTheme.colors
     val type = LaVidaTheme.type
     val offline = state.backend == BackendStatus.Unreachable
@@ -92,7 +93,7 @@ private fun HomeContent(state: HomeUiState, onOpenSetup: () -> Unit, onAnalyze: 
             state.setup?.let { RecommendedCard(SetupChecklist.items(it), onOpenSetup) }
         }
         TodayCard(state)
-        AgentCard(state, onAnalyze)
+        AgentCard(state, onAnalyze, onOpenPlans)
     }
 }
 
@@ -245,13 +246,20 @@ private fun Figure(value: String, label: String, color: Color, modifier: Modifie
  * teléfono) sigue a un toque: "enviada" no es "aplicada" y se muestran por separado.
  */
 @Composable
-private fun AgentCard(state: HomeUiState, onAnalyze: () -> Unit) {
+private fun AgentCard(state: HomeUiState, onAnalyze: () -> Unit, onOpenPlans: () -> Unit) {
     val colors = LaVidaTheme.colors
     val type = LaVidaTheme.type
     val run = state.agent
     var details by rememberSaveable { mutableStateOf(false) }
+    // Sin estado del servidor (sin red) la tarjeta queda como siempre.
+    val free = state.device?.agentEnabled == false
     Panel(spacing = 10.dp, shadow = 0.dp) {
         MonoLabel(stringResource(R.string.agent_title))
+        if (free) {
+            Text(text = stringResource(R.string.agent_free), style = type.body, color = colors.textPrimary)
+            SmallButton(text = stringResource(R.string.block_see_plans), onClick = onOpenPlans)
+            return@Panel
+        }
         Text(text = agentSummary(state), style = type.body, color = colors.textPrimary)
         if (details && run is AgentRun.Done) AgentDetails(run)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -331,6 +339,7 @@ private fun HomePreview() {
                 ),
                 onOpenSetup = {},
                 onAnalyze = {},
+                onOpenPlans = {},
             )
         }
     }

@@ -1,5 +1,6 @@
 package com.lavidanoesunbanano.app.data.repository
 
+import com.lavidanoesunbanano.app.data.FakeAgentSchedule
 import com.lavidanoesunbanano.app.data.FakeDeviceStore
 import com.lavidanoesunbanano.app.data.FakeSettingsStore
 import com.lavidanoesunbanano.app.data.remote.BackendConfig
@@ -22,6 +23,7 @@ class DeviceRepositoryTest {
     private val server = MockWebServer()
     private val store = FakeDeviceStore()
     private val settings = FakeSettingsStore()
+    private val schedule = FakeAgentSchedule()
 
     @Before
     fun setUp() {
@@ -36,7 +38,7 @@ class DeviceRepositoryTest {
     private fun repository(baseUrl: String = server.url("/").toString()): DeviceRepository {
         val config = BackendConfig(baseUrl)
         val retrofit = NetworkModule.provideRetrofit(OkHttpClient(), NetworkModule.provideJson(), config)
-        return DeviceRepository(store, retrofit.create(), config, settings)
+        return DeviceRepository(store, retrofit.create(), config, settings, schedule)
     }
 
     @Test
@@ -220,6 +222,38 @@ class DeviceRepositoryTest {
         assertNull(repository.status())
         assertEquals("monthly", store.validatedPlan)
         assertTrue(store.agentEnabled)
+    }
+
+    private fun statusJson(enabled: Boolean) =
+        """{"plan":"free","daily_limit":5,"remaining_today":5,"agent_enabled":$enabled}"""
+
+    @Test
+    fun `status schedules the agent as the server says and a network failure does not touch it`() = runTest {
+        store.token = "v1.abc.firma"
+        val repository = repository()
+        server.enqueue(MockResponse.Builder().body(statusJson(true)).build())
+        repository.status()
+        server.enqueue(MockResponse.Builder().body(statusJson(false)).build())
+        repository.status()
+        assertEquals(listOf(true, false), schedule.calls)
+
+        server.close()
+        repository.status()
+        assertEquals(listOf(true, false), schedule.calls)
+    }
+
+    @Test
+    fun `verifyPurchase schedules the agent from the validated device only`() = runTest {
+        store.token = "v1.abc.firma"
+        val repository = repository()
+        server.enqueue(MockResponse.Builder().body(verified).build())
+        repository.verifyPurchase("monthly_1", "tok")
+        server.enqueue(MockResponse.Builder().body(verified.replace(""""agent_enabled":true""", """"agent_enabled":false""")).build())
+        repository.verifyPurchase("monthly_1", "tok")
+        server.enqueue(MockResponse.Builder().code(503).build())
+        repository.verifyPurchase("monthly_1", "tok")
+
+        assertEquals(listOf(true, false), schedule.calls)
     }
 
     @Test

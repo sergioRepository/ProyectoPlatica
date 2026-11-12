@@ -99,14 +99,14 @@ class ExcuseRepositoryTest {
             settings,
             clock,
         )
-        events = EventRepository(database.eventDao(), settings, DeviceRepository(store, api, config, settings), api, clock)
+        events = EventRepository(database.eventDao(), settings, DeviceRepository(store, api, config, settings, FakeAgentSchedule()), api, clock)
         excuses = ExcuseRepository(
             database,
             database.excuseDao(),
             database.attemptDao(),
             database.templateDao(),
             database.profileDao(),
-            DeviceRepository(store, api, config, settings),
+            DeviceRepository(store, api, config, settings, FakeAgentSchedule()),
             api,
             config,
             JudgeConfig(timeoutMillis = 500),

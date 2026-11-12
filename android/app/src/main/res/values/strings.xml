@@ -209,7 +209,8 @@
     <string name="home_unlocked_value">%1$s hasta las %2$s</string>
 
     <string name="agent_title">revisión automática</string>
-    <string name="agent_never">Reviso tu uso cada 15 minutos y solo actúo si hace falta.</string>
+    <string name="agent_never">Peel revisa tu uso aproximadamente cada 15 minutos. Android puede retrasar la revisión para ahorrar batería.</string>
+    <string name="agent_free">La revisión automática viene con los planes Mensual y Semestral.</string>
     <string name="agent_unavailable">No hubo revisión: sin conexión con el servidor. El bloqueo sigue igual.</string>
     <string name="agent_analyzing">Revisando</string>
     <string name="agent_action">Revisar ahora</string>

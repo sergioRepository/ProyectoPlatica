@@ -13,7 +13,7 @@ Etiquetas: **IMPLEMENTADO** (el código está escrito), **PROBADO** (sus tests c
 | 3 | Backend: migración, cupos, facturación | PROBADO | 300 tests en verde contra Postgres 17 de Docker. Revisión de seguridad hecha (subagente, base `aebb214`) y avisos del plugin corregidos. PENDIENTE: compras reales contra Google. La migración 007 no debe desplegarse en una versión intermedia: el formato de las referencias del registro cambió antes de su primer despliegue |
 | 4 | Android: facturación y restauración | PROBADO | Play Billing 9.1.0: precios de `ProductDetails`, compra con `obfuscatedAccountId` (SHA-256 del id), cambio de plan con `CHARGE_FULL_PRICE` / `WITHOUT_PRORATION` (API de reemplazo verificada en la documentación oficial), restauración al abrir y al volver. 173 tests y lint sin errores. PENDIENTE: compras reales con testers de licencia |
 | 5 | Accesos y créditos en el bloqueo | PROBADO | Antes de pedir la razón se comprueba si quedan evaluaciones y con qué pagar; si no, «Ver planes» o «Comprar créditos». El veredicto dice con qué se pagó. `request_id` evita cobrar dos veces un pedido sin respuesta. 181 tests y lint sin errores. Los botones llevan a Ajustes hasta el Paso 7. No probado en un teléfono |
-| 6 | Revisión automática condicionada al plan | PENDIENTE | |
+| 6 | Revisión automática condicionada al plan | PROBADO | `AgentSchedule` programa o cancela el worker según `agent_enabled` del servidor; un worker heredado se apaga solo en Gratis. Inicio dice «aproximadamente cada 15 minutos» y en Gratis remite a los planes. 183 tests y lint sin errores |
 | 7 | Pantalla de planes y Ajustes | PENDIENTE | |
 | 8 | Documentación: política de datos, Términos, README, informe | PENDIENTE | |
 

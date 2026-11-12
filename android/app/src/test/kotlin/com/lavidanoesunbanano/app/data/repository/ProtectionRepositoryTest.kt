@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.lavidanoesunbanano.app.data.FakeAgentSchedule
 import com.lavidanoesunbanano.app.data.FakeDeviceStore
 import com.lavidanoesunbanano.app.data.FakeSettingsStore
 import com.lavidanoesunbanano.app.data.local.LaVidaDatabase
@@ -46,7 +47,7 @@ class ProtectionRepositoryTest {
         val config = BackendConfig("http://localhost/")
         val api = NetworkModule.provideRetrofit(OkHttpClient(), NetworkModule.provideJson(), config).create<LaVidaApi>()
         val clock = Clock.fixed(now, ZoneOffset.UTC)
-        val devices = DeviceRepository(FakeDeviceStore(), api, config, settings)
+        val devices = DeviceRepository(FakeDeviceStore(), api, config, settings, FakeAgentSchedule())
         val events = EventRepository(database.eventDao(), settings, devices, api, clock)
         protection = ProtectionRepository(settings, events, clock)
     }

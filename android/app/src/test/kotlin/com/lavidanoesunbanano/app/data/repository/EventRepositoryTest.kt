@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.lavidanoesunbanano.app.data.FakeAgentSchedule
 import com.lavidanoesunbanano.app.data.FakeDeviceStore
 import com.lavidanoesunbanano.app.data.FakeSettingsStore
 import com.lavidanoesunbanano.app.data.local.LaVidaDatabase
@@ -51,7 +52,7 @@ class EventRepositoryTest {
         events = EventRepository(
             database.eventDao(),
             settings,
-            DeviceRepository(store, api, config, settings),
+            DeviceRepository(store, api, config, settings, FakeAgentSchedule()),
             api,
             Clock.fixed(now, ZoneOffset.UTC),
         )

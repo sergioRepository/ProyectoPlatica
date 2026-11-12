@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.lavidanoesunbanano.app.data.FakeAgentSchedule
 import com.lavidanoesunbanano.app.data.FakeDeviceStore
 import com.lavidanoesunbanano.app.data.FakeSettingsStore
 import com.lavidanoesunbanano.app.data.local.LaVidaDatabase
@@ -50,7 +51,7 @@ class PrivacyRepositoryTest {
         server.start()
         val config = BackendConfig(server.url("/").toString())
         val api = NetworkModule.provideRetrofit(OkHttpClient(), NetworkModule.provideJson(), config).create<LaVidaApi>()
-        val devices = DeviceRepository(store, api, config, settings)
+        val devices = DeviceRepository(store, api, config, settings, FakeAgentSchedule())
         events = EventRepository(database.eventDao(), settings, devices, api, Clock.systemUTC())
         privacy = PrivacyRepository(database, settings, devices, events)
         events.track(AppEvents.BLOCK_EXIT)

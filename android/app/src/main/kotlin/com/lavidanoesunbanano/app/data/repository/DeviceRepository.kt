@@ -10,6 +10,7 @@ import com.lavidanoesunbanano.app.data.remote.dto.PlanRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.ReportRequestDto
 import com.lavidanoesunbanano.app.domain.model.Consents
+import com.lavidanoesunbanano.app.service.agent.AgentSchedule
 import com.lavidanoesunbanano.app.data.remote.dto.VerifyRequestDto
 import java.io.IOException
 import java.security.MessageDigest
@@ -51,6 +52,7 @@ class DeviceRepository @Inject constructor(
     private val api: LaVidaApi,
     private val config: BackendConfig,
     private val settings: SettingsStore,
+    private val agentSchedule: AgentSchedule,
 ) {
     suspend fun authorization(): String? = store.token()?.let { "Bearer $it" }
 
@@ -133,6 +135,7 @@ class DeviceRepository @Inject constructor(
     private suspend fun saveValidated(device: DeviceStatusDto) {
         store.setValidatedPlan(device.plan)
         store.setAgentEnabled(device.agentEnabled)
+        agentSchedule.apply(device.agentEnabled)
     }
 
     suspend fun setPlan(plan: String, wouldPay: String?): DeviceStatusDto? =

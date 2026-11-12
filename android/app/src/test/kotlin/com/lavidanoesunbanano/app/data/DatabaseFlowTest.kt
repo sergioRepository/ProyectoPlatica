@@ -107,7 +107,7 @@ class DatabaseFlowTest {
         val config = BackendConfig(server.url("/").toString())
         val api = NetworkModule.provideRetrofit(OkHttpClient(), NetworkModule.provideJson(), config).create<LaVidaApi>()
         val clock = Clock.fixed(Instant.parse("2026-10-14T12:00:00Z"), ZoneOffset.UTC)
-        val templates = TemplateRepository(database.templateDao(), profiles, DeviceRepository(store, api, config, FakeSettingsStore()), api, config, clock)
+        val templates = TemplateRepository(database.templateDao(), profiles, DeviceRepository(store, api, config, FakeSettingsStore(), FakeAgentSchedule()), api, config, clock)
         server.enqueue(MockResponse.Builder().body(TEMPLATE_JSON).build())
 
         val result = templates.generate()

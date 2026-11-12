@@ -127,7 +127,11 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false, openPlans: 
             }
         }
         composable<HomeRoute> {
-            HomeScreen(onTab = openTab, onOpenSetup = { navController.navigate(SetupRoute) })
+            HomeScreen(
+                onTab = openTab,
+                onOpenSetup = { navController.navigate(SetupRoute) },
+                onOpenPlans = { navController.navigate(SettingsRoute) }, // Paso 7: PlansRoute
+            )
         }
         composable<HistoryRoute> { HistoryScreen(onTab = openTab) }
         composable<SettingsRoute> {
