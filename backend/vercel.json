@@ -1,3 +1,10 @@
 {
-  "crons": [{ "path": "/internal/retention", "schedule": "0 8 * * *" }]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [{ "path": "/internal/retention", "schedule": "0 8 * * *" }],
+  "git": {
+    "deploymentEnabled": {
+      "play-store": false,
+      "feat/planes-play-billing": false
+    }
+  }
 }
