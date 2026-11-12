@@ -70,8 +70,9 @@ DEVICE_TABLES = (
     "devices",
 )
 # El registro de créditos no se borra con el dispositivo: se anonimiza. Si se borrara, el mismo
-# token de compra se podría canjear otra vez tras «Borrar mis datos».
-ERASED_DEVICE = "borrado"
+# token de compra se podría canjear otra vez tras «Borrar mis datos». Cada borrado usa un valor
+# propio y aleatorio: los saldos borrados no se juntan y ningún token firmado puede reclamarlos.
+ERASED_PREFIX = "borrado:"
 # Límite de saltos al seguir traslados de saldo: protege de un ciclo inesperado.
 MAX_TRANSFER_HOPS = 50
 DailyCounter = Literal["llm_calls", "agent_calls", "rejections", "templates"]
@@ -328,9 +329,10 @@ class MemoryStore:
             key: e for key, e in self.app_events.items() if e["device_id"] != device_id
         }
         self.daily = {key: v for key, v in self.daily.items() if key[0] != device_id}
+        erased = f"{ERASED_PREFIX}{uuid4()}"
         for row in self.ledger:
             if row["device_id"] == device_id:
-                row["device_id"] = ERASED_DEVICE
+                row["device_id"] = erased
         self.entitlements = {
             t: e for t, e in self.entitlements.items() if e["device_id"] != device_id
         }
@@ -677,7 +679,7 @@ class PostgresStore:
         await self._fetch(
             f"WITH {deletes}, "
             "ledger AS (UPDATE credit_ledger SET device_id = %s WHERE device_id = %s) SELECT 1",
-            (device_id,) * len(DEVICE_TABLES) + (ERASED_DEVICE, device_id),
+            (device_id,) * len(DEVICE_TABLES) + (f"{ERASED_PREFIX}{uuid4()}", device_id),
         )
 
     async def save_report(self, device_id: str, report: dict[str, Any]) -> None:
