@@ -161,6 +161,91 @@ class DeviceRepositoryTest {
         assertFalse(repository().report("Mensaje feo", "offensive", "verdict"))
     }
 
+    private val verified = """
+        {"outcome":"subscription","device":{"plan":"monthly","daily_limit":20,"remaining_today":19,
+        "subscription_state":"active","expiry_time":"2030-01-01T00:00:00Z","auto_renewing":true,
+        "credits":3,"included_daily":20,"included_remaining":19,"agent_enabled":true}}
+    """.trimIndent()
+
+    @Test
+    fun `verifyPurchase sends token and snake case body and stores the validated plan`() = runTest {
+        store.token = "v1.abc.firma"
+        server.enqueue(MockResponse.Builder().body(verified).build())
+
+        val result = repository().verifyPurchase("monthly_1", "tok-123")
+
+        assertTrue(result is VerifyResult.Verified)
+        assertEquals("subscription", (result as VerifyResult.Verified).outcome)
+        assertEquals("monthly", store.validatedPlan)
+        assertTrue(store.agentEnabled)
+        val request = server.takeRequest()
+        assertEquals("Bearer v1.abc.firma", request.headers["Authorization"])
+        val body = request.body!!.utf8()
+        assertTrue(body.contains(""""product_id":"monthly_1""""), body)
+        assertTrue(body.contains(""""purchase_token":"tok-123""""), body)
+    }
+
+    @Test
+    fun `verifyPurchase maps http errors`() = runTest {
+        store.token = "v1.abc.firma"
+        val repository = repository()
+        server.enqueue(MockResponse.Builder().code(404).build())
+        server.enqueue(MockResponse.Builder().code(422).build())
+        server.enqueue(MockResponse.Builder().code(503).build())
+
+        assertEquals(VerifyResult.Rejected, repository.verifyPurchase("p", "t"))
+        assertEquals(VerifyResult.Rejected, repository.verifyPurchase("p", "t"))
+        assertEquals(VerifyResult.Unavailable, repository.verifyPurchase("p", "t"))
+        assertNull(store.validatedPlan)
+    }
+
+    @Test
+    fun `verifyPurchase without token does not call the server`() = runTest {
+        assertEquals(VerifyResult.NotRegistered, repository().verifyPurchase("p", "t"))
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `status stores the validated plan and a network failure keeps it`() = runTest {
+        store.token = "v1.abc.firma"
+        val repository = repository()
+        val device = verified.substringAfter(""""device":""").removeSuffix("}")
+        server.enqueue(MockResponse.Builder().body(device).build())
+        assertEquals(19, repository.status()?.includedRemaining)
+        assertEquals("monthly", store.validatedPlan)
+        assertTrue(store.agentEnabled)
+
+        server.close()
+
+        assertNull(repository.status())
+        assertEquals("monthly", store.validatedPlan)
+        assertTrue(store.agentEnabled)
+    }
+
+    @Test
+    fun `accountHash is a sha256 hex and never the id`() = runTest {
+        assertNull(repository().accountHash())
+
+        store.id = "id-del-servidor"
+        val hash = repository().accountHash()!!
+
+        assertEquals(64, hash.length)
+        assertTrue(hash.all { it in '0'..'9' || it in 'a'..'f' }, hash)
+        assertFalse(hash.contains("id-del-servidor"))
+    }
+
+    @Test
+    fun `an old server status without billing fields still parses`() = runTest {
+        store.token = "v1.abc.firma"
+        server.enqueue(MockResponse.Builder().body("""{"plan":"free","daily_limit":5,"remaining_today":5}""").build())
+
+        val status = repository().status()
+
+        assertEquals("free", status?.plan)
+        assertEquals(0, status?.credits)
+        assertFalse(status?.agentEnabled == true)
+    }
+
     @Test
     fun `a new phone does not register when it accepts the consents`() = runTest {
         repository().syncIfRegistered()

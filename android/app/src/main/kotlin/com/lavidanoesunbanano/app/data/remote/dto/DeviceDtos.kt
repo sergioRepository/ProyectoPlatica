@@ -19,6 +19,26 @@ data class DeviceStatusDto(
     @SerialName("would_pay") val wouldPay: String? = null,
     @SerialName("daily_limit") val dailyLimit: Int,
     @SerialName("remaining_today") val remainingToday: Int,
+    // Los campos de facturación tienen valor por defecto para aceptar servidores viejos.
+    @SerialName("subscription_state") val subscriptionState: String? = null,
+    @SerialName("expiry_time") val expiryTime: String? = null,
+    @SerialName("auto_renewing") val autoRenewing: Boolean = false,
+    val credits: Int = 0,
+    @SerialName("included_daily") val includedDaily: Int = 0,
+    @SerialName("included_remaining") val includedRemaining: Int = 0,
+    @SerialName("agent_enabled") val agentEnabled: Boolean = false,
+)
+
+@Serializable
+data class VerifyRequestDto(
+    @SerialName("product_id") val productId: String,
+    @SerialName("purchase_token") val purchaseToken: String,
+)
+
+@Serializable
+data class VerifyResponseDto(
+    val outcome: String,
+    val device: DeviceStatusDto,
 )
 
 @Serializable

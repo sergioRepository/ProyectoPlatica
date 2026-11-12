@@ -40,6 +40,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.restorePurchases()
+    }
+
     companion object {
         /** La notificación de bloqueo apagado abre la app directo en la guía. */
         const val EXTRA_OPEN_SETUP = "open_setup"

@@ -17,6 +17,8 @@ import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterResponseDto
 import com.lavidanoesunbanano.app.data.remote.dto.ReportRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.TemplateResponseDto
+import com.lavidanoesunbanano.app.data.remote.dto.VerifyRequestDto
+import com.lavidanoesunbanano.app.data.remote.dto.VerifyResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -56,6 +58,12 @@ interface LaVidaApi {
         @Header("Authorization") authorization: String,
         @Body body: PlanRequestDto,
     ): DeviceStatusDto
+
+    @POST("billing/verify")
+    suspend fun verifyPurchase(
+        @Header("Authorization") authorization: String,
+        @Body body: VerifyRequestDto,
+    ): VerifyResponseDto
 
     @POST("events")
     suspend fun sendEvents(

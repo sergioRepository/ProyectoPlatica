@@ -2,6 +2,7 @@ package com.lavidanoesunbanano.app.data.prefs
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import javax.inject.Inject
@@ -14,6 +15,17 @@ interface DeviceStore {
     suspend fun setDeviceId(id: String)
     suspend fun token(): String?
     suspend fun setToken(token: String?)
+
+    /**
+     * Último plan que validó el servidor; sirve para decidir sin red y nunca lo escribe la app
+     * por su cuenta.
+     */
+    suspend fun validatedPlan(): String?
+    suspend fun setValidatedPlan(plan: String?)
+
+    /** Último valor de `agent_enabled` que dio el servidor (mismas reglas que [validatedPlan]). */
+    suspend fun agentEnabled(): Boolean
+    suspend fun setAgentEnabled(enabled: Boolean)
 }
 
 @Singleton
@@ -35,7 +47,23 @@ class DataStoreDeviceStore @Inject constructor(
         }
     }
 
+    override suspend fun validatedPlan(): String? = dataStore.data.first()[VALIDATED_PLAN]
+
+    override suspend fun setValidatedPlan(plan: String?) {
+        dataStore.edit { prefs ->
+            if (plan == null) prefs.remove(VALIDATED_PLAN) else prefs[VALIDATED_PLAN] = plan
+        }
+    }
+
+    override suspend fun agentEnabled(): Boolean = dataStore.data.first()[AGENT_ENABLED] ?: false
+
+    override suspend fun setAgentEnabled(enabled: Boolean) {
+        dataStore.edit { it[AGENT_ENABLED] = enabled }
+    }
+
     private companion object {
+        val VALIDATED_PLAN = stringPreferencesKey("validated_plan")
+        val AGENT_ENABLED = booleanPreferencesKey("agent_enabled")
         val DEVICE_ID = stringPreferencesKey("device_id")
         val DEVICE_TOKEN = stringPreferencesKey("device_token")
     }

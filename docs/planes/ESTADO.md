@@ -11,7 +11,7 @@ Etiquetas: **IMPLEMENTADO** (el código está escrito), **PROBADO** (sus tests c
 | 9 | Bloqueantes de Google Play: batería, divulgación de Accesibilidad, anti-autosabotaje dentro de la app, `allowBackup` | PROBADO | Backend: 222 tests y ruff. Android: 158 tests y lint sin errores. Versión 0.5.1 (versionCode 6), sin `SYSTEM_ALERT_WINDOW`; AAB y APK de release firmados con la clave de release. No se probó en un teléfono: lista de pruebas abajo. Guía: `PLAY_CONSOLE.md` |
 | 2 | Configuración central de planes | PROBADO | `PlanCatalog` (Android) y `Settings.benefits` (backend) con los mismos valores; sin cambio de comportamiento |
 | 3 | Backend: migración, cupos, facturación | PROBADO | 300 tests en verde contra Postgres 17 de Docker. Revisión de seguridad hecha (subagente, base `aebb214`) y avisos del plugin corregidos. PENDIENTE: compras reales contra Google. La migración 007 no debe desplegarse en una versión intermedia: el formato de las referencias del registro cambió antes de su primer despliegue |
-| 4 | Android: facturación y restauración | PENDIENTE | |
+| 4 | Android: facturación y restauración | PROBADO | Play Billing 9.1.0: precios de `ProductDetails`, compra con `obfuscatedAccountId` (SHA-256 del id), cambio de plan con `CHARGE_FULL_PRICE` / `WITHOUT_PRORATION` (API de reemplazo verificada en la documentación oficial), restauración al abrir y al volver. 173 tests y lint sin errores. PENDIENTE: compras reales con testers de licencia |
 | 5 | Accesos y créditos en el bloqueo | PENDIENTE | |
 | 6 | Revisión automática condicionada al plan | PENDIENTE | |
 | 7 | Pantalla de planes y Ajustes | PENDIENTE | |

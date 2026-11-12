@@ -10,7 +10,9 @@ import com.lavidanoesunbanano.app.data.remote.dto.PlanRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.ReportRequestDto
 import com.lavidanoesunbanano.app.domain.model.Consents
+import com.lavidanoesunbanano.app.data.remote.dto.VerifyRequestDto
 import java.io.IOException
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
@@ -26,6 +28,17 @@ sealed interface RegistrationResult {
     data object NotConfigured : RegistrationResult
     data object Unreachable : RegistrationResult
     data class ServerError(val code: Int?) : RegistrationResult
+}
+
+sealed interface VerifyResult {
+    data class Verified(val outcome: String, val device: DeviceStatusDto) : VerifyResult
+
+    /** Google no reconoce la compra o no es válida para esta app. */
+    data object Rejected : VerifyResult
+
+    /** No se pudo validar ahora; se puede reintentar. */
+    data object Unavailable : VerifyResult
+    data object NotRegistered : VerifyResult
 }
 
 /**
@@ -84,7 +97,43 @@ class DeviceRepository @Inject constructor(
     }
 
     /** Plan y llamadas de hoy; `null` sin red o sin registro. */
-    suspend fun status(): DeviceStatusDto? = authorized { api.deviceStatus(it) }
+    suspend fun status(): DeviceStatusDto? = authorized { api.deviceStatus(it) }?.also { saveValidated(it) }
+
+    /** Envía la compra al servidor, que es quien decide si vale; la app nunca concede nada sola. */
+    suspend fun verifyPurchase(productId: String, purchaseToken: String): VerifyResult {
+        val authorization = authorization() ?: return VerifyResult.NotRegistered
+        return try {
+            val response = api.verifyPurchase(authorization, VerifyRequestDto(productId, purchaseToken))
+            saveValidated(response.device)
+            VerifyResult.Verified(response.outcome, response.device)
+        } catch (e: HttpException) {
+            when (e.code()) {
+                404, 422 -> VerifyResult.Rejected
+                401 -> {
+                    forgetToken()
+                    VerifyResult.Unavailable
+                }
+                else -> VerifyResult.Unavailable
+            }
+        } catch (e: IOException) {
+            VerifyResult.Unavailable
+        } catch (e: SerializationException) {
+            VerifyResult.Unavailable
+        }
+    }
+
+    /**
+     * SHA-256 en hexadecimal del id del dispositivo: es el `obfuscatedAccountId` que va a Google.
+     * Nunca se envía el id en claro.
+     */
+    suspend fun accountHash(): String? = store.deviceId()?.let { id ->
+        MessageDigest.getInstance("SHA-256").digest(id.toByteArray()).joinToString("") { "%02x".format(it) }
+    }
+
+    private suspend fun saveValidated(device: DeviceStatusDto) {
+        store.setValidatedPlan(device.plan)
+        store.setAgentEnabled(device.agentEnabled)
+    }
 
     suspend fun setPlan(plan: String, wouldPay: String?): DeviceStatusDto? =
         authorized { api.updatePlan(it, PlanRequestDto(plan, wouldPay)) }
