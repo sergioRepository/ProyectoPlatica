@@ -554,7 +554,7 @@
     <string name="plans_semester_equivalent">≈ %1$s al mes</string>
     <string name="plans_savings">AHORRAS %1$d %%</string>
     <string name="plans_price_unavailable">Precio no disponible</string>
-    <string name="plans_benefit_evaluations">Peel evalúa %1$d razones al día</string>
+    <string name="plans_benefit_evaluations">Peel evalúa hasta %1$d razones al día</string>
     <string name="plans_benefit_evaluations_up_to">Peel evalúa hasta %1$d razones al día</string>
     <string name="plans_benefit_no_review">Sin revisión automática</string>
     <string name="plans_benefit_review">Revisión automática de tu uso, aproximadamente cada 15 minutos (Android puede retrasarla; necesita conexión y acceso a los datos de uso)</string>
@@ -597,7 +597,7 @@
     <string name="plans_credits_rule_5">Las emergencias nunca gastan evaluaciones ni créditos.</string>
     <string name="plans_credits_rule_6">Tu límite diario de 10 minutos de Ajustes se sigue aplicando, también con créditos.</string>
     <string name="plans_credits_rule_7">Las evaluaciones y los accesos incluidos se reinician a medianoche (hora de Colombia) y no se acumulan. Los créditos se conservan.</string>
-    <string name="plans_credits_rule_8">Con un plan activo, tus créditos te siguen si reinstalas. Sin plan, se pierden al desinstalar o borrar tus datos.</string>
+    <string name="plans_credits_rule_8">Con un plan activo, tus créditos pasan a la nueva instalación cuando restauras la compra con la misma cuenta de Google. Sin plan, se pierden al desinstalar. Borrar tus datos siempre los elimina.</string>
     <plurals name="plans_credits_balance">
         <item quantity="one">Tienes %1$d crédito.</item>
         <item quantity="many">Tienes %1$d créditos.</item>

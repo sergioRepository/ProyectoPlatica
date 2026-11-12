@@ -125,7 +125,7 @@ Abrir TikTok o Instagram "solo un ratito" es un gesto automático. Los bloqueado
 | **Agente de intervención** | Revisa el uso real de las últimas 24 h y el historial, y puede iniciar una sesión de enfoque dentro de límites fijos, o decidir no actuar. | `POST /agent/analyze` y `AgentCheckWorker` |
 | **Estadísticas e historial** | Intentos por app, excusas aprobadas y rechazadas, e historial de bloqueos. | `feature/stats` y `feature/history` |
 | **Anti-autosabotaje** | En tu horario de bloqueo deja bajo llave las apps, el horario y los cupos dentro de la app. Siempre puedes quitar la llave: ya mismo escribiendo una frase de confirmación, o programándolo para dentro de 24 horas. No tapa ninguna pantalla del sistema. | `SabotageGuard` y `ProtectionRepository` |
-| **Planes sin cobro** | Gratis, Mensual y Semestral, con topes diarios de llamadas de IA y la pregunta opcional "¿Pagarías por este plan?". Por ahora ningún plan tiene costo. | `PUT /devices/me/plan` y `banano/quota.py` |
+| **Planes y créditos** | Gratis, Mensual y Semestral, cobrados por Google Play y validados en el servidor. Los planes de pago suben las evaluaciones de Peel, incluyen 3 accesos de 10 minutos al día y la revisión automática. Los créditos pagan accesos extra. | `/billing/verify`, `/billing/rtdn`, `banano/billing.py`, `banano/quota.py` y `feature/plans` |
 | **Medición** | Tokens, costo y latencia de cada llamada a Grok, y eventos de uso de la app si los autorizas. | `llm_usage`, `app_events` y `backend/sql/queries/` |
 | **Privacidad** | Autorizaciones por separado, borrado total de tus datos y reporte de mensajes de la IA. | `feature/consent`, `DELETE /devices/me` y `POST /reports` |
 
@@ -173,7 +173,9 @@ El bloqueo y los mensajes no dependen del backend: la plantilla vive en Room y l
 | `GET` | `/health` | Estado del servicio |
 | `POST` | `/devices/register` | Registro automático con las autorizaciones de datos; devuelve el id generado por el servidor y el token. Solo pide `enrollment_code` si el servidor define `ENROLLMENT_CODE`. |
 | `GET` | `/devices/me` | Plan, llamadas de IA de hoy y autorizaciones |
-| `PUT` | `/devices/me/plan` | Cambia el plan y guarda la respuesta a "¿Pagarías?" |
+| `PUT` | `/devices/me/plan` | Solo guarda la respuesta a "¿Pagarías?" de versiones anteriores; ya no cambia el plan |
+| `POST` | `/billing/verify` | Valida una compra de Google Play y aplica el plan o los créditos |
+| `POST` | `/billing/rtdn` | Notificaciones de Google Play por Pub/Sub (push con JWT verificado) |
 | `PUT` | `/devices/me/consents` | Actualiza las autorizaciones; cada cambio queda como prueba |
 | `DELETE` | `/devices/me` | Borra todos los datos del dispositivo en el servidor |
 | `POST` | `/events` | Lote de hasta 100 eventos de comportamiento. Sin autorización de analítica no guarda nada. |
@@ -212,7 +214,7 @@ Reglas: máximo 3 aprobaciones de "10 minutos" y 2 emergencias (15 minutos) por 
 
 ### 3. Agente de intervención (`POST /agent/analyze`)
 
-Es el hito S2. El teléfono pide el análisis cada 15 minutos (`AgentCheckWorker`, cuando las reglas locales lo justifican) o con "Analizar ahora". Grok elige con llamadas nativas a herramientas (`bind_tools`) qué necesita consultar: no hay una secuencia fija, y puede terminar sin usar todas las herramientas.
+Es el hito S2. Con un plan de pago, el teléfono pide el análisis aproximadamente cada 15 minutos (`AgentCheckWorker`, cuando las reglas locales lo justifican; Android puede retrasarlo) o con "Analizar ahora". Grok elige con llamadas nativas a herramientas (`bind_tools`) qué necesita consultar: no hay una secuencia fija, y puede terminar sin usar todas las herramientas.
 
 ```text
 Teléfono -> POST /agent/analyze  {request_id, apps de la lista, enfoque activo, uso de 24 h}
@@ -282,10 +284,13 @@ El gateway es un espejo de la API de xAI: solo cambian la URL base y la llave. E
 | `DEVICE_TOKEN_SECRET` | Secreto para firmar los tokens de dispositivo |
 | `DATABASE_URL` | PostgreSQL. Sin ella no se pueden registrar teléfonos ni guardar autorizaciones. |
 | `ENROLLMENT_CODE` | Déjala vacía: el registro es abierto. Definirla cierra el registro si hay abuso. |
-| `PLAN_LIMIT_FREE`, `PLAN_LIMIT_MONTHLY`, `PLAN_LIMIT_SEMESTER` | Llamadas de IA por día de cada plan: 3, 20 y 20 |
+| `PLAN_LIMIT_FREE`, `PLAN_LIMIT_MONTHLY`, `PLAN_LIMIT_SEMESTER` | Evaluaciones de Peel al día de cada plan: 3, 20 y 20 |
 | `DAILY_REJECTION_CAP` | Rechazos del día antes de que el juez responda sin Grok: 5 |
 | `DAILY_TEMPLATE_CAP` | Plantillas generadas por día y dispositivo: 2 |
-| `AGENT_RESERVED_FOR_JUDGE` | Últimas llamadas del día que el análisis automático deja para el juez: 1 |
+| `PLAN_INCLUDED_ACCESSES_PAID`, `AGENT_DAILY_CAP` | Accesos de 10 minutos incluidos al día y análisis automáticos al día en los planes de pago: 3 y 96 |
+| `GOOGLE_PLAY_PACKAGE_NAME`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Paquete de la app y llave de la cuenta de servicio con acceso a la Play Developer API. Sin la llave, la facturación responde 503 |
+| `RTDN_AUDIENCE`, `RTDN_SERVICE_ACCOUNT_EMAIL` | Audiencia y cuenta de servicio del push de Pub/Sub. Sin ellas, `/billing/rtdn` responde 503 |
+| `PLAY_SUBSCRIPTION_ID`, `PLAY_BASE_PLAN_MONTHLY`, `PLAY_BASE_PLAN_SEMESTER`, `PLAY_CREDITS_PRODUCT_ID`, `CREDITS_PER_PACK` | Productos de Google Play: `premium`, `monthly`, `semester`, `creditos_10` y 10 |
 | `LLM_PRICES` | Precios por modelo en JSON para calcular `cost_usd`. Sin precio, el costo queda en NULL. |
 | `CRON_SECRET` | Secreto del cron diario de retención |
 | `RETENTION_DAYS` | Días que se guardan `llm_usage`, `app_events` y `agent_events`: 90 |
@@ -294,7 +299,7 @@ En Vercel, las mismas variables van en Project Settings > Environment Variables.
 
 ## Instalar en el teléfono
 
-No está en Play Store; se instala por APK.
+Hoy se instala por APK. La versión para Google Play (0.5.1) está en prueba cerrada; ver `docs/planes/PLAY_CONSOLE.md`.
 
 **Requisitos:** Android 8.0 o superior. Internet solo para el onboarding, el juez y el agente; los mensajes de bloqueo funcionan sin conexión.
 

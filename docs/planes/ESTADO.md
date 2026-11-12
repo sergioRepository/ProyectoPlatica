@@ -15,7 +15,7 @@ Etiquetas: **IMPLEMENTADO** (el código está escrito), **PROBADO** (sus tests c
 | 5 | Accesos y créditos en el bloqueo | PROBADO | Antes de pedir la razón se comprueba si quedan evaluaciones y con qué pagar; si no, «Ver planes» o «Comprar créditos». El veredicto dice con qué se pagó. `request_id` evita cobrar dos veces un pedido sin respuesta. 181 tests y lint sin errores. Los botones llevan a Ajustes hasta el Paso 7. No probado en un teléfono |
 | 6 | Revisión automática condicionada al plan | PROBADO | `AgentSchedule` programa o cancela el worker según `agent_enabled` del servidor; un worker heredado se apaga solo en Gratis. Inicio dice «aproximadamente cada 15 minutos» y en Gratis remite a los planes. 183 tests y lint sin errores |
 | 7 | Pantalla de planes y Ajustes | PROBADO | Pantalla de planes según la imagen; precios de Google Play; botón según selección y plan validado; condiciones siempre visibles; «¿Qué son los créditos?». Ajustes: resumen y «Ver planes» (fuera el selector sin pago y la encuesta). Revisión de cumplimiento: 0 bloqueantes, 5 importantes corregidos. 195 tests y lint sin errores. No probado en un teléfono |
-| 8 | Documentación: política de datos, Términos, README, informe | PENDIENTE | |
+| 8 | Documentación: política de datos, Términos, README, informe | IMPLEMENTADO | Política con pagos, borrador de Términos, README e `INFORME.md`. Revisión final de cumplimiento: sin bloqueantes de código; textos corregidos. PENDIENTE: contacto, revisión legal y pr-review-toolkit |
 
 ## Revisión de cumplimiento del Paso 9 (`play-compliance-reviewer`)
 

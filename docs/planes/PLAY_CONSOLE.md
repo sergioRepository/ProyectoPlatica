@@ -95,13 +95,17 @@ Obligatorio desde la prueba cerrada ([ayuda oficial](https://support.google.com/
 | Perfil: apodo, metas, apps y horarios | Otro contenido generado por el usuario | No | Funcionamiento de la app |
 | Eventos de uso de la app | Interacciones con la app | Sí | Analítica |
 | Mensajes reportados | Otro contenido generado por el usuario | Sí | Funcionamiento de la app |
+| Autorizaciones dadas y respuesta a «¿Pagarías?» de versiones anteriores | Otro contenido generado por el usuario | No | Funcionamiento de la app, cumplimiento |
+| Decisiones del agente y su motivo; consumo de IA (tokens, costo, sin texto) | Interacciones con la app / diagnóstico | No | Funcionamiento de la app |
+| Compras: código de compra, plan, estado y vencimiento; registro de créditos (solo desde la versión con facturación) | Información financiera > Historial de compras | Sí (solo si compra) | Funcionamiento de la app; prevención de fraude (evitar canjes dobles) |
 
 - Cifrado en tránsito: sí.
-- El usuario puede pedir el borrado: sí, en Ajustes, «Borrar todos mis datos».
+- El usuario puede pedir el borrado: sí, en Ajustes, «Borrar todos mis datos». Se conserva un registro de créditos seudonimizado (sin el id del teléfono), solo para impedir que una compra se canjee dos veces; descríbelo así si el formulario lo pregunta.
 - **Decisiones que necesitan criterio legal:**
   - El perfil y las razones se envían al proveedor del modelo de IA. No cuenta como «compartir» solo si el proveedor los procesa por cuenta tuya y no los usa para fines propios. El documento de política dice que eso no está verificado; mientras no lo esté, decláralo como compartido.
   - Las razones pueden contener datos de salud. Si hay que declarar además «Información de salud»: NO VERIFICADO.
-- Cuando llegue la facturación habrá que añadir «Historial de compras».
+- Google Play cobra los pagos. Según la ayuda oficial, un proveedor que procesa datos por cuenta tuya no cuenta como «compartir»; confírmalo en la revisión legal.
+- **La 0.5.1 que se sube a la prueba cerrada no tiene facturación**: es el AAB generado con el commit `fef164c`. El código actual ya incluye Play Billing y **todavía lleva versionCode 6**: antes de generar otro AAB hay que subirlo a 7 (versión 0.6.0) y declarar «Historial de compras».
 
 ## 6. Crear la prueba cerrada y la lista de testers
 
