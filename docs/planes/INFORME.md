@@ -67,7 +67,7 @@ Guía paso a paso en [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 - [ ] Testers de licencia.
 - [ ] Declaración de Accesibilidad y vídeo de la divulgación.
 - [ ] Seguridad de los datos (añadir «Historial de compras»).
-- [x] URL pública de la política de privacidad: `https://la-vida-no-es-un-banano.vercel.app/privacidad` (después de desplegar la web a producción).
+- [x] URL pública de la política de privacidad: `https://la-vida-no-es-un-banano.vercel.app/privacidad`.
 - [ ] Clasificación de contenido y público objetivo (18+).
 
 ## 4. Pendiente en el backend y la infraestructura
@@ -87,7 +87,7 @@ Guía paso a paso en [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 | Frecuencia de la revisión: no es exacta y Android la retrasa | https://developer.android.com/develop/background-work/background-tasks/persistent/getting-started/define-work | Los textos dicen «aproximadamente» y avisan del retraso |
 | Créditos ligados a la instalación: sin plan se pierden al desinstalar o borrar datos | Decisión de producto (sin cuentas) | Avisado antes de comprar y en los Términos |
 | Período de gracia: se asume un máximo de 30 días | NO VERIFICADO | Margen en `GRACE_LEEWAY` |
-| Política de datos y Términos sin revisión legal ni contacto | `docs/politica-de-datos.md`, `docs/terminos.md` | PENDIENTE |
+| Política de datos y Términos revisados contra la Ley 1581, el Decreto 1377 y la Ley 1480 (revisión hecha por Claude, no por un abogado) | `docs/politica-de-datos.md`, `docs/terminos.md` | Publicados. Quedan para un abogado: dirección completa y teléfono del responsable (Decreto 1377, art. 13), cédula en los Términos (Ley 1480, art. 50), la excepción al retracto en créditos sin usar, la base para conservar el registro de créditos seudonimizado (Decreto 1377, art. 9) y borrar la prueba de la autorización al suprimir los datos |
 | ¿Hay que volver a pedir las autorizaciones al añadir los pagos? | `docs/politica-de-datos.md` | Se piden de nuevo (`2026-11-v3`), por prudencia; confirmar en la revisión legal |
 | Cobrar por desbloquear apps que el usuario bloqueó | NO VERIFICADO (política de Comportamiento engañoso no revisada) | Explicado con exactitud antes de pagar |
 
@@ -118,10 +118,10 @@ Guía paso a paso en [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 | Variables en Vercel y migración en Neon | PENDIENTE |
 | Compras reales con testers de licencia | PENDIENTE |
 | Pantallas nuevas probadas en un teléfono | PENDIENTE |
-| Revisión legal de la política y los Términos | PENDIENTE |
+| Revisión legal de la política y los Términos | Revisión normativa hecha y publicada; confirmación de un abogado PENDIENTE (ver riesgos) |
 | Revisión pr-review-toolkit | HECHA |
 | Contacto del responsable en la política y los Términos | IMPLEMENTADO: sergioflorez422@gmail.com |
-| Política y Términos publicados | IMPLEMENTADO en la web de descarga (`/privacidad`, `/terminos`); la app enlaza ahí. PENDIENTE: `npx vercel --prod` en `pageofficial` |
+| Política y Términos publicados | HECHO: `https://la-vida-no-es-un-banano.vercel.app/privacidad` y `/terminos`, en producción |
 | versionCode 7 (0.6.0) para el próximo AAB con facturación | IMPLEMENTADO con tu autorización |
 | Manifest fusionado con Play Billing revisado | HECHO en la 0.6.0: incluye `com.android.vending.BILLING`, sin `SYSTEM_ALERT_WINDOW` ni permiso de batería |
 | ¿Volver a pedir las autorizaciones por los pagos? | IMPLEMENTADO: versión `2026-11-v3`; al actualizar, la app vuelve a mostrar la pantalla de autorizaciones, ahora con un aviso de pagos. Confirmarlo en la revisión legal |

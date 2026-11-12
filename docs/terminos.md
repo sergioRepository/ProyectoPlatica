@@ -2,9 +2,7 @@
 
 Última actualización: noviembre de 2026.
 
-<!-- TODO(sergio): BORRADOR. Necesita revisión legal antes de publicar la app en Google Play (Ley 1480 de 2011, Estatuto del Consumidor, y Ley 527 de 1999, comercio electrónico). Completar el contacto y confirmar cada cláusula. -->
-
-Estos términos explican qué ofrece la app **La vida no es un banano**, cuánto cuesta y qué puedes esperar de ella. Al usarla los aceptas. Si no estás de acuerdo, no la uses.
+Estos términos explican qué ofrece la app **La vida no es un banano**, cuánto cuesta y qué puedes esperar de ella. Al usarla los aceptas, y las condiciones de cada compra se muestran en la app antes de pagar. Si no estás de acuerdo, no la uses.
 
 ## Qué es la app
 
@@ -27,11 +25,13 @@ Los mensajes y las decisiones de Peel los genera un modelo de inteligencia artif
 | Revisión automática del uso | No | Sí | Sí |
 | Accesos de 10 minutos incluidos al día | 0 | 3 | 3 |
 
-- **Precio.** El precio, la moneda y el período de cada plan son los que muestra Google Play para tu país en el momento de la compra. La app los toma de Google Play.
+- **Precio.** El precio, la moneda y el período de cada plan son los que muestra Google Play para tu país en el momento de la compra, con los impuestos que Google Play aplique. La app los toma de Google Play.
 - **Cobro y renovación.** Los planes se cobran por Google Play con tu cuenta de Google y **se renuevan automáticamente** cada mes (Mensual) o cada 6 meses (Semestral) hasta que los canceles.
 - **Cancelación.** Puedes cancelar cuando quieras en Google Play, en Pagos y suscripciones > Suscripciones, o desde el enlace de la pantalla de planes. Conservas el plan hasta el final del período que ya pagaste. Los reembolsos los gestiona Google Play según sus políticas.
 - **Cambio de plan.** Al pasar de Mensual a Semestral, se cobra el Semestral de inmediato y el tiempo que te quedaba se suma al plan nuevo. Al pasar de Semestral a Mensual, el cambio es inmediato y el Mensual se cobra en la siguiente renovación.
 - **Problemas con el pago.** Si Google Play no puede cobrar, puede darte un período de gracia en el que conservas el plan. Si el problema sigue, el plan se suspende hasta que lo resuelvas en Google Play.
+- **Derecho de retracto.** Los planes y los créditos empiezan a prestarse en cuanto compras, con tu acuerdo, por lo que no aplica el derecho de retracto (Ley 1480 de 2011, art. 47, num. 1). Puedes pedir reembolsos a Google Play según sus políticas.
+- **Reversión del pago.** Si un pago se hizo sin tu autorización o no recibiste lo que compraste, puedes pedir la reversión al emisor de tu medio de pago dentro de los 5 días hábiles siguientes a cuando lo sepas, y avisarnos al correo de contacto (Ley 1480 de 2011, art. 51).
 - **Revisión automática.** Peel revisa tu uso aproximadamente cada 15 minutos. Android puede retrasar la revisión para ahorrar batería, y la revisión necesita conexión y el acceso a los datos de uso.
 
 ## Créditos
@@ -60,7 +60,8 @@ Si estos términos cambian de forma importante, te lo diremos en la app antes de
 
 ## Responsable y contacto
 
-Responsable: Sergio Daniel Flórez López.
-Contacto: sergioflorez422@gmail.com
+- **Responsable:** Sergio Daniel Flórez López.
+- **Domicilio:** Bucaramanga, Santander, Colombia.
+- **Correo para peticiones, quejas y reclamos:** sergioflorez422@gmail.com. Respondemos en máximo 15 días hábiles.
 
-Estos términos se rigen por las leyes de Colombia.
+Si tu queja no se resuelve, puedes acudir a la Superintendencia de Industria y Comercio. Estos términos se rigen por las leyes de Colombia.

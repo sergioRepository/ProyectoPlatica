@@ -2,16 +2,15 @@
 
 Última actualización: noviembre de 2026. Versión del texto de autorización: `2026-11-v3`.
 
-<!-- TODO(sergio): este documento necesita revisión legal antes de distribuir el APK. -->
-
-Esta política explica qué datos usa la app **La vida no es un banano**, para qué, dónde están, cuánto tiempo se guardan y cómo puedes consultarlos, corregirlos o borrarlos. Se escribe para cumplir la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.
+Esta política explica qué datos usa la app **La vida no es un banano**, para qué, dónde están, cuánto tiempo se guardan y cómo puedes consultarlos, corregirlos o borrarlos. Se escribe para cumplir la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia (hoy en el Decreto 1074 de 2015).
 
 La app te ayuda a reducir el uso del celular. No es un servicio médico ni de salud mental, y no reemplaza a un profesional.
 
 ## Quién responde por tus datos
 
 - **Responsable:** Sergio Daniel Flórez López.
-- **Contacto:** sergioflorez422@gmail.com <!-- TODO(sergio): confirmar con revisión legal si además hace falta documento o dirección física para consultas y reclamos. -->
+- **Domicilio:** Bucaramanga, Santander, Colombia.
+- **Correo para consultas y reclamos:** sergioflorez422@gmail.com
 
 ## Qué autorizas
 
@@ -68,17 +67,15 @@ Una tarea automática diaria aplica estos plazos.
 
 ## Con quién se comparten y dónde se procesan
 
-Tus datos se procesan fuera de Colombia con estos proveedores:
+Tus datos se procesan fuera de Colombia con estos proveedores. Por eso la app te pide autorizar ese procesamiento de forma expresa (Ley 1581, art. 26):
 
-| Proveedor | Para qué | Qué recibe |
-|---|---|---|
-| Vercel | Aloja el servidor | Todo lo que la app envía |
-| Neon | Base de datos PostgreSQL | Lo que aparece como "Servidor" en esta política |
-| PLATICA MX (gateway del Reto Agente 2026) | Conecta el servidor con el modelo de IA | Perfil, excusas autorizadas y uso |
-| xAI (Grok) | Modelo de IA | Perfil, excusas autorizadas y uso |
-| Google (Google Play) | Cobra los planes y los créditos y confirma las compras | Tu compra, asociada a tu cuenta de Google y a un código irreversible de tu instalación |
-
-<!-- TODO(sergio): la pantalla de autorizaciones dice "servidores en Estados Unidos y México"; confirmarlo antes de distribuir. Confirmar países y regiones de Vercel y Neon, y qué retiene cada proveedor (sobre todo PLATICA MX y xAI). No está verificado: el servidor no guarda las excusas, pero eso no dice nada de lo que retengan ellos. -->
+| Proveedor | País | Para qué | Qué recibe |
+|---|---|---|---|
+| Vercel | Estados Unidos | Aloja el servidor | Todo lo que la app envía |
+| Neon | Estados Unidos | Base de datos PostgreSQL | Lo que aparece como "Servidor" en esta política |
+| PLATICA MX (gateway del Reto Agente 2026) | México | Conecta el servidor con el modelo de IA | Perfil, excusas autorizadas y uso |
+| xAI (Grok) | Estados Unidos | Modelo de IA | Perfil, excusas autorizadas y uso |
+| Google (Google Play) | Estados Unidos | Cobra los planes y los créditos y confirma las compras | Tu compra, asociada a tu cuenta de Google y a un código irreversible de tu instalación |
 
 Los proveedores de IA ven el texto que se les envía para responder. **Qué conserven y por cuánto tiempo depende de sus propias políticas.** No escribas en tus excusas nada que no quieras enviarles.
 
@@ -89,26 +86,25 @@ No vendemos tus datos ni los usamos para publicidad.
 Como titular de los datos puedes conocerlos, actualizarlos, corregirlos, pedir que se borren, revocar tu autorización y pedir prueba de ella. También puedes presentar quejas ante la Superintendencia de Industria y Comercio.
 
 - **Borrar:** en **Ajustes > Privacidad > Borrar mis datos**. Borra de inmediato tus datos del servidor y del teléfono, incluidas tus autorizaciones y tus compras de suscripción registradas. La acción no se puede deshacer.
-  - Pierdes tus créditos, tengas plan o no. El registro de créditos no se borra: se seudonimiza. Se quita el identificador de tu teléfono y las referencias quedan como códigos (hashes). Se conserva para que una misma compra no se pueda canjear otra vez.
+  - Pierdes tus créditos, tengas plan o no. El registro de créditos no se borra: se seudonimiza. Se quita el identificador de tu teléfono y las referencias quedan como códigos (hashes). Se conserva para que una misma compra no se pueda canjear otra vez: es parte del contrato de compra, por lo que la supresión no procede sobre ese registro mínimo (Decreto 1377 de 2013, art. 9).
   - Borrar tus datos **no cancela tu suscripción**. Cancélala en Google Play, en Pagos y suscripciones > Suscripciones.
   - Si reinstalas la app (sin usar «Borrar mis datos») con un plan activo, la suscripción se restaura desde Google Play con la misma cuenta de Google y tus créditos pasan a la instalación nueva. Sin plan, los créditos se pierden al desinstalar.
 - **Corregir tu perfil:** en **Ajustes**.
-- **Consultar o reclamar:** escribe al contacto de arriba. Las consultas se atienden en máximo 10 días hábiles y los reclamos en máximo 15 días hábiles.
-
-<!-- TODO(sergio): confirmar con revisión legal que conservar el registro de créditos anonimizado tras el borrado es correcto, y que los datos de compra que procesa Google quedan bien descritos. -->
-
-<!-- TODO(sergio): confirmar con revisión legal si borrar las autorizaciones al suprimir los datos es correcto, o si hay que conservar la prueba por un tiempo (Decreto 1377, art. 8). Hoy se borran porque así se pidió. -->
+- **Consultar o reclamar:** escribe al correo de arriba diciendo qué pides. Como la app no tiene cuentas, puede que te pidamos un dato para ubicar tu instalación; nunca tu contraseña ni datos de pago.
+  - Las consultas se responden en máximo 10 días hábiles. Si no es posible, te diremos por qué y la nueva fecha, que no pasará de 5 días hábiles más (Ley 1581, art. 14).
+  - Los reclamos (corregir, actualizar, suprimir o revocar) se resuelven en máximo 15 días hábiles. Si no es posible, te diremos por qué y la nueva fecha, que no pasará de 8 días hábiles más (Ley 1581, art. 15).
+- **Superintendencia de Industria y Comercio:** puedes acudir a ella después de agotar la consulta o el reclamo ante nosotros (Ley 1581, art. 16).
 
 ## Menores de edad
 
 La app es para personas de 18 años o más. Al continuar en la pantalla de autorización declaras tener esa edad.
 
-<!-- TODO(sergio): confirmar el tratamiento de menores con revisión legal si algún amigo o familiar lo es (Ley 1581, art. 7). -->
-
 ## Si estás pasando por un mal momento
 
 Cuando escribes algo que parece una emergencia, la app te muestra líneas de ayuda. Esas líneas no son atendidas por esta app. Si estás en peligro, busca ayuda de inmediato.
 
-## Cambios
+## Cambios y vigencia
 
 Si esta política cambia de forma importante, la app te volverá a pedir tus autorizaciones.
+
+Esta versión rige desde noviembre de 2026. Las bases de datos se mantienen mientras la app esté en funcionamiento, con los plazos de conservación de arriba.
