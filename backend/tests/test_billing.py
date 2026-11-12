@@ -63,6 +63,12 @@ class FakePlay:
         self.products: dict[str, Any] = {}
         self.acknowledged: list[str] = []
         self.consumed: list[str] = []
+        self.fail_next: BaseException | None = None  # lo lanza el próximo acknowledge o consume
+
+    def _maybe_fail(self) -> None:
+        if self.fail_next is not None:
+            error, self.fail_next = self.fail_next, None
+            raise error
 
     @staticmethod
     def _answer(value: Any) -> Any:
@@ -76,12 +82,14 @@ class FakePlay:
         return self._answer(self.subscriptions.get(token))
 
     async def acknowledge_subscription(self, product_id: str, token: str) -> None:
+        self._maybe_fail()
         self.acknowledged.append(token)
 
     async def get_product(self, product_id: str, token: str) -> dict[str, Any]:
         return self._answer(self.products.get(token))
 
     async def consume_product(self, product_id: str, token: str) -> None:
+        self._maybe_fail()
         self.consumed.append(token)
 
 
@@ -136,7 +144,7 @@ def test_each_google_state_maps_to_its_benefits(make_client, state, days, plan):
     assert response.json()["device"]["plan"] == plan
     assert response.json()["device"]["subscription_state"] == state
     # Solo se hace el acknowledge de lo que da acceso.
-    assert play.acknowledged == ([SUB] if state.endswith("IN_GRACE_PERIOD") else [])
+    assert play.acknowledged == ([SUB] if plan != "free" else [])
 
 
 def test_an_active_subscription_that_expired_without_news_gives_nothing(make_client):
@@ -257,6 +265,8 @@ def test_a_plan_change_retires_the_replaced_purchase(make_client):
     response = verify(client, "premium", "token-semestral-0001")
 
     assert response.json()["device"]["plan"] == "semester"
+    # El aviso de la pantalla habla de la compra vigente, nunca de la reemplazada.
+    assert response.json()["device"]["subscription_state"] == "SUBSCRIPTION_STATE_ACTIVE"
     assert store.entitlements[SUB]["state"] == "REPLACED"
 
 
@@ -285,6 +295,49 @@ def test_a_credit_pack_is_added_once_and_consumed(make_client):
     assert first.json()["outcome"] == "granted"
     assert second.json()["outcome"] == "already_granted"
     assert second.json()["device"]["credits"] == 10
+    assert play.consumed == [PACK]
+
+
+def test_a_failed_acknowledge_is_retried_on_the_next_verify(make_client):
+    store, play = consented_store(), FakePlay()
+    play.subscriptions[SUB] = subscription()
+    play.fail_next = PlayUnavailableError("503")
+    client = make_client(store=store, play_client=play)
+
+    assert verify(client, "premium", SUB).status_code == 503
+    retry = verify(client, "premium", SUB)
+    assert retry.status_code == 200
+    assert retry.json()["device"]["plan"] == "monthly"
+    assert play.acknowledged == [SUB]
+
+
+def test_an_acknowledge_already_done_elsewhere_keeps_the_plan(make_client):
+    store, play = consented_store(), FakePlay()
+    play.subscriptions[SUB] = subscription()
+    play.fail_next = PlayNotFoundError("400")
+    response = verify(make_client(store=store, play_client=play), "premium", SUB)
+    assert response.status_code == 200
+    assert response.json()["device"]["plan"] == "monthly"
+
+
+def test_a_failed_consume_is_retried_without_adding_twice(make_client):
+    store, play = consented_store(credits=0), FakePlay()
+    play.products[PACK] = {"purchaseState": 0, "consumptionState": 0}
+    play.fail_next = PlayUnavailableError("503")
+    client = make_client(store=store, play_client=play)
+
+    assert verify(client, "creditos_10", PACK).status_code == 503
+    retry = verify(client, "creditos_10", PACK)
+    assert retry.json()["outcome"] == "already_granted"
+    assert retry.json()["device"]["credits"] == 10
+    assert play.consumed == [PACK]
+
+
+def test_several_packs_in_one_purchase_add_all_their_credits(make_client):
+    store, play = consented_store(credits=0), FakePlay()
+    play.products[PACK] = {"purchaseState": 0, "consumptionState": 0, "quantity": 3}
+    response = verify(make_client(store=store, play_client=play), "creditos_10", PACK)
+    assert response.json()["device"]["credits"] == 30
     assert play.consumed == [PACK]
 
 
@@ -464,6 +517,19 @@ def test_rtdn_rereads_google_and_updates_the_plan(make_client, trusted_push, sta
     assert client.get("/devices/me", headers=auth_headers()).json()["plan"] == plan
 
 
+def test_rtdn_acknowledges_a_pending_payment_charged_with_the_app_closed(make_client, trusted_push):
+    store, play = consented_store(), FakePlay()
+    seed_entitlement(store, TEST_DEVICE_ID, token=SUB)
+    play.subscriptions[SUB] = subscription()
+    client = make_client(settings=rtdn_settings(), store=store, play_client=play)
+
+    assert push(client, sub_notification()).status_code == 204
+    assert play.acknowledged == [SUB]
+    play.subscriptions[SUB] = subscription(acknowledged=True)
+    assert push(client, sub_notification()).status_code == 204
+    assert play.acknowledged == [SUB]
+
+
 def test_rtdn_of_an_unknown_purchase_changes_nothing(make_client, trusted_push):
     store, play = consented_store(), FakePlay()
     play.subscriptions[SUB] = subscription()
@@ -487,6 +553,21 @@ def test_rtdn_refunds_a_voided_credit_pack(make_client, trusted_push):
     assert push(client, voided).status_code == 204
     assert push(client, voided).status_code == 204
     assert client.get("/devices/me", headers=auth_headers()).json()["credits"] == 0
+
+
+def test_rtdn_of_a_refunded_subscription_removes_the_plan(make_client, trusted_push):
+    store, play = consented_store(), FakePlay()
+    seed_entitlement(store, TEST_DEVICE_ID, token=SUB)
+    play.subscriptions[SUB] = subscription(state="SUBSCRIPTION_STATE_EXPIRED", days=-1)
+    client = make_client(settings=rtdn_settings(), store=store, play_client=play)
+    voided = {
+        "version": "1.0",
+        "packageName": "com.lavidanoesunbanano.app",
+        "voidedPurchaseNotification": {"purchaseToken": SUB, "productType": 1, "refundType": 1},
+    }
+
+    assert push(client, voided).status_code == 204
+    assert client.get("/devices/me", headers=auth_headers()).json()["plan"] == "free"
 
 
 def test_rtdn_of_another_app_or_malformed_is_acknowledged_and_ignored(make_client, trusted_push):

@@ -14,7 +14,7 @@ import binascii
 import hashlib
 import json
 import logging
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Any, Literal, Protocol
 from urllib.parse import quote
 
@@ -30,7 +30,12 @@ logger = logging.getLogger(__name__)
 API = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
 SCOPE = "https://www.googleapis.com/auth/androidpublisher"
 ACKNOWLEDGE_PENDING = "ACKNOWLEDGEMENT_STATE_PENDING"
-ACKNOWLEDGEABLE = ("SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD")
+# Cancelada (sin renovación) sigue pagada hasta vencer: también hay que confirmarla.
+ACKNOWLEDGEABLE = (
+    "SUBSCRIPTION_STATE_ACTIVE",
+    "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+    "SUBSCRIPTION_STATE_CANCELED",
+)
 # purchases.products: purchaseState 0 comprado, 1 cancelado, 2 pendiente; consumptionState 0 sin
 # consumir.
 PRODUCT_PURCHASED, PRODUCT_PENDING = 0, 2
@@ -172,12 +177,30 @@ async def verify_subscription(
     entitlement = entitlement_from(subscription, token, device_id, settings, day)
     await store.save_entitlement(entitlement)
     # Sin acknowledge en 3 días Google reembolsa y revoca: se hace aquí, después de guardar.
-    if (
-        subscription.get("acknowledgementState") == ACKNOWLEDGE_PENDING
-        and entitlement["state"] in ACKNOWLEDGEABLE
-    ):
-        await client.acknowledge_subscription(settings.play_subscription_id, token)
+    await _acknowledge(client, settings, subscription, entitlement, token)
     return entitlement
+
+
+async def _acknowledge(
+    client: PlayClient,
+    settings: Settings,
+    subscription: dict[str, Any],
+    entitlement: dict[str, Any],
+    token: str,
+) -> None:
+    """Confirma una compra pagada y sin vencer. El derecho ya está guardado: un 4xx (confirmada
+    por otra validación simultánea) no lo deshace; un 5xx sube para que se reintente."""
+    expiry = entitlement["expiry_time"]
+    if (
+        subscription.get("acknowledgementState") != ACKNOWLEDGE_PENDING
+        or entitlement["state"] not in ACKNOWLEDGEABLE
+        or (expiry is not None and expiry <= datetime.now(UTC))
+    ):
+        return
+    try:
+        await client.acknowledge_subscription(settings.play_subscription_id, token)
+    except PlayNotFoundError:
+        logger.warning("acknowledge rechazado por Google con el derecho ya guardado")
 
 
 async def verify_credits(
@@ -205,7 +228,11 @@ async def verify_credits(
     # Se consume después de anotar el saldo: si el consumo falla, la próxima restauración lo
     # reintenta y el registro no vuelve a sumar.
     if purchase.get("consumptionState") == NOT_CONSUMED:
-        await client.consume_product(product_id, token)
+        try:
+            await client.consume_product(product_id, token)
+        except PlayNotFoundError:
+            # Ya consumida por otra validación simultánea (al volver del flujo y al restaurar).
+            logger.warning("consumo rechazado por Google con los créditos ya anotados")
     return "granted" if granted else "already_granted"
 
 
@@ -276,4 +303,6 @@ async def _refresh_subscription(
         return "unknown_purchase"
     entitlement = entitlement_from(subscription, token, known["device_id"], settings, day)
     await store.save_entitlement(entitlement)
+    # Un pago pendiente que se cobra con la app cerrada solo llega por aquí.
+    await _acknowledge(client, settings, subscription, entitlement, token)
     return "updated"

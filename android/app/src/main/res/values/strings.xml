@@ -30,9 +30,10 @@
     <string name="consent_excuses_desc">Las lee una IA para aprobar o rechazar tus pedidos. Pueden incluir datos de salud.</string>
     <string name="consent_excuses_if_not">las emergencias se aprueban siempre y los 10 minutos se rechazan siempre.</string>
     <string name="consent_analytics_title">Ayudarnos a mejorar la app</string>
-    <string name="consent_analytics_desc">Solo registramos qué botones tocas. Nunca lo que escribes.</string>
+    <string name="consent_analytics_desc">Registramos qué apps se bloquean, si sales o pides tiempo y qué decide Peel. Nunca lo que escribes.</string>
     <string name="consent_analytics_if_not">la app funciona igual.</string>
     <string name="consent_if_not">Si no lo marcas:</string>
+    <string name="consent_payments">Si compras un plan o créditos, Google Play te cobra y nos confirma la compra. Guardamos el código de la compra, su estado y tu saldo de créditos. Nunca vemos tu tarjeta.</string>
     <string name="consent_controller">Responsable de tus datos: Sergio Daniel Flórez López</string>
     <string name="policy_link">Leer la política de datos</string>
     <string name="policy_url" translatable="false">https://github.com/sergioRepository/ProyectoPlatica/blob/production/docs/politica-de-datos.md</string>
@@ -348,7 +349,7 @@
     <string name="settings_consent_excuses">Enviar tus razones para evaluarlas</string>
     <string name="settings_consent_excuses_desc">Las lee una IA. Si lo apagas, las emergencias se aprueban siempre y los 10 minutos se rechazan.</string>
     <string name="settings_consent_analytics">Ayudarnos a mejorar la app</string>
-    <string name="settings_consent_analytics_desc">Solo qué botones tocas. Nunca lo que escribes.</string>
+    <string name="settings_consent_analytics_desc">Qué apps se bloquean, si sales o pides tiempo y qué decide Peel. Nunca lo que escribes.</string>
     <string name="settings_erase">Borrar todos mis datos</string>
     <string name="settings_erase_title">¿Borrar tus datos?</string>
     <string name="settings_erase_warning">Se borra todo lo tuyo en el servidor y en este teléfono: perfil, mensajes, historial, créditos y autorizaciones. La app queda como recién instalada y no se puede deshacer. Si tienes un plan, cancélalo en Google Play: borrar tus datos no lo cancela.</string>

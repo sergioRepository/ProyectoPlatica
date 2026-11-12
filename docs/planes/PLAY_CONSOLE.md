@@ -105,7 +105,7 @@ Obligatorio desde la prueba cerrada ([ayuda oficial](https://support.google.com/
   - El perfil y las razones se envían al proveedor del modelo de IA. No cuenta como «compartir» solo si el proveedor los procesa por cuenta tuya y no los usa para fines propios. El documento de política dice que eso no está verificado; mientras no lo esté, decláralo como compartido.
   - Las razones pueden contener datos de salud. Si hay que declarar además «Información de salud»: NO VERIFICADO.
 - Google Play cobra los pagos. Según la ayuda oficial, un proveedor que procesa datos por cuenta tuya no cuenta como «compartir»; confírmalo en la revisión legal.
-- **La 0.5.1 que se sube a la prueba cerrada no tiene facturación**: es el AAB generado con el commit `fef164c`. El código actual ya incluye Play Billing y **todavía lleva versionCode 6**: antes de generar otro AAB hay que subirlo a 7 (versión 0.6.0) y declarar «Historial de compras».
+- **La 0.5.1 que se sube a la prueba cerrada no tiene facturación**: es el AAB generado con el commit `fef164c`. La versión con Play Billing es la **0.6.0 (versionCode 7)**: al subirla, declara «Historial de compras». Se puede subir a la pista interna para dar de alta los productos.
 
 ## 6. Crear la prueba cerrada y la lista de testers
 

@@ -40,7 +40,7 @@ Planes Gratis, Mensual (USD 1.99) y Semestral (USD 8.39 cada 6 meses); 3, 20 y 2
 
 | Qué | Comando | Resultado |
 |---|---|---|
-| Backend | `cd backend && TEST_DATABASE_URL=postgresql://banano:banano@localhost:5432/banano uv run pytest` | 300 pasados, 0 saltados (con Postgres 17 de Docker) |
+| Backend | `cd backend && TEST_DATABASE_URL=postgresql://banano:banano@localhost:5432/banano uv run pytest` | 306 pasados, 0 saltados (con Postgres 17 de Docker) |
 | Backend, estilo | `cd backend && uv run ruff check` | Sin errores |
 | Android | `cd android && JAVA_HOME="…/Android Studio/jbr" ./gradlew testDebugUnitTest lint` | 195 pasados; lint sin errores |
 | Teléfono (0.5.1) | Lista de 12 pruebas en `ESTADO.md` | Hechas por Sergio: el bloqueo funciona sin `SYSTEM_ALERT_WINDOW` |
@@ -88,7 +88,7 @@ Guía paso a paso en [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 | Créditos ligados a la instalación: sin plan se pierden al desinstalar o borrar datos | Decisión de producto (sin cuentas) | Avisado antes de comprar y en los Términos |
 | Período de gracia: se asume un máximo de 30 días | NO VERIFICADO | Margen en `GRACE_LEEWAY` |
 | Política de datos y Términos sin revisión legal ni contacto | `docs/politica-de-datos.md`, `docs/terminos.md` | PENDIENTE |
-| ¿Hay que volver a pedir las autorizaciones al añadir los pagos? La política dice que se piden de nuevo si cambia «de forma importante» | `docs/politica-de-datos.md` | PENDIENTE: decisión legal; hoy no se piden de nuevo |
+| ¿Hay que volver a pedir las autorizaciones al añadir los pagos? | `docs/politica-de-datos.md` | Se piden de nuevo (`2026-11-v3`), por prudencia; confirmar en la revisión legal |
 | Cobrar por desbloquear apps que el usuario bloqueó | NO VERIFICADO (política de Comportamiento engañoso no revisada) | Explicado con exactitud antes de pagar |
 
 ## 6. Revisiones
@@ -98,7 +98,14 @@ Guía paso a paso en [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 - **Cumplimiento del Paso 9:** sin bloqueantes; corregida la descripción de qué datos salen del teléfono.
 - **Cumplimiento del Paso 7:** sin bloqueantes; corregidos cinco importantes (compra pendiente mostrada como activa, cambio de plan sin precio ni momento del cobro, frecuencia de la revisión, aviso de pérdida de créditos, condiciones ocultas con Gratis).
 - **Cumplimiento final sobre todos los cambios:** sin bloqueantes de código. Corregidos: condiciones del traslado de créditos (con la misma cuenta de Google; borrar los datos siempre los elimina), «hasta» en las evaluaciones, versión de la autorización en la política (`2026-11-v2`, la del código), campos de compra y seudonimización en la política, y la tabla de Seguridad de los datos de `PLAY_CONSOLE.md`. Quedan abiertos los puntos marcados en el checklist.
-- **pr-review-toolkit:** PENDIENTE, lo ejecuta Sergio.
+- **pr-review-toolkit:** ejecutado con subagentes sobre `aebb214` (code-reviewer, silent-failure-hunter, pr-test-analyzer). Corregido:
+  - un pago pendiente que Google cobraba con la app cerrada llegaba por RTDN sin acknowledge, y Google lo habría reembolsado a los 3 días; ahora la RTDN también lo confirma;
+  - una suscripción cancelada pero vigente daba el plan sin acknowledge;
+  - un acknowledge o consumo repetido (al volver del flujo y al restaurar a la vez) mostraba «compra rechazada» sobre una compra pagada;
+  - la pantalla de planes quedaba bloqueada en «comprando» tras «ya tienes este producto» o un flujo sin compras, y un aviso de compra pendiente cancelada por Google no se quitaba nunca;
+  - el estado y el vencimiento que ve el usuario podían salir de la compra reemplazada tras un cambio de plan.
+  - Tests nuevos: reintento del acknowledge y del consumo, suscripción reembolsada por RTDN, paquete con cantidad 3, acknowledge por RTDN.
+  - Aceptado sin cambiar: al cambiar de plan, los accesos incluidos del día empiezan de cero con la compra nueva (requiere pagar el cambio). Pendiente menor: un 404 por «dispositivo desconocido» se muestra como compra rechazada; la siguiente restauración lo resuelve.
 
 ## 7. Checklist antes de publicar
 
@@ -112,11 +119,11 @@ Guía paso a paso en [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 | Compras reales con testers de licencia | PENDIENTE |
 | Pantallas nuevas probadas en un teléfono | PENDIENTE |
 | Revisión legal de la política y los Términos | PENDIENTE |
-| Revisión pr-review-toolkit | PENDIENTE |
+| Revisión pr-review-toolkit | HECHA |
 | Contacto del responsable en la política y los Términos | IMPLEMENTADO: sergioflorez422@gmail.com |
 | `docs/terminos.md` y la política nueva publicados: `policy_url` y `terms_url` apuntan a `production` en GitHub, que todavía no los tiene | PENDIENTE: fusionar antes de subir la versión con facturación |
-| versionCode 7 (0.6.0) para el próximo AAB con facturación | PENDIENTE: necesita tu autorización |
-| Manifest fusionado con Play Billing (permiso `com.android.vending.BILLING`) revisado | PENDIENTE: se ve al generar el AAB nuevo |
-| ¿Volver a pedir las autorizaciones por los pagos? | PENDIENTE: decisión legal |
-| Texto de la autorización de analítica («Solo registramos qué botones tocas») frente a lo que se registra (bloqueos, salidas y veredictos) | PENDIENTE: viene de antes de esta rama; cambiarlo exige subir la versión de la autorización |
+| versionCode 7 (0.6.0) para el próximo AAB con facturación | IMPLEMENTADO con tu autorización |
+| Manifest fusionado con Play Billing revisado | HECHO en la 0.6.0: incluye `com.android.vending.BILLING`, sin `SYSTEM_ALERT_WINDOW` ni permiso de batería |
+| ¿Volver a pedir las autorizaciones por los pagos? | IMPLEMENTADO: versión `2026-11-v3`; al actualizar, la app vuelve a mostrar la pantalla de autorizaciones, ahora con un aviso de pagos. Confirmarlo en la revisión legal |
+| Texto de la autorización de analítica frente a lo que se registra | IMPLEMENTADO en `2026-11-v3`: «Registramos qué apps se bloquean, si sales o pides tiempo y qué decide Peel» |
 | Purga de suscripciones vencidas en `entitlements` (hoy se guardan hasta que el usuario borra sus datos) | PENDIENTE |

@@ -309,7 +309,12 @@ class MemoryStore:
             )
         ]
         best = max(active, key=lambda e: e["expiry_time"], default=None)
-        latest = max(mine, key=lambda e: e["updated_at"], default=None)
+        # El aviso de la pantalla sale de la compra vigente; si no hay, de la última no reemplazada.
+        latest = best or max(
+            (e for e in mine if e["state"] != REPLACED_STATE),
+            key=lambda e: e["updated_at"],
+            default=None,
+        )
         rows = [r for r in self.ledger if r["device_id"] == device_id]
         plan_ref = ledger_ref(best["purchase_token"]) if best else None
         return {
@@ -643,22 +648,26 @@ class PostgresStore:
             "SELECT d.device_id, d.would_pay, d.consent_excuses, d.consent_analytics, "
             f"{counters}, "
             "coalesce(b.plan, 'free') AS plan, b.plan_ref AS plan_ref, "
-            "l.state AS subscription_state, l.expiry_time AS expiry_time, "
-            "coalesce(l.auto_renewing, false) AS auto_renewing, "
+            # El aviso sale de la compra vigente (b); si no hay, de la última no reemplazada (l).
+            "CASE WHEN b.plan IS NULL THEN l.state ELSE b.state END AS subscription_state, "
+            "CASE WHEN b.plan IS NULL THEN l.expiry_time ELSE b.expiry_time END AS expiry_time, "
+            "coalesce(CASE WHEN b.plan IS NULL THEN l.auto_renewing ELSE b.auto_renewing END, "
+            "false) AS auto_renewing, "
             "(SELECT coalesce(sum(delta), 0)::int FROM credit_ledger "
             "WHERE device_id = d.device_id) AS credits, "
             "(SELECT count(*)::int FROM credit_ledger WHERE plan_ref = b.plan_ref "
             "AND kind = 'access' AND delta = 0 AND day = %s) AS included_used "
             "FROM devices d LEFT JOIN device_daily_usage u "
             "ON u.device_id = d.device_id AND u.day = %s "
-            "LEFT JOIN LATERAL (SELECT plan, "
+            "LEFT JOIN LATERAL (SELECT plan, state, expiry_time, auto_renewing, "
             "encode(sha256(convert_to(purchase_token, 'UTF8')), 'hex') AS plan_ref "
             "FROM entitlements WHERE device_id = d.device_id AND ("
             "(state = ANY(%s) AND expiry_time > now() - %s) "
             "OR (state = %s AND expiry_time > now() - %s)) "
             "ORDER BY expiry_time DESC LIMIT 1) b ON true "
             "LEFT JOIN LATERAL (SELECT state, expiry_time, auto_renewing FROM entitlements "
-            "WHERE device_id = d.device_id ORDER BY updated_at DESC LIMIT 1) l ON true "
+            "WHERE device_id = d.device_id AND state <> %s "
+            "ORDER BY updated_at DESC LIMIT 1) l ON true "
             "WHERE d.device_id = %s",
             (
                 day,
@@ -667,6 +676,7 @@ class PostgresStore:
                 ENTITLEMENT_LEEWAY,
                 GRACE_STATE,
                 GRACE_LEEWAY,
+                REPLACED_STATE,
                 device_id,
             ),
             timeout,

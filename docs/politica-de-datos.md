@@ -1,6 +1,6 @@
 # Política de tratamiento de datos · La vida no es un banano
 
-Última actualización: noviembre de 2026. Versión del texto de autorización: `2026-11-v2`.
+Última actualización: noviembre de 2026. Versión del texto de autorización: `2026-11-v3`.
 
 <!-- TODO(sergio): este documento necesita revisión legal antes de distribuir el APK. -->
 

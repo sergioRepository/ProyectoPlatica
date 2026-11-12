@@ -72,6 +72,7 @@ fun ConsentScreen(onDone: (Any) -> Unit, viewModel: ConsentViewModel = hiltViewM
                     viewModel::toggleAnalytics,
                 )
             }
+            Text(text = stringResource(R.string.consent_payments), style = type.small, color = colors.textSecondary)
             Column {
                 PolicyLink()
                 Text(text = stringResource(R.string.consent_controller), style = type.small, color = colors.textSecondary)

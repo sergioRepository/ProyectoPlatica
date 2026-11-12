@@ -190,17 +190,35 @@ class PlayBillingRepository @Inject constructor(
 
     override fun onPurchasesUpdated(result: BillingResult, purchases: MutableList<Purchase>?) {
         when (result.responseCode) {
-            BillingResponseCode.OK -> scope.launch { purchases.orEmpty().forEach { handle(it, fromFlow = true) } }
+            BillingResponseCode.OK ->
+                if (purchases.isNullOrEmpty()) {
+                    _state.update { it.copy(purchase = PurchaseStatus.Idle) }
+                } else {
+                    scope.launch { purchases.forEach { handle(it, fromFlow = true) } }
+                }
             BillingResponseCode.USER_CANCELED -> _state.update { it.copy(purchase = PurchaseStatus.Cancelled) }
             // Ya la tenía (otra instalación o una compra sin validar): se valida lo que Google tiene.
-            BillingResponseCode.ITEM_ALREADY_OWNED -> scope.launch { restore() }
+            BillingResponseCode.ITEM_ALREADY_OWNED -> scope.launch {
+                restoreOwned(fromFlow = true)
+                // Si no se encontró nada que validar, la pantalla no puede quedarse en «comprando».
+                _state.update {
+                    if (it.purchase is PurchaseStatus.Launching) it.copy(purchase = PurchaseStatus.Failed(retryable = true)) else it
+                }
+            }
             else -> _state.update { it.copy(purchase = PurchaseStatus.Failed(retryable = true)) }
         }
     }
 
-    override suspend fun restore() {
+    override suspend fun restore() = restoreOwned(fromFlow = false)
+
+    private suspend fun restoreOwned(fromFlow: Boolean) {
         if (!connect()) return
-        (queryOwned(ProductType.SUBS) + queryOwned(ProductType.INAPP)).forEach { handle(it, fromFlow = false) }
+        val owned = queryOwned(ProductType.SUBS) + queryOwned(ProductType.INAPP)
+        // Una pendiente que Google canceló (no se pagó) desaparece: el aviso no puede quedar fijo.
+        if (_state.value.purchase == PurchaseStatus.Pending && owned.none { it.purchaseState == Purchase.PurchaseState.PENDING }) {
+            _state.update { it.copy(purchase = PurchaseStatus.Idle) }
+        }
+        owned.forEach { handle(it, fromFlow) }
     }
 
     /**

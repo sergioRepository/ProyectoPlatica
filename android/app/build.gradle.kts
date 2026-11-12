@@ -76,8 +76,8 @@ android {
         applicationId = "com.lavidanoesunbanano.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 6
-        versionName = "0.5.1"
+        versionCode = 7
+        versionName = "0.6.0"
     }
     packaging {
         resources {
