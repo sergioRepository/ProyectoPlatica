@@ -23,6 +23,7 @@ import com.lavidanoesunbanano.app.data.repository.VerifyResult
 import com.lavidanoesunbanano.app.domain.billing.PlanCatalog
 import com.lavidanoesunbanano.app.domain.billing.PlanTier
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
@@ -133,8 +134,19 @@ class PlayBillingRepository @Inject constructor(
         )
     }
 
+    /** Se toma antes de cualquier espera: un doble toque no abre dos compras (ni cobra dos paquetes). */
+    private val purchasing = AtomicBoolean(false)
+
     override suspend fun purchase(activity: Activity, product: StoreProduct) {
-        if (_state.value.busy) return
+        if (_state.value.busy || !purchasing.compareAndSet(false, true)) return
+        try {
+            launchPurchase(activity, product)
+        } finally {
+            purchasing.set(false)
+        }
+    }
+
+    private suspend fun launchPurchase(activity: Activity, product: StoreProduct) {
         val productDetails = details[product]
         val offerToken = offerTokens[product]
         val account = devices.accountHash()
