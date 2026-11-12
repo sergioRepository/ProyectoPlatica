@@ -18,11 +18,7 @@ QuotaReason = Literal["plan_quota", "rejection_cap"]
 
 
 def plan_limit(settings: Settings, plan: str) -> int:
-    limits = {
-        "monthly": settings.plan_limit_monthly,
-        "semester": settings.plan_limit_semester,
-    }
-    return limits.get(plan, settings.plan_limit_free)
+    return settings.benefits(plan).daily_evaluations
 
 
 def quota_day(settings: Settings, now: datetime | None = None) -> date:

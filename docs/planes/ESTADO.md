@@ -9,8 +9,8 @@ Etiquetas: **IMPLEMENTADO** (el código está escrito), **PROBADO** (sus tests c
 | 0 | Configuración reutilizable: `PLAN.md`, subagentes, `.claude/CLAUDE.md`, este archivo | IMPLEMENTADO | No lleva tests |
 | 1 | Nombres: «La vida no es un banano» y «Peel» | PROBADO | Backend: 222 tests y ruff en verde. Android: 159 tests y lint sin errores. Falta ver en un teléfono de 360 dp si `home_brand` cabe en una línea |
 | 9 | Bloqueantes de Google Play: batería, divulgación de Accesibilidad, anti-autosabotaje dentro de la app, `allowBackup` | PROBADO | Backend: 222 tests y ruff. Android: 158 tests y lint sin errores. Versión 0.5.1 (versionCode 6), sin `SYSTEM_ALERT_WINDOW`; AAB y APK de release firmados con la clave de release. No se probó en un teléfono: lista de pruebas abajo. Guía: `PLAY_CONSOLE.md` |
-| 2 | Configuración central de planes | PENDIENTE | |
-| 3 | Backend: migración, cupos, facturación | PENDIENTE | Antes: confirmar que la base de producción está a salvo |
+| 2 | Configuración central de planes | PROBADO | `PlanCatalog` (Android) y `Settings.benefits` (backend) con los mismos valores; sin cambio de comportamiento |
+| 3 | Backend: migración, cupos, facturación | PENDIENTE | BLOQUEADO: Vercel crea un despliegue Preview por cada push a `play-store` (comprobado: commit `fef164c`). Falta confirmar que Preview no usa la base de producción |
 | 4 | Android: facturación y restauración | PENDIENTE | |
 | 5 | Accesos y créditos en el bloqueo | PENDIENTE | |
 | 6 | Revisión automática condicionada al plan | PENDIENTE | |
@@ -32,7 +32,7 @@ Ningún bloqueante. Lo que marcó:
 
 Revisado y correcto: la divulgación está en el flujo normal, exige una acción afirmativa y Atrás cuenta como rechazo; el servicio solo lee el paquete de la app en primer plano; no queda ningún uso de Accesibilidad que estorbe desactivar o desinstalar; no queda rastro del permiso de batería; `allowBackup="false"`.
 
-## Pruebas de la 0.5.1 en el teléfono (PENDIENTE, las hace Sergio)
+## Pruebas de la 0.5.1 en el teléfono (PROBADO por Sergio el 2026-11-11)
 
 Instalar el APK de release `android/app/build/outputs/apk/release/app-release.apk`. Si la 0.4.0 está instalada con otra firma, hay que desinstalarla antes. TikTok debe estar en la lista de apps bloqueadas.
 

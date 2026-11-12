@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Literal
 
@@ -12,6 +13,14 @@ class ModelPrice(BaseModel):
 
     input_per_million: float
     output_per_million: float
+
+
+@dataclass(frozen=True)
+class PlanBenefits:
+    daily_evaluations: int
+    included_accesses: int
+    auto_review: bool
+    agent_daily_cap: int
 
 
 class Settings(BaseSettings):
@@ -80,10 +89,20 @@ class Settings(BaseSettings):
     # Un "sent" sin confirmar después de esto se lee como "unknown".
     agent_confirm_window_s: float = 120.0
 
-    # Planes sin cobro: llamadas de IA por día (un juicio o un análisis cuentan una).
+    # Evaluaciones de Peel al día por plan.
     plan_limit_free: int = 3
     plan_limit_monthly: int = 20
     plan_limit_semester: int = 20
+    # Accesos de 10 min incluidos al día en los planes de pago.
+    plan_included_accesses_paid: int = 3
+    # Análisis automáticos al día en los planes de pago.
+    agent_daily_cap: int = 96
+    # Productos de Google Play (deben coincidir con Play Console).
+    play_subscription_id: str = "premium"
+    play_base_plan_monthly: str = "monthly"
+    play_base_plan_semester: str = "semester"
+    play_credits_product_id: str = "creditos_10"
+    credits_per_pack: int = 10
     # Después de esta cantidad de rechazos del día, el juez responde sin llamar a Grok.
     daily_rejection_cap: int = 5
     daily_template_cap: int = 2
@@ -103,6 +122,18 @@ class Settings(BaseSettings):
     cron_secret: SecretStr | None = None
 
     enable_docs: bool = False
+
+    def benefits(self, plan: str) -> PlanBenefits:
+        """Beneficios por plan: fuente de verdad, igual que `PlanCatalog` en Android."""
+        if plan == "monthly":
+            evaluations = self.plan_limit_monthly
+        elif plan == "semester":
+            evaluations = self.plan_limit_semester
+        else:
+            return PlanBenefits(self.plan_limit_free, 0, False, 0)
+        return PlanBenefits(
+            evaluations, self.plan_included_accesses_paid, True, self.agent_daily_cap
+        )
 
 
 @lru_cache

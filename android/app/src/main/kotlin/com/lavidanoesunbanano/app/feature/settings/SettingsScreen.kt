@@ -64,6 +64,7 @@ import com.lavidanoesunbanano.app.core.designsystem.TextLink
 import com.lavidanoesunbanano.app.core.designsystem.UiIcon
 import com.lavidanoesunbanano.app.core.designsystem.dashed
 import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
+import com.lavidanoesunbanano.app.domain.billing.PlanTier
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
 import com.lavidanoesunbanano.app.feature.block.SabotageExitForm
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingRules
@@ -496,12 +497,6 @@ private fun EraseButton(onClick: () -> Unit) {
     }
 }
 
-private val PLANS = listOf(
-    "free" to R.string.plan_free,
-    "monthly" to R.string.plan_monthly,
-    "semester" to R.string.plan_semester,
-)
-
 @Composable
 private fun PlanSection(device: DeviceStatusDto?, actions: SettingsActions) {
     val colors = LaVidaTheme.colors
@@ -514,19 +509,18 @@ private fun PlanSection(device: DeviceStatusDto?, actions: SettingsActions) {
     var surveyClosed by rememberSaveable { mutableStateOf(false) }
     Panel(spacing = 10.dp) {
         MonoLabel(stringResource(R.string.settings_plan_label))
-        val name = PLANS.firstOrNull { it.first == device.plan }?.second ?: R.string.plan_free
-        Text(text = stringResource(name), style = type.section, color = colors.textPrimary)
+        Text(text = stringResource(PlanTier.fromWire(device.plan).nameRes), style = type.section, color = colors.textPrimary)
         Text(
             text = pluralStringResource(R.plurals.settings_plan_limit, device.dailyLimit, device.dailyLimit, device.remainingToday),
             style = type.small,
             color = colors.textPrimary,
         )
         if (showPlans) {
-            PLANS.forEach { (plan, label) ->
+            PlanTier.entries.forEach { tier ->
                 SelectableRow(
-                    title = stringResource(label),
-                    selected = device.plan == plan,
-                    onClick = { actions.onSelectPlan(plan) },
+                    title = stringResource(tier.nameRes),
+                    selected = device.plan == tier.wire,
+                    onClick = { actions.onSelectPlan(tier.wire) },
                 )
             }
             Text(text = stringResource(R.string.settings_plan_hint), style = type.caption, color = colors.textSecondary)
