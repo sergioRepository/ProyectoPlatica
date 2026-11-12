@@ -112,7 +112,7 @@ Guía paso a paso en [`PLAY_CONSOLE.md`](PLAY_CONSOLE.md).
 | Pantallas nuevas probadas en un teléfono | PENDIENTE |
 | Revisión legal de la política y los Términos | PENDIENTE |
 | Revisión pr-review-toolkit | PENDIENTE |
-| **Contacto del responsable** en la política y los Términos (bloqueante para publicar) | PENDIENTE: lo pone Sergio |
+| Contacto del responsable en la política y los Términos | IMPLEMENTADO: sergioflorez422@gmail.com |
 | `docs/terminos.md` y la política nueva publicados: `policy_url` y `terms_url` apuntan a `production` en GitHub, que todavía no los tiene | PENDIENTE: fusionar antes de subir la versión con facturación |
 | versionCode 7 (0.6.0) para el próximo AAB con facturación | PENDIENTE: necesita tu autorización |
 | Manifest fusionado con Play Billing (permiso `com.android.vending.BILLING`) revisado | PENDIENTE: se ve al generar el AAB nuevo |

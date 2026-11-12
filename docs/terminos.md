@@ -61,6 +61,6 @@ Si estos términos cambian de forma importante, te lo diremos en la app antes de
 ## Responsable y contacto
 
 Responsable: Sergio Daniel Flórez López.
-Contacto: <!-- TODO(sergio): correo de contacto. -->pendiente de completar.
+Contacto: sergioflorez422@gmail.com
 
 Estos términos se rigen por las leyes de Colombia.

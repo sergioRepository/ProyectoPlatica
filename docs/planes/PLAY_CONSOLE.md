@@ -18,7 +18,7 @@ Lo marcado «NO VERIFICADO» no lo pude confirmar en una fuente oficial; Play Co
 | Nombre, descripción corta y descripción completa de la ficha | 2 | PENDIENTE (tú); abajo va un párrafo obligatorio |
 | Icono, gráfico de funciones y capturas de pantalla | 2 | PENDIENTE (tú). Tamaños: NO VERIFICADO |
 
-**Política de privacidad.** Hoy la app enlaza a la página de GitHub de `docs/politica-de-datos.md`. Google exige una URL pública, sin restricción por país y que no sea un PDF ([política de Datos de usuario](https://support.google.com/googleplay/android-developer/answer/10144311)). Sirve la de GitHub solo si el repositorio es público. Antes de enviarla a revisión hay que completar el contacto del responsable, que hoy dice «pendiente de completar», y pasar la revisión legal que el propio documento marca como pendiente.
+**Política de privacidad.** Hoy la app enlaza a la página de GitHub de `docs/politica-de-datos.md`. Google exige una URL pública, sin restricción por país y que no sea un PDF ([política de Datos de usuario](https://support.google.com/googleplay/android-developer/answer/10144311)). Sirve la de GitHub solo si el repositorio es público. El contacto del responsable ya está (sergioflorez422@gmail.com); falta la revisión legal que el propio documento marca como pendiente.
 
 ## Antes de subir nada: probar la 0.5.1 en tu teléfono
 

@@ -11,7 +11,7 @@ La app te ayuda a reducir el uso del celular. No es un servicio médico ni de sa
 ## Quién responde por tus datos
 
 - **Responsable:** Sergio Daniel Flórez López.
-- **Contacto:** <!-- TODO(sergio): correo y documento o dirección de contacto para consultas y reclamos. -->pendiente de completar.
+- **Contacto:** sergioflorez422@gmail.com <!-- TODO(sergio): confirmar con revisión legal si además hace falta documento o dirección física para consultas y reclamos. -->
 
 ## Qué autorizas
 
