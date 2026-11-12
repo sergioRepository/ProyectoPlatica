@@ -10,7 +10,7 @@ Etiquetas: **IMPLEMENTADO** (el código está escrito), **PROBADO** (sus tests c
 | 1 | Nombres: «La vida no es un banano» y «Peel» | PROBADO | Backend: 222 tests y ruff en verde. Android: 159 tests y lint sin errores. Falta ver en un teléfono de 360 dp si `home_brand` cabe en una línea |
 | 9 | Bloqueantes de Google Play: batería, divulgación de Accesibilidad, anti-autosabotaje dentro de la app, `allowBackup` | PROBADO | Backend: 222 tests y ruff. Android: 158 tests y lint sin errores. Versión 0.5.1 (versionCode 6), sin `SYSTEM_ALERT_WINDOW`; AAB y APK de release firmados con la clave de release. No se probó en un teléfono: lista de pruebas abajo. Guía: `PLAY_CONSOLE.md` |
 | 2 | Configuración central de planes | PROBADO | `PlanCatalog` (Android) y `Settings.benefits` (backend) con los mismos valores; sin cambio de comportamiento |
-| 3 | Backend: migración, cupos, facturación | PROBADO | 295 tests en verde, incluido el contrato contra Postgres 17 de Docker (migración 007, cobro de accesos, traslados, reembolsos y borrado anonimizado). Cinco avisos del plugin de seguridad corregidos. PENDIENTE: `/security-review` de Sergio; compras reales contra Google |
+| 3 | Backend: migración, cupos, facturación | PROBADO | 300 tests en verde contra Postgres 17 de Docker. Revisión de seguridad hecha (subagente, base `aebb214`) y avisos del plugin corregidos. PENDIENTE: compras reales contra Google. La migración 007 no debe desplegarse en una versión intermedia: el formato de las referencias del registro cambió antes de su primer despliegue |
 | 4 | Android: facturación y restauración | PENDIENTE | |
 | 5 | Accesos y créditos en el bloqueo | PENDIENTE | |
 | 6 | Revisión automática condicionada al plan | PENDIENTE | |

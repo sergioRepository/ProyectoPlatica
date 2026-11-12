@@ -2,6 +2,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
+from banano.agent.store import ledger_ref
 from banano.graphs.judge_graph import JudgeEvaluation
 from banano.graphs.template_graph import DraftBatch, ProfileAnalysis
 from banano.llm.client import LLMError
@@ -216,18 +217,23 @@ def test_included_accesses_evaluate_without_credits(make_client) -> None:
     assert judge(client).json()["reason_code"] == "legit_work"
 
 
+def included_row(store, ref: str, day) -> dict:
+    """Un acceso incluido ya gastado por la suscripción vigente del dispositivo de prueba."""
+    token = next(iter(store.entitlements))
+    return {
+        "device_id": TEST_DEVICE_ID,
+        "delta": 0,
+        "kind": "access",
+        "ref": ref,
+        "day": day,
+        "plan_ref": ledger_ref(token),
+    }
+
+
 def test_used_included_accesses_and_no_credits_is_no_credits(make_client) -> None:
     store = consented_store(plan="monthly", credits=0)
     for i in range(3):
-        store.ledger.append(
-            {
-                "device_id": TEST_DEVICE_ID,
-                "delta": 0,
-                "kind": "access",
-                "ref": f"a{i}",
-                "day": TODAY,
-            }
-        )
+        store.ledger.append(included_row(store, f"a{i}", TODAY))
     llm = FakeLLM({JudgeEvaluation: evaluation()})
 
     assert judge(make_client(judge_llm=llm, store=store)).json()["reason_code"] == "no_credits"
@@ -237,9 +243,7 @@ def test_used_included_accesses_and_no_credits_is_no_credits(make_client) -> Non
 async def test_included_used_resets_at_colombian_midnight() -> None:
     store = consented_store(plan="monthly", credits=0)
     yesterday = TODAY - timedelta(days=1)
-    store.ledger.append(
-        {"device_id": TEST_DEVICE_ID, "delta": 0, "kind": "access", "ref": "ayer", "day": yesterday}
-    )
+    store.ledger.append(included_row(store, "ayer", yesterday))
 
     assert (await store.get_device(TEST_DEVICE_ID, yesterday))["included_used"] == 1
     assert (await store.get_device(TEST_DEVICE_ID, TODAY))["included_used"] == 0
@@ -334,6 +338,8 @@ def test_put_plan_is_ignored_and_keeps_the_answer(make_client) -> None:
     [
         ("SUBSCRIPTION_STATE_ACTIVE", timedelta(days=5), "monthly"),
         ("SUBSCRIPTION_STATE_IN_GRACE_PERIOD", timedelta(days=-1), "monthly"),
+        ("SUBSCRIPTION_STATE_IN_GRACE_PERIOD", timedelta(days=-40), "free"),
+        ("SUBSCRIPTION_STATE_ACTIVE", timedelta(hours=-2), "free"),
         ("SUBSCRIPTION_STATE_CANCELED", timedelta(days=5), "monthly"),
         ("SUBSCRIPTION_STATE_CANCELED", timedelta(days=-5), "free"),
         ("SUBSCRIPTION_STATE_ON_HOLD", timedelta(days=5), "free"),
@@ -358,9 +364,7 @@ async def test_the_longest_entitlement_wins() -> None:
 def test_status_has_the_billing_fields(make_client) -> None:
     store = consented_store(credits=7)
     seed_entitlement(store, TEST_DEVICE_ID, "semester")
-    store.ledger.append(
-        {"device_id": TEST_DEVICE_ID, "delta": 0, "kind": "access", "ref": "x", "day": TODAY}
-    )
+    store.ledger.append(included_row(store, "x", TODAY))
 
     body = make_client(store=store).get("/devices/me", headers=auth_headers()).json()
 

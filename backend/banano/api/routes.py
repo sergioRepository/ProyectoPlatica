@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from banano import __version__
-from banano.agent.store import Store, StoreError, utcnow
+from banano.agent.store import Store, StoreError, ledger_ref, utcnow
 from banano.api.deps import (
     DeviceDep,
     PlayDep,
@@ -331,7 +331,7 @@ async def judge_excuse(
 
     day = quota_day(settings)
     # El mismo pedido repetido (se perdió la respuesta) no se evalúa ni se cobra otra vez.
-    ref = f"{device_id}:{body.request_id or uuid4()}"
+    ref = ledger_ref("access", device_id, str(body.request_id or uuid4()))
     if body.type == "extra_time" and body.request_id is not None:
         paid = await _safe(store.access_source(device_id, ref))
         if paid is not None:
@@ -373,7 +373,7 @@ async def judge_excuse(
         return verdict
     assert device is not None  # la base caída ya respondió 503 arriba
     included = settings.benefits(device["plan"]).included_accesses
-    source = await _safe(store.spend_access(device_id, ref, day, included))
+    source = await _safe(store.spend_access(device_id, ref, day, included, device["plan_ref"]))
     if source is None:
         # Otro pedido gastó el último crédito mientras Peel evaluaba.
         return JudgeResponse(

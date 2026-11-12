@@ -139,6 +139,44 @@ def test_each_google_state_maps_to_its_benefits(make_client, state, days, plan):
     assert play.acknowledged == ([SUB] if state.endswith("IN_GRACE_PERIOD") else [])
 
 
+def test_an_active_subscription_that_expired_without_news_gives_nothing(make_client):
+    # Si no llega la notificación de Google, el plan no dura para siempre.
+    store = consented_store()
+    seed_entitlement(store, TEST_DEVICE_ID, expires_in=timedelta(hours=-2))
+    client = make_client(store=store)
+    assert client.get("/devices/me", headers=auth_headers()).json()["plan"] == "free"
+
+
+def test_reinstalling_does_not_renew_the_included_accesses(make_client):
+    store, play = consented_store(TEST_DEVICE_ID, OTHER_DEVICE, credits=0), FakePlay()
+    play.subscriptions[SUB] = subscription()
+    client = make_client(
+        store=store, play_client=play, judge_llm=FakeLLM({JudgeEvaluation: evaluation()})
+    )
+    verify(client, "premium", SUB)
+    for _ in range(3):
+        assert judge(client).json()["access_source"] == "included"
+
+    verify(client, "premium", SUB, device_id=OTHER_DEVICE)
+    status = client.get("/devices/me", headers=auth_headers(OTHER_DEVICE)).json()
+
+    assert status["plan"] == "monthly"
+    assert status["included_remaining"] == 0
+
+
+def test_the_ledger_never_keeps_tokens_or_ids_in_clear(make_client):
+    store, play = consented_store(credits=0), FakePlay()
+    play.products[PACK] = {"purchaseState": 0, "consumptionState": 0}
+    client = make_client(
+        store=store, play_client=play, judge_llm=FakeLLM({JudgeEvaluation: evaluation()})
+    )
+    verify(client, "creditos_10", PACK)
+    judge(client, request_id=str(uuid4()))
+
+    refs = " ".join(r["ref"] for r in store.ledger)
+    assert PACK not in refs and TEST_DEVICE_ID not in refs
+
+
 def test_a_pending_subscription_gives_nothing_yet(make_client):
     store, play = consented_store(), FakePlay()
     play.subscriptions[SUB] = subscription(state="SUBSCRIPTION_STATE_PENDING")
@@ -190,9 +228,7 @@ def test_url_segments_are_encoded():
 
 def test_verify_needs_the_device_token(make_client):
     client = make_client(store=consented_store(), play_client=FakePlay())
-    response = client.post(
-        "/billing/verify", json={"product_id": "premium", "purchase_token": SUB}
-    )
+    response = client.post("/billing/verify", json={"product_id": "premium", "purchase_token": SUB})
     assert response.status_code == 401
 
 
@@ -281,7 +317,8 @@ def test_pending_or_canceled_packs_give_no_credits(make_client, state, code, out
 
 def judge(client, **overrides):
     return client.post(
-        "/excuses/judge", json=judge_request(**overrides).model_dump(mode="json"),
+        "/excuses/judge",
+        json=judge_request(**overrides).model_dump(mode="json"),
         headers=auth_headers(),
     )
 

@@ -159,16 +159,23 @@ async def money_contract(store) -> None:
     assert (await store.get_device(first, today))["credits"] == 2
 
     # Primero el incluido del día, después los créditos, y luego nada.
-    paid = [await store.spend_access(first, f"{first}:{n}", today, 1) for n in range(4)]
+    plan = f"plan-{uuid4()}"
+    paid = [await store.spend_access(first, f"{first}:{n}", today, 1, plan) for n in range(4)]
     assert paid == ["included", "credit", "credit", None]
     # El mismo pedido no se cobra dos veces.
-    assert await store.spend_access(first, f"{first}:1", today, 1) == "credit"
+    assert await store.spend_access(first, f"{first}:1", today, 1, plan) == "credit"
     assert await store.access_source(first, f"{first}:1") == "credit"
     assert await store.access_source(first, f"{first}:3") is None
-    device = await store.get_device(first, today)
-    assert (device["credits"], device["included_used"]) == (0, 1)
+    # Los incluidos usados se ven en el dispositivo que tiene la suscripción, no en este.
+    assert (await store.get_device(first, today))["credits"] == 0
     # El incluido es por día: mañana vuelve.
-    assert await store.spend_access(first, f"{first}:5", today + timedelta(days=1), 1) == "included"
+    tomorrow = today + timedelta(days=1)
+    assert await store.spend_access(first, f"{first}:5", tomorrow, 1, plan) == "included"
+    # Y es de la suscripción, no de la instalación: otra instalación con la misma no lo renueva.
+    await store.grant_credits(second, f"compra-{uuid4()}", 1, today)
+    assert await store.spend_access(second, f"{second}:6", tomorrow, 1, plan) == "credit"
+    # Sin suscripción no hay incluidos.
+    assert await store.spend_access(second, f"{second}:7", tomorrow, 1, None) is None
 
     # Reembolso: se descuenta lo comprado, una vez, aunque el saldo quede negativo.
     assert await store.refund_credits(pack, today) is True
@@ -195,6 +202,7 @@ async def money_contract(store) -> None:
     assert await store.save_entitlement({**entitlement, "device_id": second}) == first
     moved, left = await store.get_device(second, today), await store.get_device(first, today)
     assert (moved["plan"], moved["credits"]) == ("semester", 5)
+    assert moved["plan_ref"] is not None and left["plan_ref"] is None
     assert (left["plan"], left["credits"]) == ("free", 0)
     assert await store.save_entitlement({**entitlement, "device_id": second}) is None
     assert (await store.get_device(second, today))["credits"] == 5
@@ -203,8 +211,13 @@ async def money_contract(store) -> None:
     # Cambio de plan: la compra reemplazada deja de dar acceso.
     newer = f"suscripcion-{uuid4()}"
     await store.save_entitlement(
-        {**entitlement, "purchase_token": newer, "device_id": second, "plan": "monthly",
-         "linked_purchase_token": token}
+        {
+            **entitlement,
+            "purchase_token": newer,
+            "device_id": second,
+            "plan": "monthly",
+            "linked_purchase_token": token,
+        }
     )
     assert (await store.find_entitlement(token))["state"] == "REPLACED"
     assert (await store.get_device(second, today))["plan"] == "monthly"
@@ -214,8 +227,15 @@ async def money_contract(store) -> None:
     await store.save_consents(third, consents)
     moving = f"compra-{uuid4()}"
     await store.grant_credits(second, moving, 10, today)
-    await store.save_entitlement({**entitlement, "purchase_token": newer, "device_id": third,
-                                  "plan": "monthly", "linked_purchase_token": token})
+    await store.save_entitlement(
+        {
+            **entitlement,
+            "purchase_token": newer,
+            "device_id": third,
+            "plan": "monthly",
+            "linked_purchase_token": token,
+        }
+    )
     assert (await store.get_device(third, today))["credits"] == 15
     assert await store.refund_credits(moving, today) is True
     assert (await store.get_device(third, today))["credits"] == 5

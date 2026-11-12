@@ -76,17 +76,29 @@ DEVICE_TABLES = (
 ERASED_PREFIX = "borrado:"
 
 
+def ledger_ref(*parts: str) -> str:
+    """Referencia del registro de créditos: un hash, nunca el token ni el id en claro. Sigue
+    siendo única por compra, pedido o traslado, que es lo que impide canjear dos veces."""
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()
+
+
 def transfer_ref(token: str, moved_from: str, stamp: str) -> str:
-    """Referencia de un traslado de saldo. Lleva un hash del dispositivo, no su id: tras «Borrar
-    mis datos» no queda el id en claro, y el estado anterior evita trasladar dos veces."""
-    return f"{token}|{hashlib.sha256(moved_from.encode()).hexdigest()[:16]}|{stamp}"
+    """Un traslado de saldo; el estado anterior evita trasladar dos veces el mismo re-ligado."""
+    return ledger_ref("transfer", token, moved_from, stamp)
 
 
 DailyCounter = Literal["llm_calls", "agent_calls", "rejections", "templates"]
 DAILY_COUNTERS: tuple[DailyCounter, ...] = ("llm_calls", "agent_calls", "rejections", "templates")
 # Estados de Google que dan acceso; CANCELED también mientras no llegue su expiry_time.
-ENTITLED_STATES = ("SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD")
-CANCELED_STATE = "SUBSCRIPTION_STATE_CANCELED"
+# Dan acceso mientras no venzan. Cancelada también: dura hasta el fin del período pagado.
+ENTITLED_STATES = ("SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_CANCELED")
+# En gracia Google mantiene el acceso aunque el cobro haya fallado y la fecha haya pasado; la
+# política exige respetarlo. Tope: la gracia más larga de Play Console (NO VERIFICADO: 30 días).
+GRACE_STATE = "SUBSCRIPTION_STATE_IN_GRACE_PERIOD"
+GRACE_LEEWAY = timedelta(days=30)
+# Margen tras el vencimiento para que una renovación llegue (RTDN o la app al abrirse). Sin él,
+# una notificación perdida dejaría un mes pagado como premium para siempre.
+ENTITLEMENT_LEEWAY = timedelta(hours=1)
 # Estado propio: una compra que otra reemplazó (cambio de plan) deja de dar acceso.
 REPLACED_STATE = "REPLACED"
 ACCESS_INCLUDED = "included"
@@ -177,9 +189,10 @@ class DeviceStore(Protocol):
         ...
 
     async def spend_access(
-        self, device_id: str, ref: str, day: date, included_cap: int
+        self, device_id: str, ref: str, day: date, included_cap: int, plan_ref: str | None
     ) -> str | None:
-        """Paga un acceso de 10 minutos: primero un incluido de `day`, si no un crédito.
+        """Paga un acceso de 10 minutos: primero un incluido de `day` de la suscripción
+        `plan_ref` (contado por suscripción, no por instalación), si no un crédito.
         Idempotente por `ref`. `None` si no hay con qué pagar."""
         ...
 
@@ -289,12 +302,16 @@ class MemoryStore:
         active = [
             e
             for e in mine
-            if e["state"] in ENTITLED_STATES
-            or (e["state"] == CANCELED_STATE and e["expiry_time"] and e["expiry_time"] > now)
+            if e["expiry_time"]
+            and (
+                (e["state"] in ENTITLED_STATES and e["expiry_time"] > now - ENTITLEMENT_LEEWAY)
+                or (e["state"] == GRACE_STATE and e["expiry_time"] > now - GRACE_LEEWAY)
+            )
         ]
-        best = max(active, key=lambda e: e["expiry_time"] or now, default=None)
+        best = max(active, key=lambda e: e["expiry_time"], default=None)
         latest = max(mine, key=lambda e: e["updated_at"], default=None)
         rows = [r for r in self.ledger if r["device_id"] == device_id]
+        plan_ref = ledger_ref(best["purchase_token"]) if best else None
         return {
             **device,
             **{name: counters.get(name, 0) for name in DAILY_COUNTERS},
@@ -303,10 +320,21 @@ class MemoryStore:
             "expiry_time": latest["expiry_time"] if latest else None,
             "auto_renewing": bool(latest and latest["auto_renewing"]),
             "credits": sum(r["delta"] for r in rows),
-            "included_used": sum(
-                1 for r in rows if r["kind"] == "access" and r["delta"] == 0 and r["day"] == day
-            ),
+            "plan_ref": plan_ref,
+            "included_used": self._included_used(plan_ref, day),
         }
+
+    def _included_used(self, plan_ref: str | None, day: date) -> int:
+        if plan_ref is None:
+            return 0
+        return sum(
+            1
+            for r in self.ledger
+            if r["kind"] == "access"
+            and r["delta"] == 0
+            and r["day"] == day
+            and r.get("plan_ref") == plan_ref
+        )
 
     async def save_consents(self, device_id: str, consents: dict[str, Any]) -> None:
         self._check()
@@ -384,7 +412,15 @@ class MemoryStore:
     def _balance(self, device_id: str) -> int:
         return sum(r["delta"] for r in self.ledger if r["device_id"] == device_id)
 
-    def _add_entry(self, device_id: str, delta: int, kind: str, ref: str, day: date) -> bool:
+    def _add_entry(
+        self,
+        device_id: str,
+        delta: int,
+        kind: str,
+        ref: str,
+        day: date,
+        plan_ref: str | None = None,
+    ) -> bool:
         if any(r["kind"] == kind and r["ref"] == ref for r in self.ledger):
             return False
         self.ledger.append(
@@ -394,6 +430,7 @@ class MemoryStore:
                 "kind": kind,
                 "ref": ref,
                 "day": day,
+                "plan_ref": plan_ref,
                 "created_at": utcnow(),
             }
         )
@@ -429,7 +466,7 @@ class MemoryStore:
         self, device_id: str, purchase_token: str, amount: int, day: date
     ) -> bool:
         self._check()
-        return self._add_entry(device_id, amount, "purchase", purchase_token, day)
+        return self._add_entry(device_id, amount, "purchase", ledger_ref(purchase_token), day)
 
     async def refund_credits(self, purchase_token: str, day: date) -> bool:
         self._check()
@@ -437,7 +474,7 @@ class MemoryStore:
             (
                 i
                 for i, r in enumerate(self.ledger)
-                if r["kind"] == "purchase" and r["ref"] == purchase_token
+                if r["kind"] == "purchase" and r["ref"] == ledger_ref(purchase_token)
             ),
             None,
         )
@@ -464,24 +501,16 @@ class MemoryStore:
                 if r["kind"] == "transfer_in" and r["ref"] == self.ledger[out]["ref"]
             )
             holder, position = self.ledger[arrival]["device_id"], arrival
-        return self._add_entry(holder, -bought["delta"], "refund", purchase_token, day)
+        return self._add_entry(holder, -bought["delta"], "refund", bought["ref"], day)
 
     async def spend_access(
-        self, device_id: str, ref: str, day: date, included_cap: int
+        self, device_id: str, ref: str, day: date, included_cap: int, plan_ref: str | None
     ) -> str | None:
         self._check()
         if (source := await self.access_source(device_id, ref)) is not None:
             return source
-        used = sum(
-            1
-            for r in self.ledger
-            if r["device_id"] == device_id
-            and r["kind"] == "access"
-            and r["delta"] == 0
-            and r["day"] == day
-        )
-        if used < included_cap:
-            self._add_entry(device_id, 0, "access", ref, day)
+        if plan_ref is not None and self._included_used(plan_ref, day) < included_cap:
+            self._add_entry(device_id, 0, "access", ref, day, plan_ref)
             return ACCESS_INCLUDED
         if self._balance(device_id) > 0:
             self._add_entry(device_id, -1, "access", ref, day)
@@ -608,27 +637,38 @@ class PostgresStore:
     ) -> dict[str, Any] | None:
         counters = ", ".join(f"coalesce(u.{name}, 0) AS {name}" for name in DAILY_COUNTERS)
         # El plan lo decide el derecho vigente, no devices.plan (el cliente ya no lo elige).
-        access = (
-            "(state = ANY(%s) OR (state = %s AND expiry_time > now())) AND device_id = d.device_id"
-        )
+        # plan_ref es el mismo hash que ledger_ref(token) en Python.
         rows = await self._fetch(
             # Columnas explícitas: devices.plan está en desuso y no debe pisar el plan efectivo.
             "SELECT d.device_id, d.would_pay, d.consent_excuses, d.consent_analytics, "
             f"{counters}, "
-            f"coalesce((SELECT plan FROM entitlements WHERE {access} "
-            "ORDER BY expiry_time DESC NULLS LAST LIMIT 1), 'free') AS plan, "
+            "coalesce(b.plan, 'free') AS plan, b.plan_ref AS plan_ref, "
             "l.state AS subscription_state, l.expiry_time AS expiry_time, "
             "coalesce(l.auto_renewing, false) AS auto_renewing, "
             "(SELECT coalesce(sum(delta), 0)::int FROM credit_ledger "
             "WHERE device_id = d.device_id) AS credits, "
-            "(SELECT count(*)::int FROM credit_ledger WHERE device_id = d.device_id "
+            "(SELECT count(*)::int FROM credit_ledger WHERE plan_ref = b.plan_ref "
             "AND kind = 'access' AND delta = 0 AND day = %s) AS included_used "
             "FROM devices d LEFT JOIN device_daily_usage u "
             "ON u.device_id = d.device_id AND u.day = %s "
+            "LEFT JOIN LATERAL (SELECT plan, "
+            "encode(sha256(convert_to(purchase_token, 'UTF8')), 'hex') AS plan_ref "
+            "FROM entitlements WHERE device_id = d.device_id AND ("
+            "(state = ANY(%s) AND expiry_time > now() - %s) "
+            "OR (state = %s AND expiry_time > now() - %s)) "
+            "ORDER BY expiry_time DESC LIMIT 1) b ON true "
             "LEFT JOIN LATERAL (SELECT state, expiry_time, auto_renewing FROM entitlements "
             "WHERE device_id = d.device_id ORDER BY updated_at DESC LIMIT 1) l ON true "
             "WHERE d.device_id = %s",
-            (list(ENTITLED_STATES), CANCELED_STATE, day, day, device_id),
+            (
+                day,
+                day,
+                list(ENTITLED_STATES),
+                ENTITLEMENT_LEEWAY,
+                GRACE_STATE,
+                GRACE_LEEWAY,
+                device_id,
+            ),
             timeout,
         )
         return rows[0] if rows else None
@@ -806,7 +846,7 @@ class PostgresStore:
         rows = await self._fetch(
             "INSERT INTO credit_ledger (device_id, delta, kind, ref, day) "
             "VALUES (%s, %s, 'purchase', %s, %s) ON CONFLICT (kind, ref) DO NOTHING RETURNING id",
-            (device_id, amount, purchase_token, day),
+            (device_id, amount, ledger_ref(purchase_token), day),
         )
         return bool(rows)
 
@@ -814,9 +854,9 @@ class PostgresStore:
         async def work(conn: Any) -> bool:
             bought = await self._one(
                 conn,
-                "SELECT id, device_id, delta FROM credit_ledger "
+                "SELECT id, device_id, delta, ref FROM credit_ledger "
                 "WHERE kind = 'purchase' AND ref = %s",
-                (purchase_token,),
+                (ledger_ref(purchase_token),),
             )
             if bought is None:
                 return False
@@ -847,17 +887,20 @@ class PostgresStore:
                 "INSERT INTO credit_ledger (device_id, delta, kind, ref, day) "
                 "VALUES (%s, %s, 'refund', %s, %s) "
                 "ON CONFLICT (kind, ref) DO NOTHING RETURNING id",
-                (holder, -bought["delta"], purchase_token, day),
+                (holder, -bought["delta"], bought["ref"], day),
             )
             return row is not None
 
         return await self._transaction(work)
 
     async def spend_access(
-        self, device_id: str, ref: str, day: date, included_cap: int
+        self, device_id: str, ref: str, day: date, included_cap: int, plan_ref: str | None
     ) -> str | None:
         async def work(conn: Any) -> str | None:
             await self._lock_device(conn, device_id)
+            if plan_ref is not None:
+                # Los incluidos son de la suscripción: dos instalaciones no los gastan a la vez.
+                await self._lock_device(conn, plan_ref)
             done = await self._one(
                 conn,
                 "SELECT delta FROM credit_ledger WHERE kind = 'access' AND ref = %s "
@@ -868,22 +911,23 @@ class PostgresStore:
                 return ACCESS_INCLUDED if done["delta"] == 0 else ACCESS_CREDIT
             row = await self._one(
                 conn,
-                "SELECT coalesce(sum(delta), 0)::int AS balance, "
-                "(count(*) FILTER (WHERE kind = 'access' AND delta = 0 AND day = %s))::int "
-                "AS used FROM credit_ledger WHERE device_id = %s",
-                (day, device_id),
+                "SELECT (SELECT coalesce(sum(delta), 0)::int FROM credit_ledger "
+                "WHERE device_id = %s) AS balance, "
+                "(SELECT count(*)::int FROM credit_ledger WHERE plan_ref = %s "
+                "AND kind = 'access' AND delta = 0 AND day = %s) AS used",
+                (device_id, plan_ref, day),
             )
             balance, used = (row["balance"], row["used"]) if row else (0, 0)
-            if used < included_cap:
+            if plan_ref is not None and used < included_cap:
                 delta, source = 0, ACCESS_INCLUDED
             elif balance > 0:
                 delta, source = -1, ACCESS_CREDIT
             else:
                 return None
             await conn.execute(
-                "INSERT INTO credit_ledger (device_id, delta, kind, ref, day) "
-                "VALUES (%s, %s, 'access', %s, %s)",
-                (device_id, delta, ref, day),
+                "INSERT INTO credit_ledger (device_id, delta, kind, ref, day, plan_ref) "
+                "VALUES (%s, %s, 'access', %s, %s, %s)",
+                (device_id, delta, ref, day, plan_ref if delta == 0 else None),
             )
             return source
 

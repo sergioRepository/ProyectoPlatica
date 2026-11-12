@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from langchain_core.messages import AIMessage, BaseMessage
 
-from banano.agent.store import MemoryStore  # noqa: F401 (los tests la importan de aquí)
+from banano.agent.store import MemoryStore, ledger_ref  # noqa: F401 (los tests la importan de aquí)
 from banano.auth import sign_device_token
 from banano.config import Settings
 from banano.graphs.judge_graph import JudgeEvaluation
@@ -119,7 +119,7 @@ def consented_store(*device_ids: str, credits: int = 10, **overrides: Any) -> Me
                 "device_id": device_id,
                 "delta": credits,
                 "kind": "purchase",
-                "ref": f"semilla-{device_id}",
+                "ref": ledger_ref("semilla", device_id),
                 "day": date(2026, 1, 1),
             }
         )

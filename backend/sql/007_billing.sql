@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS credit_ledger (
     delta      integer NOT NULL,
     -- purchase | access | refund | transfer_in | transfer_out
     kind       text NOT NULL,
+    -- Siempre un hash (token de compra, pedido o traslado): tras borrar no queda nada en claro.
     ref        text NOT NULL,
     -- Día de cupo (hora de Colombia).
     day        date NOT NULL,
@@ -33,3 +34,7 @@ CREATE TABLE IF NOT EXISTS credit_ledger (
     UNIQUE (kind, ref)
 );
 CREATE INDEX IF NOT EXISTS credit_ledger_device_idx ON credit_ledger (device_id);
+-- Hash de la suscripción que pagó un acceso incluido: los 3 del día son de la suscripción, no de
+-- la instalación, así que reinstalar o borrar los datos no los renueva.
+ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS plan_ref text;
+CREATE INDEX IF NOT EXISTS credit_ledger_plan_day_idx ON credit_ledger (plan_ref, day);
