@@ -12,6 +12,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lavidanoesunbanano.app.BuildConfig
+import com.lavidanoesunbanano.app.MainActivity
 import com.lavidanoesunbanano.app.core.designsystem.LaVidaTheme
 import com.lavidanoesunbanano.app.core.designsystem.applyWindowTheme
 import com.lavidanoesunbanano.app.service.blocker.BlockerBridge
@@ -52,6 +53,7 @@ class BlockActivity : ComponentActivity() {
             onBack = viewModel::back,
             onOpenApp = ::openApp,
             onReport = viewModel::report,
+            onOpenPlans = ::openPlans,
         )
         setContent {
             LaVidaTheme {
@@ -90,6 +92,17 @@ class BlockActivity : ComponentActivity() {
             // Sin servicio (por ejemplo si lo apagaron con la pantalla abierta), el launcher.
             startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
+    }
+
+    /** Lleva a la app a los planes y cierra el bloqueo, como al salir. */
+    private fun openPlans() {
+        viewModel.recordExit()
+        startActivity(
+            Intent(this, MainActivity::class.java)
+                .putExtra(MainActivity.EXTRA_OPEN_PLANS, true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+        )
+        exitRequested = true
     }
 
     /** Veredicto aprobado: el servicio ya sabe del desbloqueo y la app pasa al frente. */

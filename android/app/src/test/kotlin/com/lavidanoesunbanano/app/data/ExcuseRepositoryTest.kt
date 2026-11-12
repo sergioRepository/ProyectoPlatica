@@ -247,6 +247,55 @@ class ExcuseRepositoryTest {
         assertFalse(result.verdict.valid)
     }
 
+    private fun requestId(body: String) = Regex(""""request_id":"([^"]+)"""").find(body)?.groupValues?.get(1)
+
+    @Test
+    fun `request id travels in extra time and not in emergencies`() = runBlocking {
+        judgeReplies(valid = true, minutes = 10, message = "Vale.", code = "legit_work")
+        excuses.judge(session(0), ExcuseType.EXTRA_TIME, "Responder un correo del trabajo")
+        judgeReplies(valid = true, minutes = 15, message = "Vale.", code = "legit_emergency")
+        excuses.judge(session(1), ExcuseType.EMERGENCY, "Tengo que pagar el arriendo antes de las 5")
+
+        assertTrue(requestId(server.takeRequest().body!!.utf8()) != null)
+        assertNull(requestId(server.takeRequest().body!!.utf8()))
+    }
+
+    @Test
+    fun `a lost response reuses the request id until a verdict arrives`() = runBlocking {
+        val session = session()
+        server.enqueue(MockResponse.Builder().code(503).build())
+        excuses.judge(session, ExcuseType.EXTRA_TIME, "Responder un correo del trabajo")
+        server.enqueue(MockResponse.Builder().code(503).build())
+        excuses.judge(session, ExcuseType.EXTRA_TIME, "Responder un correo del trabajo")
+        judgeReplies(valid = false, minutes = 0, message = "No.", code = "boredom")
+        excuses.judge(session, ExcuseType.EXTRA_TIME, "Responder un correo del trabajo")
+        judgeReplies(valid = false, minutes = 0, message = "No.", code = "boredom")
+        excuses.judge(session, ExcuseType.EXTRA_TIME, "Otra razón distinta del trabajo")
+
+        val ids = List(4) { requestId(server.takeRequest().body!!.utf8()) }
+        assertEquals(ids[0], ids[1])
+        assertEquals(ids[0], ids[2])
+        assertTrue(ids[3] != null && ids[3] != ids[0])
+    }
+
+    @Test
+    fun `access fields and no_credits are read from the response`() = runBlocking {
+        server.enqueue(
+            MockResponse.Builder()
+                .body("""{"valid":true,"confidence":0.8,"granted_minutes":10,"message":"Vale.","reason_code":"legit_work","access_source":"credit","credits":4,"included_remaining":0}""")
+                .build(),
+        )
+        val paid = excuses.judge(session(0), ExcuseType.EXTRA_TIME, "Responder un correo del trabajo").verdict
+        assertEquals("credit", paid.accessSource)
+        assertEquals(4, paid.creditsLeft)
+        assertEquals(0, paid.includedLeft)
+
+        judgeReplies(valid = false, minutes = 0, message = "Sin accesos.", code = "no_credits")
+        val rejected = excuses.judge(session(1), ExcuseType.EXTRA_TIME, "Responder otro correo del trabajo").verdict
+        assertEquals(VerdictReason.NO_CREDITS, rejected.reason)
+        assertNull(rejected.accessSource)
+    }
+
     @Test
     fun `without a token there is no request`() = runBlocking {
         store.token = null

@@ -31,6 +31,7 @@ internal fun verdictLabel(verdict: Verdict, shared: Boolean = true): String = wh
                 VerdictReason.OFFLINE -> if (shared) R.string.verdict_reason_offline else R.string.verdict_reason_rule
                 VerdictReason.PLAN_QUOTA -> R.string.verdict_reason_plan_quota
                 VerdictReason.REJECTION_CAP -> R.string.verdict_reason_rejection_cap
+                VerdictReason.NO_CREDITS -> R.string.verdict_reason_no_credits
                 else -> R.string.verdict_reason_boredom
             },
         ),
@@ -47,6 +48,7 @@ internal fun verdictTip(reason: VerdictReason, shared: Boolean): String = string
         VerdictReason.OFFLINE -> if (shared) R.string.verdict_tip_offline else R.string.verdict_tip_rule
         VerdictReason.PLAN_QUOTA -> R.string.verdict_tip_plan_quota
         VerdictReason.REJECTION_CAP -> R.string.verdict_tip_rejection_cap
+        VerdictReason.NO_CREDITS -> R.string.verdict_tip_no_credits
         else -> R.string.verdict_tip_boredom
     },
 )

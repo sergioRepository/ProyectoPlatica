@@ -23,6 +23,8 @@ import java.io.IOException
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -69,6 +71,9 @@ class ExcuseRepository @Inject constructor(
     private val events: EventRepository,
     private val clock: Clock,
 ) {
+    /** `request_id` de los pedidos de 10 minutos sin respuesta, por intento. */
+    private val pendingRequestIds = ConcurrentHashMap<Long, String>()
+
     /** Último desbloqueo de cada app. Los vencidos los descarta `BlockPolicy`. */
     fun observeUnlocks(): Flow<Map<String, Instant>> = excuseDao.observeUnlocks().map { rows ->
         rows.associate { it.packageName to Instant.ofEpochMilli(it.unlockedUntil) }
@@ -91,7 +96,15 @@ class ExcuseRepository @Inject constructor(
         val limits = settings.limits.first()
         // Sin esa autorización, el texto no sale del teléfono.
         val allowed = settings.consents.first()?.excuses == true
-        val verdict = (if (allowed) askJudge(request(session, type, text, limits), limits) else null)
+        val requestId = if (allowed && type == ExcuseType.EXTRA_TIME) {
+            // Si la respuesta se pierde, repetir el mismo id evita que el servidor cobre dos veces.
+            pendingRequestIds.getOrPut(session.attemptId) { UUID.randomUUID().toString() }
+        } else {
+            null
+        }
+        val judged = if (allowed) askJudge(request(session, type, text, limits, requestId), limits) else null
+        if (judged != null) pendingRequestIds.remove(session.attemptId)
+        val verdict = judged
             ?: OfflineVerdict.decide(
                 type,
                 limits,
@@ -150,6 +163,7 @@ class ExcuseRepository @Inject constructor(
         type: ExcuseType,
         reason: String,
         limits: UnlockLimits,
+        requestId: String?,
     ): JudgeRequestDto {
         val now = clock.instant().atZone(clock.zone)
         val dayStart = now.toLocalDate().atStartOfDay(clock.zone).toInstant().toEpochMilli()
@@ -172,6 +186,7 @@ class ExcuseRepository @Inject constructor(
             profanityAllowed = !kind && profile?.profanityAllowed ?: false,
             country = profile?.country.orEmpty().take(MAX_COUNTRY_CHARS),
             kindMode = kind,
+            requestId = requestId,
         )
     }
 
@@ -203,6 +218,9 @@ class ExcuseRepository @Inject constructor(
         reason = VerdictReason.fromWire(reasonCode),
         confidence = confidence,
         offline = false,
+        accessSource = accessSource,
+        creditsLeft = credits,
+        includedLeft = includedRemaining,
     )
 
     private companion object {

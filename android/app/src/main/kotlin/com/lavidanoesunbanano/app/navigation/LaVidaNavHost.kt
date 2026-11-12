@@ -47,13 +47,17 @@ data object SetupRoute
 @Serializable
 data class EditAnswerRoute(val step: String)
 
-/** `openSetup`: se abrió desde la notificación de bloqueo apagado. */
+/** `openSetup`: se abrió desde la notificación de bloqueo apagado. `openPlans`: desde la pantalla de bloqueo. */
 @Composable
-fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false) {
+fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false, openPlans: Boolean = false) {
     val navController = rememberNavController()
     LaunchedEffect(openSetup) {
         // Sin onboarding terminado no hay bloqueo que configurar todavía.
         if (openSetup && startDestination == HomeRoute) navController.navigate(SetupRoute)
+    }
+    LaunchedEffect(openPlans) {
+        // Paso 7: PlansRoute
+        if (openPlans && startDestination == HomeRoute) navController.navigate(SettingsRoute)
     }
     val openTab: (MainTab) -> Unit = { tab ->
         // Las pestañas no se apilan: Atrás siempre lleva a Inicio.

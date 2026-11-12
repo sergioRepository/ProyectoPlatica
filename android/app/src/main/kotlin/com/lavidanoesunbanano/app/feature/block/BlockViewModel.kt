@@ -12,6 +12,8 @@ import com.lavidanoesunbanano.app.data.repository.ExcuseRepository
 import com.lavidanoesunbanano.app.data.repository.ProfileRepository
 import com.lavidanoesunbanano.app.data.repository.QuotaToday
 import com.lavidanoesunbanano.app.data.system.CrisisLinesSource
+import com.lavidanoesunbanano.app.domain.excuse.AccessCheck
+import com.lavidanoesunbanano.app.domain.excuse.AccessGate
 import com.lavidanoesunbanano.app.domain.excuse.CrisisLine
 import com.lavidanoesunbanano.app.domain.model.AppInfo
 import com.lavidanoesunbanano.app.domain.model.ExcuseType
@@ -79,6 +81,12 @@ sealed interface BlockStep {
         val judging: Boolean = false,
     ) : BlockStep
 
+    /** Sin evaluaciones hoy (plan): se ofrece ver planes en vez de pedir la razón. */
+    data object OutOfEvaluations : BlockStep
+
+    /** Sin accesos incluidos ni créditos: se ofrece comprar. */
+    data object NeedCredits : BlockStep
+
     /** Líneas de ayuda pedidas a mano: no piden razón ni desbloquean. */
     data class Help(val lines: List<CrisisLine>) : BlockStep
 
@@ -105,6 +113,8 @@ data class BlockUiState(
     val step: BlockStep = BlockStep.Message,
     /** Resultado del último reporte; `null` si no se ha reportado nada en este paso. */
     val reported: Boolean? = null,
+    /** Lo que dijo el servidor al abrir; `UNKNOWN` mientras llega o sin red. */
+    val access: AccessCheck = AccessCheck.UNKNOWN,
 )
 
 enum class ReportSource(val wire: String) { MESSAGE("block_message"), VERDICT("verdict") }
@@ -151,7 +161,13 @@ class BlockViewModel @Inject constructor(
         opening = viewModelScope.launch {
             val opened = sessions.open(request.app, request.startedAt)
             session = opened
-            _state.value = opened.toUiState(excuses.quotaToday(), blockedUntil())
+            val quota = excuses.quotaToday()
+            _state.value = opened.toUiState(quota, blockedUntil())
+            // Sin bloquear la pantalla: mientras llega, vale UNKNOWN y se pregunta como siempre.
+            launch {
+                val access = AccessGate.check(deviceRepository.status(), quota.judged)
+                _state.update { if (it?.attemptId == opened.attemptId) it.copy(access = access) else it }
+            }
             if (request.newAttempt) {
                 events.track(AppEvents.BLOCK_SHOWN, opened.app.packageName, "attempt" to JsonPrimitive(opened.attemptNumber))
             }
@@ -159,7 +175,13 @@ class BlockViewModel @Inject constructor(
     }
 
     fun askExcuse(type: ExcuseType) = updateStep { step ->
-        if (step is BlockStep.Message) BlockStep.Excuse(type, drafts[type].orEmpty()) else step
+        when {
+            step !is BlockStep.Message -> step
+            // Las emergencias nunca se frenan.
+            type == ExcuseType.EXTRA_TIME && _state.value?.access == AccessCheck.NO_EVALUATIONS -> BlockStep.OutOfEvaluations
+            type == ExcuseType.EXTRA_TIME && _state.value?.access == AccessCheck.NO_CREDITS -> BlockStep.NeedCredits
+            else -> BlockStep.Excuse(type, drafts[type].orEmpty())
+        }
     }
 
     fun askHelp() {
@@ -190,7 +212,7 @@ class BlockViewModel @Inject constructor(
                 updateStep { BlockStep.Message }
             }
             is BlockStep.Decided -> if (!step.verdict.valid) dismissRejection()
-            is BlockStep.Help -> updateStep { BlockStep.Message }
+            is BlockStep.Help, BlockStep.OutOfEvaluations, BlockStep.NeedCredits -> updateStep { BlockStep.Message }
             BlockStep.Message, null -> Unit
         }
     }

@@ -23,6 +23,7 @@ enum class VerdictReason(val wire: String) {
     PLAN_QUOTA("plan_quota"),
     REJECTION_CAP("rejection_cap"),
     OFFLINE("offline"),
+    NO_CREDITS("no_credits"),
     ;
 
     companion object {
@@ -39,6 +40,10 @@ data class Verdict(
     /** Seguridad del juez; `null` sin conexión. */
     val confidence: Double?,
     val offline: Boolean,
+    /** "included" o "credit" si el servidor cobró el acceso de 10 minutos; `null` si no. */
+    val accessSource: String? = null,
+    val creditsLeft: Int? = null,
+    val includedLeft: Int? = null,
 )
 
 /** Cupos por día (todas las apps juntas) y duración de cada desbloqueo, según el spec. */

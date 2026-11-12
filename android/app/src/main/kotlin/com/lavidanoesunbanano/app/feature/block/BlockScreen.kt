@@ -80,6 +80,7 @@ class BlockActions(
     val onBack: () -> Unit,
     val onOpenApp: () -> Unit,
     val onReport: (String, String, ReportSource) -> Unit,
+    val onOpenPlans: () -> Unit,
 )
 
 /**
@@ -115,6 +116,8 @@ fun BlockScreen(state: BlockUiState?, actions: BlockActions, onShown: () -> Unit
                     is BlockStep.Excuse -> ExcuseStep(current, step, actions)
                     is BlockStep.Decided -> DecidedStep(current, step, actions)
                     is BlockStep.Help -> HelpStep(current, step, actions)
+                    BlockStep.OutOfEvaluations -> OutOfEvaluationsStep(current, actions)
+                    BlockStep.NeedCredits -> NeedCreditsStep(current, actions)
                 }
             }
         }
@@ -132,6 +135,8 @@ private fun BlockUiState.contentKey(): String = when (val step = step) {
     is BlockStep.Excuse -> "$attemptId:excusa:${step.type}"
     is BlockStep.Decided -> "$attemptId:veredicto"
     is BlockStep.Help -> "$attemptId:ayuda"
+    BlockStep.OutOfEvaluations -> "$attemptId:sin_evaluaciones"
+    BlockStep.NeedCredits -> "$attemptId:sin_creditos"
 }
 
 @Composable
@@ -319,6 +324,12 @@ private fun ColumnScope.Approved(state: BlockUiState, verdict: Verdict, actions:
         StatusTag(verdictLabel(verdict), approved = true)
         Text(text = verdictMessage(verdict), style = type.headline, color = LaVidaTheme.colors.textPrimary)
         IconNotice(R.drawable.ic_ui_history, stringResource(R.string.verdict_clock), tone = NoticeTone.PLAIN)
+        val paid = when (verdict.accessSource) {
+            "included" -> verdict.includedLeft?.let { stringResource(R.string.verdict_paid_included, it) }
+            "credit" -> verdict.creditsLeft?.let { stringResource(R.string.verdict_paid_credit, it) }
+            else -> null
+        }
+        paid?.let { Text(text = it, style = type.caption, color = LaVidaTheme.colors.textSecondary) }
     }
     PrimaryButton(
         text = stringResource(R.string.verdict_open_app, state.appLabel),
@@ -378,12 +389,71 @@ private fun ColumnScope.Rejected(state: BlockUiState, step: BlockStep.Decided, a
             onClick = actions.onExit,
             modifier = Modifier.fillMaxWidth(),
         )
+        if (verdict.reason == VerdictReason.NO_CREDITS) {
+            SecondaryButton(
+                text = stringResource(R.string.block_buy_credits),
+                onClick = actions.onOpenPlans,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         SecondaryButton(
             text = stringResource(R.string.verdict_back),
             onClick = actions.onBack,
             modifier = Modifier.fillMaxWidth(),
         )
         verdict.message?.let { ReportControl(it, ReportSource.VERDICT, state.reported, actions, Modifier.align(Alignment.CenterHorizontally)) }
+    }
+}
+
+/** El plan no tiene más evaluaciones hoy: ni créditos las dan, solo mañana o un plan mayor. */
+@Composable
+private fun ColumnScope.OutOfEvaluationsStep(state: BlockUiState, actions: BlockActions) {
+    Meta(state)
+    CenteredBody {
+        Banana(BananaMood.SAD, 104.dp)
+        Text(text = stringResource(R.string.block_out_of_evaluations_title), style = LaVidaTheme.type.title, color = LaVidaTheme.colors.textPrimary)
+        Text(text = stringResource(R.string.block_out_of_evaluations), style = LaVidaTheme.type.body, color = LaVidaTheme.colors.textBody)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        PrimaryButton(
+            text = stringResource(R.string.block_see_plans),
+            onClick = actions.onOpenPlans,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        SecondaryButton(
+            text = stringResource(R.string.verdict_back),
+            onClick = actions.onBack,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** Sin accesos incluidos ni créditos: comprar o mejorar el plan. */
+@Composable
+private fun ColumnScope.NeedCreditsStep(state: BlockUiState, actions: BlockActions) {
+    Meta(state)
+    CenteredBody {
+        Banana(BananaMood.SAD, 104.dp)
+        Text(text = stringResource(R.string.block_no_credits_title), style = LaVidaTheme.type.title, color = LaVidaTheme.colors.textPrimary)
+        Text(text = stringResource(R.string.block_no_credits), style = LaVidaTheme.type.body, color = LaVidaTheme.colors.textBody)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        PrimaryButton(
+            text = stringResource(R.string.block_buy_credits),
+            onClick = actions.onOpenPlans,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        SecondaryButton(
+            text = stringResource(R.string.block_see_plans),
+            onClick = actions.onOpenPlans,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        TextLink(
+            text = stringResource(R.string.verdict_back),
+            onClick = actions.onBack,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            weight = FontWeight.SemiBold,
+        )
     }
 }
 
@@ -511,7 +581,7 @@ private fun ReportControl(
     }
 }
 
-private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, {}, { _, _, _ -> })
+private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, {}, { _, _, _ -> }, {})
 
 private val PreviewState = BlockUiState(
     attemptId = 7,

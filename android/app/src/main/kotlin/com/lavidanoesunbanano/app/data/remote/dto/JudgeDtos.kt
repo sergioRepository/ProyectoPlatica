@@ -21,6 +21,7 @@ data class JudgeRequestDto(
     @SerialName("profanity_allowed") val profanityAllowed: Boolean,
     val country: String,
     @SerialName("kind_mode") val kindMode: Boolean,
+    @SerialName("request_id") val requestId: String? = null,
 )
 
 @Serializable
@@ -30,4 +31,7 @@ data class JudgeResponseDto(
     @SerialName("granted_minutes") val grantedMinutes: Int,
     val message: String,
     @SerialName("reason_code") val reasonCode: String,
+    @SerialName("access_source") val accessSource: String? = null,
+    val credits: Int? = null,
+    @SerialName("included_remaining") val includedRemaining: Int? = null,
 )

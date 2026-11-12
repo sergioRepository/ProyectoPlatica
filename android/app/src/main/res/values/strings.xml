@@ -500,6 +500,16 @@
     <string name="verdict_tip_boredom">Di qué vas a hacer y por qué no puede esperar.</string>
     <string name="verdict_tip_offline">Sin internet no hay minutos extra. Vuelve cuando haya conexión.</string>
     <string name="verdict_tip_rule">Sin compartir tus razones, los 10 minutos se rechazan. Puedes cambiarlo en Ajustes.</string>
+    <string name="block_out_of_evaluations_title">Hoy no quedan evaluaciones</string>
+    <string name="block_out_of_evaluations">Hoy no quedan evaluaciones. Mañana vuelven. Se reinician a medianoche (hora de Colombia). Las emergencias siguen disponibles.</string>
+    <string name="block_no_credits_title">No te quedan accesos para hoy</string>
+    <string name="block_no_credits">Ya usaste los accesos incluidos de hoy y no tienes créditos. Un crédito es un acceso de 10 minutos.</string>
+    <string name="block_buy_credits">Comprar créditos</string>
+    <string name="block_see_plans">Ver planes</string>
+    <string name="verdict_reason_no_credits">sin accesos ni créditos</string>
+    <string name="verdict_tip_no_credits">Compra créditos o mejora tu plan para pedir 10 minutos.</string>
+    <string name="verdict_paid_included">Usaste un acceso incluido. Te quedan %1$d hoy.</string>
+    <string name="verdict_paid_credit">Usaste 1 crédito. Te quedan %1$d.</string>
     <string name="verdict_tip_plan_quota">Hoy no quedan evaluaciones. Mañana vuelven.</string>
     <string name="verdict_tip_rejection_cap">Hoy ya hubo demasiados rechazos. Mañana vuelve a empezar.</string>
     <string name="verdict_tip_opens">%1$s se abre sola a %2$s.</string>

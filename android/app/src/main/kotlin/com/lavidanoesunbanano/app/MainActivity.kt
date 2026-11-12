@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // Solo la primera vez: al recrear la Activity no se vuelve a abrir la guía.
         val openSetup = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_SETUP, false)
+        val openPlans = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_PLANS, false)
         applyWindowTheme()
 
         setContent {
@@ -34,7 +35,7 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(LaVidaTheme.colors.background),
                 ) {
-                    start?.let { LaVidaNavHost(startDestination = it, openSetup = openSetup) }
+                    start?.let { LaVidaNavHost(startDestination = it, openSetup = openSetup, openPlans = openPlans) }
                 }
             }
         }
@@ -48,5 +49,8 @@ class MainActivity : ComponentActivity() {
     companion object {
         /** La notificación de bloqueo apagado abre la app directo en la guía. */
         const val EXTRA_OPEN_SETUP = "open_setup"
+
+        /** La pantalla de bloqueo lleva a los planes. */
+        const val EXTRA_OPEN_PLANS = "open_plans"
     }
 }
