@@ -174,14 +174,18 @@ def test_generate_refuses_a_device_without_consents(make_client) -> None:
     assert response.status_code == 403
 
 
-def test_a_store_outage_does_not_stop_the_judge(make_client) -> None:
+def test_a_store_outage_does_not_stop_an_emergency(make_client) -> None:
     store = consented_store()
     store.fail = True
     client = make_client(judge_llm=FakeLLM({JudgeEvaluation: evaluation()}), store=store)
 
-    response = client.post("/excuses/judge", json=judge_body(), headers=auth_headers())
+    emergency = client.post(
+        "/excuses/judge", json=judge_body(type="emergency"), headers=auth_headers()
+    )
+    extra_time = client.post("/excuses/judge", json=judge_body(), headers=auth_headers())
 
-    assert response.status_code == 200
+    # Sin saldo verificable los 10 minutos no se regalan: la app aplica la regla sin conexión.
+    assert (emergency.status_code, extra_time.status_code) == (200, 503)
 
 
 def test_judge_requires_a_valid_token(make_client) -> None:
@@ -196,7 +200,9 @@ def test_judge_requires_a_valid_token(make_client) -> None:
 
 
 def test_judge_answers_with_the_spec_schema(make_client) -> None:
-    client = make_client(judge_llm=FakeLLM({JudgeEvaluation: evaluation()}))
+    client = make_client(
+        judge_llm=FakeLLM({JudgeEvaluation: evaluation()}), store=consented_store()
+    )
 
     response = client.post("/excuses/judge", json=judge_body(), headers=auth_headers())
 
@@ -207,6 +213,9 @@ def test_judge_answers_with_the_spec_schema(make_client) -> None:
         "granted_minutes",
         "message",
         "reason_code",
+        "access_source",
+        "credits",
+        "included_remaining",
     }
     assert response.json()["granted_minutes"] == 10
 
@@ -215,6 +224,7 @@ def test_judge_is_rate_limited_per_device(make_client) -> None:
     client = make_client(
         make_settings(rate_limit_judge_per_hour=1),
         judge_llm=FakeLLM({JudgeEvaluation: evaluation()}),
+        store=consented_store(TEST_DEVICE_ID, "otro-dispositivo-0001"),
     )
 
     first = client.post("/excuses/judge", json=judge_body(), headers=auth_headers())

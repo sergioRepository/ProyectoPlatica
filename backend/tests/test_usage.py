@@ -169,7 +169,7 @@ def test_the_judge_records_its_call(make_client) -> None:
 
 
 def test_the_agent_records_with_its_request_id(make_client) -> None:
-    store = consented_store()
+    store = consented_store(plan="monthly")
     client = make_client(agent_llm=GrokToolLLM(ScriptedModel()), store=store)
     request = analyze_request()
 

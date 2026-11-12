@@ -1,5 +1,6 @@
 """Dobles de prueba y datos de ejemplo. Los tests nunca llaman a Grok real."""
 
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -107,10 +108,23 @@ def make_settings(**overrides: Any) -> Settings:
     return Settings(_env_file=None, **values)
 
 
-def consented_store(*device_ids: str, **overrides: Any) -> MemoryStore:
-    """Una base con los dispositivos ya registrados y sus autorizaciones."""
+def consented_store(*device_ids: str, credits: int = 10, **overrides: Any) -> MemoryStore:
+    """Una base con los dispositivos ya registrados, sus autorizaciones y créditos semilla.
+    `plan="monthly"` siembra un derecho activo: el plan efectivo sale de los derechos."""
     store = MemoryStore()
+    plan = overrides.pop("plan", "free")
     for device_id in device_ids or (TEST_DEVICE_ID,):
+        store.ledger.append(
+            {
+                "device_id": device_id,
+                "delta": credits,
+                "kind": "purchase",
+                "ref": f"semilla-{device_id}",
+                "day": date(2026, 1, 1),
+            }
+        )
+        if plan != "free":
+            seed_entitlement(store, device_id, plan)
         store.devices[device_id] = {
             "device_id": device_id,
             "consent_excuses": True,
@@ -120,6 +134,30 @@ def consented_store(*device_ids: str, **overrides: Any) -> MemoryStore:
             **overrides,
         }
     return store
+
+
+def seed_entitlement(
+    store: MemoryStore,
+    device_id: str,
+    plan: str = "monthly",
+    state: str = "SUBSCRIPTION_STATE_ACTIVE",
+    expires_in: timedelta = timedelta(days=10),
+    token: str | None = None,
+) -> None:
+    now = datetime.now(UTC)
+    token = token or f"token-{device_id}-{len(store.entitlements)}"
+    store.entitlements[token] = {
+        "purchase_token": token,
+        "device_id": device_id,
+        "product_id": "premium",
+        "plan": plan,
+        "state": state,
+        "expiry_time": now + expires_in,
+        "auto_renewing": state == "SUBSCRIPTION_STATE_ACTIVE",
+        "linked_purchase_token": None,
+        "account_hash": None,
+        "updated_at": now,
+    }
 
 
 def auth_headers(device_id: str = TEST_DEVICE_ID, secret: str = TEST_SECRET) -> dict[str, str]:

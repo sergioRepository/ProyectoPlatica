@@ -103,11 +103,18 @@ class Settings(BaseSettings):
     play_base_plan_semester: str = "semester"
     play_credits_product_id: str = "creditos_10"
     credits_per_pack: int = 10
+
+    # Google Play Developer API y notificaciones (RTDN). La llave de la cuenta de servicio es
+    # el JSON completo, en una sola variable; nunca va al repo ni a los logs.
+    google_play_package_name: str = "com.lavidanoesunbanano.app"
+    google_play_service_account_json: SecretStr | None = None
+    play_api_timeout_s: float = 10.0
+    # El push de Pub/Sub firma un JWT: su audiencia y la cuenta de servicio que lo emite.
+    rtdn_audience: str | None = None
+    rtdn_service_account_email: str | None = None
     # Después de esta cantidad de rechazos del día, el juez responde sin llamar a Grok.
     daily_rejection_cap: int = 5
     daily_template_cap: int = 2
-    # El análisis periódico nunca gasta estas últimas llamadas: son para el juez.
-    agent_reserved_for_judge: int = 1
     # Colombia no cambia de hora, así que basta un desfase fijo.
     quota_utc_offset_hours: int = -5
 

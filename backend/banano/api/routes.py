@@ -1,15 +1,19 @@
+import asyncio
 import hmac
-from datetime import timedelta
+import logging
+from collections.abc import Awaitable
+from datetime import date, timedelta
 from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from pydantic import BaseModel
 
 from banano import __version__
 from banano.agent.store import Store, StoreError, utcnow
 from banano.api.deps import (
     DeviceDep,
+    PlayDep,
     RateLimiterDep,
     SettingsDep,
     StoreDep,
@@ -22,13 +26,23 @@ from banano.api.deps import (
     require_consent,
 )
 from banano.auth import sign_device_token
+from banano.billing import (
+    BillingError,
+    PlayNotFoundError,
+    PlayUnavailableError,
+    decode_notification,
+    handle_notification,
+    verify_credits,
+    verify_push,
+    verify_subscription,
+)
 from banano.config import Settings
 from banano.graphs.agent_graph import run_agent_graph
-from banano.graphs.judge_graph import JudgeUnavailableError, run_judge_graph
+from banano.graphs.judge_graph import QUOTA_LINES, JudgeUnavailableError, run_judge_graph
 from banano.graphs.template_graph import TemplateGenerationError, run_template_graph
 from banano.llm.client import LLMError, StructuredLLM, ToolLLM
 from banano.llm.usage import metering
-from banano.quota import QuotaReason, bump, plan_limit, quota_day, take_llm_call
+from banano.quota import QuotaReason, bump, check_judge, plan_limit, quota_day, take_agent_call
 from banano.schemas.agent import AnalyzeRequest, AnalyzeResponse, ConfirmRequest, ConfirmResponse
 from banano.schemas.devices import (
     Consents,
@@ -36,6 +50,8 @@ from banano.schemas.devices import (
     PlanRequest,
     RegisterRequest,
     RegisterResponse,
+    VerifyRequest,
+    VerifyResponse,
 )
 from banano.schemas.events import EventBatch, EventsAccepted
 from banano.schemas.judge import JudgeRequest, JudgeResponse
@@ -44,6 +60,7 @@ from banano.schemas.reports import ContentReport
 from banano.schemas.template import TemplateResponse
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class HealthResponse(BaseModel):
@@ -108,6 +125,7 @@ async def update_consents(body: Consents, device_id: DeviceDep, store: StoreDep)
 
 def device_status(device: dict[str, Any], settings: Settings) -> DeviceStatus:
     limit = plan_limit(settings, device["plan"])
+    benefits = settings.benefits(device["plan"])
     return DeviceStatus(
         plan=device["plan"],
         would_pay=device["would_pay"],
@@ -116,6 +134,13 @@ def device_status(device: dict[str, Any], settings: Settings) -> DeviceStatus:
         remaining_today=max(limit - device["llm_calls"], 0),
         consent_excuses=device["consent_excuses"],
         consent_analytics=device["consent_analytics"],
+        subscription_state=device["subscription_state"],
+        expiry_time=device["expiry_time"],
+        auto_renewing=device["auto_renewing"],
+        credits=device["credits"],
+        included_daily=benefits.included_accesses,
+        included_remaining=max(benefits.included_accesses - device["included_used"], 0),
+        agent_enabled=benefits.auto_review,
     )
 
 
@@ -142,11 +167,13 @@ async def get_device_status(
 async def update_plan(
     body: PlanRequest, device_id: ManagedDevice, settings: SettingsDep, store: StoreDep
 ) -> DeviceStatus:
+    """El plan lo decide solo el servidor a partir del derecho validado: `body.plan` se
+    ignora y solo se guarda la respuesta de «¿pagarías?»."""
     try:
-        known = await store.set_plan(device_id, body.plan, body.would_pay)
+        known = await store.set_would_pay(device_id, body.would_pay)
     except StoreError as exc:
         raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail="No se pudo guardar el plan."
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail="No se pudo guardar la respuesta."
         ) from exc
     if not known:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dispositivo desconocido.")
@@ -261,11 +288,9 @@ async def analyze(
     llm: Annotated[ToolLLM, Depends(get_agent_llm)],
 ) -> AnalyzeResponse:
     device = await require_consent(store, device_id, settings)
-    periodic = body.trigger == "periodic"
 
     async def quota() -> QuotaReason | None:
-        reserve = settings.agent_reserved_for_judge if periodic else 0
-        return await take_llm_call(store, device, settings, reserve=reserve)
+        return await take_agent_call(store, device, settings)
 
     # Si el LLM falla, responde agent_unavailable (200): el teléfono sigue con su bloqueo local.
     async with metering(store, settings, device_id, device, "agent", body.request_id):
@@ -297,12 +322,45 @@ async def judge_excuse(
 ) -> JudgeResponse:
     device = await require_consent(store, device_id, settings, excuses=True)
 
+    # Sin saldo verificable no se regalan minutos; las emergencias no dependen de él.
+    if device is None and body.type == "extra_time":
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo comprobar tu saldo. Aplica la regla sin conexión.",
+        )
+
+    day = quota_day(settings)
+    # El mismo pedido repetido (se perdió la respuesta) no se evalúa ni se cobra otra vez.
+    ref = f"{device_id}:{body.request_id or uuid4()}"
+    if body.type == "extra_time" and body.request_id is not None:
+        paid = await _safe(store.access_source(device_id, ref))
+        if paid is not None:
+            return await _with_balance(
+                JudgeResponse(
+                    valid=True,
+                    confidence=1.0,
+                    granted_minutes=settings.extra_time_minutes,
+                    message="Ya estaba aprobado.",
+                    reason_code="legit_work",
+                    access_source=paid,
+                ),
+                store,
+                device_id,
+                day,
+                settings,
+            )
+
     async def quota() -> QuotaReason | None:
-        return await take_llm_call(store, device, settings, judge=True)
+        return check_judge(device, settings, body.type)
+
+    async def evaluated() -> None:
+        # shortcut: comprobar y contar por separado permite pasarse por una o dos con peticiones
+        # simultáneas; el límite por hora lo acota; pasarlo a una sola sentencia si se nota.
+        await bump(store, device_id, settings, "llm_calls")
 
     try:
         async with metering(store, settings, device_id, device, "judge"):
-            verdict = await run_judge_graph(body, llm, settings, quota)
+            verdict = await run_judge_graph(body, llm, settings, quota, evaluated)
     except JudgeUnavailableError as exc:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -310,4 +368,134 @@ async def judge_excuse(
         ) from exc
     if verdict.reason_code == "boredom":
         await bump(store, device_id, settings, "rejections")
-    return verdict
+    # Solo un acceso de 10 minutos aprobado por Peel se paga; una crisis nunca se cobra.
+    if body.type != "extra_time" or not verdict.valid or verdict.reason_code not in PAID_CODES:
+        return verdict
+    assert device is not None  # la base caída ya respondió 503 arriba
+    included = settings.benefits(device["plan"]).included_accesses
+    source = await _safe(store.spend_access(device_id, ref, day, included))
+    if source is None:
+        # Otro pedido gastó el último crédito mientras Peel evaluaba.
+        return JudgeResponse(
+            valid=False,
+            confidence=1.0,
+            granted_minutes=0,
+            message=QUOTA_LINES["no_credits"][0],
+            reason_code="no_credits",
+        )
+    return await _with_balance(
+        verdict.model_copy(update={"access_source": source}), store, device_id, day, settings
+    )
+
+
+PAID_CODES = ("legit_work", "legit_emergency")
+
+
+async def _safe[T](operation: Awaitable[T]) -> T:
+    """Una escritura de dinero que falla no regala ni cobra: la app aplica la regla sin conexión."""
+    try:
+        return await operation
+    except StoreError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo cobrar el acceso. Aplica la regla sin conexión.",
+        ) from exc
+
+
+async def _with_balance(
+    verdict: JudgeResponse, store: Store, device_id: str, day: date, settings: Settings
+) -> JudgeResponse:
+    """Añade el saldo que queda tras pagar. Si la base no responde, se omite: ya se pagó."""
+    try:
+        device = await store.get_device(device_id, day, settings.gate_db_timeout_s)
+    except StoreError:
+        return verdict
+    if device is None:
+        return verdict
+    included = settings.benefits(device["plan"]).included_accesses
+    return verdict.model_copy(
+        update={
+            "credits": device["credits"],
+            "included_remaining": max(included - device["included_used"], 0),
+        }
+    )
+
+
+BillingDevice = Annotated[
+    str, Depends(rate_limited("billing", lambda s: s.rate_limit_device_per_hour))
+]
+
+
+@router.post("/billing/verify")
+async def verify_purchase(
+    body: VerifyRequest,
+    device_id: BillingDevice,
+    settings: SettingsDep,
+    store: StoreDep,
+    client: PlayDep,
+) -> VerifyResponse:
+    """Valida con Google una compra que la app vio y la aplica. El único camino a un plan de
+    pago o a créditos: el teléfono nunca decide."""
+    day = quota_day(settings)
+    try:
+        if await store.get_device(device_id, day) is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Dispositivo desconocido.")
+        if body.product_id == settings.play_subscription_id:
+            entitlement = await verify_subscription(
+                store, client, settings, device_id, body.purchase_token, day
+            )
+            pending = entitlement["state"] == "SUBSCRIPTION_STATE_PENDING"
+            outcome = "pending" if pending else "subscription"
+        else:
+            outcome = await verify_credits(
+                store, client, settings, device_id, body.product_id, body.purchase_token, day
+            )
+    except BillingError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
+    except PlayNotFoundError as exc:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail="Google Play no reconoce esa compra."
+        ) from exc
+    except (PlayUnavailableError, StoreError) as exc:
+        logger.warning("No se pudo validar una compra: %s", type(exc).__name__)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo validar la compra. Se reintenta al volver a abrir la app.",
+        ) from exc
+    return VerifyResponse(outcome=outcome, device=await read_status(store, device_id, settings))
+
+
+@router.post("/billing/rtdn", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
+async def receive_rtdn(
+    request: Request,
+    settings: SettingsDep,
+    store: StoreDep,
+    client: PlayDep,
+    authorization: Annotated[str | None, Header()] = None,
+) -> Response:
+    """Push de Pub/Sub con las notificaciones de Google Play. 2xx acusa recibo; cualquier otro
+    código hace que Pub/Sub reintente."""
+    if not settings.rtdn_audience or not settings.rtdn_service_account_email:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="RTDN sin configurar.")
+    try:
+        await asyncio.to_thread(verify_push, authorization, settings)
+    except Exception as exc:  # firma, audiencia, emisor o remitente incorrectos
+        logger.warning("Push de RTDN rechazado: %s", type(exc).__name__)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="No autorizado.") from exc
+    try:
+        notification = decode_notification(await request.json())
+    except ValueError:
+        # Reintentar un mensaje mal formado no lo arregla: se acusa y se descarta.
+        logger.warning("Push de RTDN mal formado")
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    try:
+        day = quota_day(settings)
+        result = await handle_notification(notification, store, client, settings, day)
+    except BillingError as exc:
+        logger.warning("RTDN de una compra que no es de esta app: %s", exc)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except (PlayUnavailableError, StoreError) as exc:
+        logger.warning("RTDN sin aplicar, Pub/Sub reintenta: %s", type(exc).__name__)
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="Reintenta.") from exc
+    logger.info("RTDN aplicada: %s", result)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

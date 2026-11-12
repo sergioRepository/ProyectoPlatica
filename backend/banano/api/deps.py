@@ -6,6 +6,7 @@ from fastapi import Depends, Header, HTTPException, Request, status
 
 from banano.agent.store import PostgresStore, Store, StoreError, UnconfiguredStore
 from banano.auth import verify_device_token
+from banano.billing import GooglePlayClient, PlayClient, PlayUnavailableError
 from banano.config import Settings
 from banano.llm.client import (
     LLMNotConfiguredError,
@@ -130,6 +131,24 @@ def get_store(request: Request) -> Store:
 
 
 StoreDep = Annotated[Store, Depends(get_store)]
+
+
+def get_play_client(request: Request) -> PlayClient:
+    """El cliente de la Play Developer API; se crea la primera vez que se necesita."""
+    client = request.app.state.play_client
+    if client is None:
+        try:
+            client = GooglePlayClient(request.app.state.settings)
+        except (PlayUnavailableError, ValueError) as exc:
+            # Sin llave (o con una mal formada) no se valida nada: nunca se dan beneficios a ciegas.
+            raise HTTPException(
+                status.HTTP_503_SERVICE_UNAVAILABLE, detail="Facturación sin configurar."
+            ) from exc
+        request.app.state.play_client = client
+    return client
+
+
+PlayDep = Annotated[PlayClient, Depends(get_play_client)]
 
 
 async def require_consent(

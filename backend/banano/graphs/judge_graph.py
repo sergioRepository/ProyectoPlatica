@@ -56,6 +56,7 @@ PREFILTER_LINES: dict[str, tuple[str, ...]] = {
 QUOTA_LINES: dict[str, tuple[str, ...]] = {
     "plan_quota": ("Por hoy no quedan evaluaciones. Sin Peel no hay minutos extra.",),
     "rejection_cap": ("Ya fueron muchos rechazos por hoy. Sin Peel no hay minutos extra.",),
+    "no_credits": ("No te quedan accesos incluidos ni créditos. Sin eso no hay minutos extra.",),
 }
 QUOTA_APPROVED = "Por hoy Peel no está, así que te creo. Queda anotado para revisarlo después."
 APPROVED_FALLBACK = ("Aprobado. Que valga la pena.",)
@@ -80,6 +81,8 @@ class JudgeContext:
     settings: Settings
     # Reserva una llamada del cupo diario. None: sin cupo que revisar (Studio y scripts).
     quota: Callable[[], Awaitable[QuotaReason | None]] | None = None
+    # Se llama cuando Peel respondió una evaluación de 10 minutos (para contarla).
+    on_evaluated: Callable[[], Awaitable[None]] | None = None
 
 
 class JudgeState(TypedDict, total=False):
@@ -222,6 +225,8 @@ async def evaluar(state: JudgeState, runtime: Runtime[JudgeContext]) -> dict[str
     except LLMError as exc:
         logger.warning("El juez no respondió: %s", exc)
         return {"evaluation": None}
+    if request.type == "extra_time" and context.on_evaluated:
+        await context.on_evaluated()
     return {"evaluation": evaluation}
 
 
@@ -270,8 +275,10 @@ async def run_judge_graph(
     llm: StructuredLLM,
     settings: Settings,
     quota: Callable[[], Awaitable[QuotaReason | None]] | None = None,
+    on_evaluated: Callable[[], Awaitable[None]] | None = None,
 ) -> JudgeResponse:
     final = await JUDGE_GRAPH.ainvoke(
-        {"request": request}, context=JudgeContext(llm=llm, settings=settings, quota=quota)
+        {"request": request},
+        context=JudgeContext(llm=llm, settings=settings, quota=quota, on_evaluated=on_evaluated),
     )
     return final["response"]

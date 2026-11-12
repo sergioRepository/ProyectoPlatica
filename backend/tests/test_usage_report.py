@@ -57,7 +57,7 @@ def test_the_report_has_a_section_per_query() -> None:
 
 async def seed(store: PostgresStore, device: str) -> None:
     await store.save_consents(device, CONSENTS)
-    await store.set_plan(device, "monthly", "maybe")
+    await store.set_would_pay(device, "maybe")
     request_id = uuid4()
     await store.save(
         {

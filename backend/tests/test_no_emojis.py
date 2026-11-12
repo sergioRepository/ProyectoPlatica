@@ -21,6 +21,7 @@ from tests.fakes import (
     FakeLLM,
     auth_headers,
     batch,
+    consented_store,
     evaluation,
     judge_request,
     sample_analysis,
@@ -58,7 +59,7 @@ def test_api_outputs_have_no_emojis_even_if_the_llm_sends_them(make_client) -> N
         }
     )
     judge_llm = FakeLLM({JudgeEvaluation: evaluation(message="Jajaja 🤣 no ❌ :v #nunca")})
-    client = make_client(generate_llm=generate_llm, judge_llm=judge_llm)
+    client = make_client(generate_llm=generate_llm, judge_llm=judge_llm, store=consented_store())
 
     template = client.post(
         "/templates/generate", json=sample_profile().model_dump(), headers=auth_headers()

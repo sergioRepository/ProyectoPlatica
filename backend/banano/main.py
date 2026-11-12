@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from banano import __version__
 from banano.agent.store import Store
 from banano.api.routes import router
+from banano.billing import PlayClient
 from banano.config import Settings, get_settings
 from banano.llm.client import StructuredLLM, ToolLLM
 from banano.ratelimit import RateLimiter
@@ -15,6 +16,7 @@ def create_app(
     judge_llm: StructuredLLM | None = None,
     agent_llm: ToolLLM | None = None,
     store: Store | None = None,
+    play_client: PlayClient | None = None,
 ) -> FastAPI:
     """Crea la app. Los tests pasan su configuración y un LLM falso; si no hay LLM, se
     construye el de Grok la primera vez que se necesita."""
@@ -32,6 +34,7 @@ def create_app(
     app.state.judge_llm = judge_llm
     app.state.agent_llm = agent_llm
     app.state.store = store
+    app.state.play_client = play_client
     app.include_router(router)
     return app
 

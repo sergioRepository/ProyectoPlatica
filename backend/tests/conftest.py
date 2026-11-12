@@ -19,6 +19,7 @@ def make_client() -> Callable[..., TestClient]:
         judge_llm: Any = None,
         agent_llm: Any = None,
         store: Any = None,
+        play_client: Any = None,
     ) -> TestClient:
         app = create_app(
             settings or make_settings(),
@@ -26,6 +27,7 @@ def make_client() -> Callable[..., TestClient]:
             judge_llm=judge_llm,
             agent_llm=agent_llm,
             store=store,
+            play_client=play_client,
         )
         return TestClient(app)
 

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal, Self
 
 from pydantic import BaseModel, Field, model_validator
@@ -28,6 +29,7 @@ WouldPay = Literal["yes", "no", "maybe"]
 
 
 class PlanRequest(Strict):
+    # Se acepta (los APK 0.4.0 lo envían) pero se ignora: el plan lo decide el servidor.
     plan: Plan
     # La respuesta es sobre este plan: al cambiar de plan sin responder, queda vacía.
     would_pay: WouldPay | None = None
@@ -41,6 +43,31 @@ class DeviceStatus(BaseModel):
     remaining_today: int
     consent_excuses: bool
     consent_analytics: bool
+    subscription_state: str | None
+    expiry_time: datetime | None
+    auto_renewing: bool
+    credits: int
+    included_daily: int
+    included_remaining: int
+    agent_enabled: bool
+
+
+class VerifyRequest(Strict):
+    """Una compra que la app vio en Google Play. El servidor la valida con Google."""
+
+    product_id: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9._]+$")
+    # El token va en la URL de la API de Google y es la llave del registro de créditos: solo el
+    # alfabeto de los tokens de Play, sin "/" ni "..", para que un texto no valide la compra de
+    # otro token ni la canjee dos veces.
+    purchase_token: str = Field(
+        min_length=10, max_length=2000, pattern=r"^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$"
+    )
+
+
+class VerifyResponse(BaseModel):
+    # subscription | pending | granted | already_granted
+    outcome: str
+    device: DeviceStatus
 
 
 class RegisterRequest(BaseModel):

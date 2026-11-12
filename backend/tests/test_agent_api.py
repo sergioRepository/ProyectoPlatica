@@ -52,7 +52,7 @@ def test_analyze_rejects_unknown_fields(make_client) -> None:
 
 
 def test_analyze_then_confirm_executed(make_client) -> None:
-    store = consented_store(TEST_DEVICE_ID, "otro-dispositivo")
+    store = consented_store(TEST_DEVICE_ID, "otro-dispositivo", plan="monthly")
     client, response = sent_intervention(make_client, store)
     assert response.status_code == 200
     intervention = response.json()["intervention"]
@@ -70,7 +70,7 @@ def test_analyze_then_confirm_executed(make_client) -> None:
 
 
 def test_another_device_cannot_confirm(make_client) -> None:
-    store = consented_store(TEST_DEVICE_ID, "otro-dispositivo")
+    store = consented_store(TEST_DEVICE_ID, "otro-dispositivo", plan="monthly")
     client, response = sent_intervention(make_client, store)
     event_id = response.json()["intervention"]["id"]
 
@@ -114,7 +114,7 @@ def test_agent_has_its_own_rate_limit(make_client) -> None:
     client = make_client(
         make_settings(rate_limit_agent_per_hour=1),
         agent_llm=FakeToolLLM(*turns),
-        store=consented_store(),
+        store=consented_store(plan="monthly"),
     )
 
     first = client.post("/agent/analyze", json=body(), headers=auth_headers())

@@ -14,7 +14,7 @@ from banano.config import Settings
 
 logger = logging.getLogger(__name__)
 
-QuotaReason = Literal["plan_quota", "rejection_cap"]
+QuotaReason = Literal["plan_quota", "rejection_cap", "no_credits"]
 
 
 def plan_limit(settings: Settings, plan: str) -> int:
@@ -44,19 +44,31 @@ async def bump(
         return True
 
 
-async def take_llm_call(
-    store: Store,
-    device: dict[str, Any] | None,
-    settings: Settings,
-    *,
-    reserve: int = 0,
-    judge: bool = False,
+def check_judge(
+    device: dict[str, Any] | None, settings: Settings, request_type: str
 ) -> QuotaReason | None:
-    """Reserva una llamada de hoy; devuelve el motivo si no hay. `device` None: base caída."""
+    """Revisa sin contar nada: la evaluación se cuenta solo si Peel responde. `device` None:
+    base caída (la ruta decide qué hacer)."""
     if device is None:
         return None
-    if judge and device["rejections"] >= settings.daily_rejection_cap:
+    if device["rejections"] >= settings.daily_rejection_cap:
         return "rejection_cap"
-    limit = plan_limit(settings, device["plan"]) - reserve
-    allowed = await bump(store, device["device_id"], settings, "llm_calls", limit)
+    if request_type == "emergency":
+        return None
+    benefits = settings.benefits(device["plan"])
+    if device["llm_calls"] >= benefits.daily_evaluations:
+        return "plan_quota"
+    if device["included_used"] >= benefits.included_accesses and device["credits"] <= 0:
+        return "no_credits"
+    return None
+
+
+async def take_agent_call(
+    store: Store, device: dict[str, Any] | None, settings: Settings
+) -> QuotaReason | None:
+    """Reserva un análisis de hoy; Gratis tiene tope 0. `device` None: base caída."""
+    if device is None:
+        return None
+    cap = settings.benefits(device["plan"]).agent_daily_cap
+    allowed = await bump(store, device["device_id"], settings, "agent_calls", cap)
     return None if allowed else "plan_quota"

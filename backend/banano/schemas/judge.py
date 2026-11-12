@@ -1,4 +1,5 @@
 from typing import Annotated, Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -13,6 +14,7 @@ ReasonCode = Literal[
     "too_short",
     "plan_quota",
     "rejection_cap",
+    "no_credits",
 ]
 
 Excuse = Annotated[str, Field(max_length=1000)]
@@ -39,6 +41,8 @@ class JudgeRequest(BaseModel):
     country: str = Field(default="Colombia", max_length=40)
     # Modo amable en Ajustes: sin sarcasmo ni burla, aunque rechace.
     kind_mode: bool = False
+    # Identifica el pedido de 10 minutos: repetirlo no evalúa ni cobra otra vez.
+    request_id: UUID | None = None
 
 
 class JudgeResponse(BaseModel):
@@ -47,3 +51,7 @@ class JudgeResponse(BaseModel):
     granted_minutes: int = Field(ge=0)
     message: str
     reason_code: ReasonCode
+    # Con qué se pagó un acceso de 10 minutos aprobado: incluido en el plan o un crédito.
+    access_source: Literal["included", "credit"] | None = None
+    credits: int | None = None
+    included_remaining: int | None = None
