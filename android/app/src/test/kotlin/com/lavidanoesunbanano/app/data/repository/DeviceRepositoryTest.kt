@@ -118,17 +118,15 @@ class DeviceRepositoryTest {
     }
 
     @Test
-    fun `status and plan travel with the token`() = runTest {
+    fun `status travels with the token`() = runTest {
         store.token = "v1.abc.firma"
-        val status = """{"plan":"monthly","would_pay":"maybe","daily_limit":20,"used_today":1,"remaining_today":19}"""
+        val status = """{"plan":"monthly","daily_limit":20,"used_today":1,"remaining_today":19}"""
         server.enqueue(MockResponse.Builder().body(status).build())
 
-        val result = repository().setPlan("monthly", "maybe")
+        val result = repository().status()
 
         assertEquals(19, result?.remainingToday)
-        val request = server.takeRequest()
-        assertEquals("Bearer v1.abc.firma", request.headers["Authorization"])
-        assertTrue(request.body!!.utf8().contains(""""would_pay":"maybe""""))
+        assertEquals("Bearer v1.abc.firma", server.takeRequest().headers["Authorization"])
     }
 
     @Test

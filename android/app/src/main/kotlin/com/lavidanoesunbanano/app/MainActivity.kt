@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity() {
         // Solo la primera vez: al recrear la Activity no se vuelve a abrir la guía.
         val openSetup = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_SETUP, false)
         val openPlans = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_PLANS, false)
+        val openCredits = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_CREDITS, false)
         applyWindowTheme()
 
         setContent {
@@ -35,7 +36,7 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(LaVidaTheme.colors.background),
                 ) {
-                    start?.let { LaVidaNavHost(startDestination = it, openSetup = openSetup, openPlans = openPlans) }
+                    start?.let { LaVidaNavHost(startDestination = it, openSetup = openSetup, openPlans = openPlans, openCredits = openCredits) }
                 }
             }
         }
@@ -52,5 +53,8 @@ class MainActivity : ComponentActivity() {
 
         /** La pantalla de bloqueo lleva a los planes. */
         const val EXTRA_OPEN_PLANS = "open_plans"
+
+        /** Con `EXTRA_OPEN_PLANS`: abre los planes con la sección de créditos desplegada. */
+        const val EXTRA_OPEN_CREDITS = "open_credits"
     }
 }

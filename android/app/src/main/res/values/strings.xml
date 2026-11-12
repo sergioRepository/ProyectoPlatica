@@ -209,7 +209,7 @@
     <string name="home_unlocked_value">%1$s hasta las %2$s</string>
 
     <string name="agent_title">revisión automática</string>
-    <string name="agent_never">Peel revisa tu uso aproximadamente cada 15 minutos. Android puede retrasar la revisión para ahorrar batería.</string>
+    <string name="agent_never">Revisión automática de tu uso, aproximadamente cada 15 minutos (Android puede retrasarla; necesita conexión y acceso a los datos de uso). Android puede retrasar la revisión para ahorrar batería.</string>
     <string name="agent_free">La revisión automática viene con los planes Mensual y Semestral.</string>
     <string name="agent_unavailable">No hubo revisión: sin conexión con el servidor. El bloqueo sigue igual.</string>
     <string name="agent_analyzing">Revisando</string>
@@ -344,19 +344,14 @@
         <item quantity="other">Peel evalúa hasta %1$d razones al día. Hoy te quedan %2$d.</item>
     </plurals>
     <string name="settings_plans">Ver planes</string>
-    <string name="settings_plan_hint">Por ahora ningún plan tiene costo. Sin evaluaciones, las emergencias se aprueban sin juez y los 10 minutos se rechazan.</string>
     <string name="settings_plan_offline">Conéctate para ver tu plan y tus evaluaciones de hoy.</string>
-    <string name="settings_would_pay">¿Pagarías por un plan con más evaluaciones al día?</string>
-    <string name="settings_survey_close">Cerrar encuesta</string>
-    <string name="would_pay_yes">Sí</string>
-    <string name="would_pay_no">No</string>
     <string name="settings_consent_excuses">Enviar tus razones para evaluarlas</string>
     <string name="settings_consent_excuses_desc">Las lee una IA. Si lo apagas, las emergencias se aprueban siempre y los 10 minutos se rechazan.</string>
     <string name="settings_consent_analytics">Ayudarnos a mejorar la app</string>
     <string name="settings_consent_analytics_desc">Solo qué botones tocas. Nunca lo que escribes.</string>
     <string name="settings_erase">Borrar todos mis datos</string>
     <string name="settings_erase_title">¿Borrar tus datos?</string>
-    <string name="settings_erase_warning">Se borra todo lo tuyo en el servidor y en este teléfono: perfil, mensajes, historial, plan y autorizaciones. La app queda como recién instalada y no se puede deshacer.</string>
+    <string name="settings_erase_warning">Se borra todo lo tuyo en el servidor y en este teléfono: perfil, mensajes, historial, créditos y autorizaciones. La app queda como recién instalada y no se puede deshacer. Si tienes un plan, cancélalo en Google Play: borrar tus datos no lo cancela.</string>
     <string name="settings_erase_confirm">Borrar todo</string>
     <string name="settings_erase_failed">No se pudieron borrar tus datos del servidor. Nada se borró; revisa tu conexión e intenta otra vez.</string>
 
@@ -544,4 +539,72 @@
 
     <!-- Servicio de accesibilidad -->
     <string name="blocker_service_description">Detecta qué app pasa al frente para mostrar la pantalla de bloqueo en tu horario. No lee el contenido de la pantalla ni lo que escribes.</string>
+    <!-- Planes (Paso 7) -->
+    <string name="plans_breadcrumb">Ajustes › Planes</string>
+    <string name="plans_title">Elige tu plan</string>
+    <string name="plans_subtitle">El bloqueo funciona igual en todos. Lo que cambia es cuánto te ayuda Peel.</string>
+    <string name="plans_all_include">Todos los planes incluyen</string>
+    <string name="plans_all_block">Bloqueo de apps y tus mensajes personalizados</string>
+    <string name="plans_all_emergency">Emergencias reales, siempre gratis</string>
+    <string name="plans_your_plan">TU PLAN</string>
+    <string name="plans_free_price">Sin costo</string>
+    <string name="plans_free_subtitle">Sin suscripción</string>
+    <string name="plans_monthly_subtitle">Se cobra cada mes</string>
+    <string name="plans_semester_subtitle">Se cobra cada 6 meses</string>
+    <string name="plans_semester_equivalent">≈ %1$s al mes</string>
+    <string name="plans_savings">AHORRAS %1$d %%</string>
+    <string name="plans_price_unavailable">Precio no disponible</string>
+    <string name="plans_benefit_evaluations">Peel evalúa %1$d razones al día</string>
+    <string name="plans_benefit_evaluations_up_to">Peel evalúa hasta %1$d razones al día</string>
+    <string name="plans_benefit_no_review">Sin revisión automática</string>
+    <string name="plans_benefit_review">Revisión automática de tu uso, aproximadamente cada 15 minutos (Android puede retrasarla; necesita conexión y acceso a los datos de uso)</string>
+    <string name="plans_benefit_credits_only">10 minutos: solo con créditos</string>
+    <string name="plans_benefit_included">10 minutos: %1$d al día incluidos, extra con créditos</string>
+    <string name="plans_period_month">mes</string>
+    <string name="plans_period_6_months">6 meses</string>
+    <string name="plans_subscribe">Suscribirme · %1$s/%2$s</string>
+    <string name="plans_change_to_price">Cambiar a %1$s · %2$s/%3$s</string>
+    <string name="plans_change_upgrade">Se cobra %1$s ahora. El tiempo que te quedaba del plan Mensual se suma al nuevo plan.</string>
+    <string name="plans_change_downgrade">El cambio a Mensual es inmediato y se cobra %1$s en tu próxima renovación. Hasta entonces no pagas nada más.</string>
+    <string name="plans_status_received">Recibimos tu compra. La estamos validando con Google Play.</string>
+    <string name="plans_change_to">Cambiar a %1$s</string>
+    <string name="plans_current">Es tu plan actual</string>
+    <string name="plans_manage">Gestionar suscripción</string>
+    <string name="plans_unavailable">No disponible ahora</string>
+    <string name="plans_terms_price">%1$s cada %2$s, en la moneda de tu cuenta de Google Play.</string>
+    <string name="plans_terms_renewal">Se renueva automáticamente hasta que la canceles.</string>
+    <string name="plans_terms_cancel">Cancela cuando quieras en Google Play › Pagos y suscripciones › Suscripciones. Mantienes el plan hasta el final del período pagado.</string>
+    <string name="plans_manage_link">Gestionar suscripción en Google Play</string>
+    <string name="plans_terms_link">Términos de uso</string>
+    <string name="plans_notice_grace">Hubo un problema con tu pago. Actualízalo en Google Play para no perder tu plan.</string>
+    <string name="plans_notice_hold">Tu plan está suspendido por un problema con el pago. Arréglalo en Google Play para recuperarlo.</string>
+    <string name="plans_notice_canceled">Cancelaste tu plan. Sigue activo hasta el %1$s.</string>
+    <string name="plans_notice_expired">Tu plan venció. Puedes volver a suscribirte cuando quieras.</string>
+    <string name="plans_status_pending">Tu pago está pendiente. El plan se activa cuando Google Play lo confirme.</string>
+    <string name="plans_status_cancelled">Cancelaste la compra. No se cobró nada.</string>
+    <string name="plans_status_failed">No se pudo completar la compra. Revisa tu conexión e intenta de nuevo.</string>
+    <string name="plans_status_rejected">Google Play no reconoce esa compra.</string>
+    <string name="plans_status_done">Listo. Tu plan quedó activo.</string>
+    <string name="plans_status_credits">Listo. Sumamos tus créditos.</string>
+    <string name="plans_retry">Intentar de nuevo</string>
+    <string name="plans_debug_prices">Precios de referencia en USD (versión de prueba sin Google Play). No se puede comprar.</string>
+    <string name="plans_credits_link">¿Qué son los créditos?</string>
+    <string name="plans_credits_title">Qué son los créditos</string>
+    <string name="plans_credits_rule_1">1 crédito = 1 acceso de 10 minutos.</string>
+    <string name="plans_credits_rule_2">Se compran en paquetes de 10 créditos y no caducan con el tiempo.</string>
+    <string name="plans_credits_rule_3">Cuando Peel aprueba 10 minutos, primero se usa un acceso incluido de tu plan y, si no quedan, un crédito.</string>
+    <string name="plans_credits_rule_4">Si Peel rechaza tu razón, solo se gasta la evaluación: no se descuenta ningún crédito.</string>
+    <string name="plans_credits_rule_5">Las emergencias nunca gastan evaluaciones ni créditos.</string>
+    <string name="plans_credits_rule_6">Tu límite diario de 10 minutos de Ajustes se sigue aplicando, también con créditos.</string>
+    <string name="plans_credits_rule_7">Las evaluaciones y los accesos incluidos se reinician a medianoche (hora de Colombia) y no se acumulan. Los créditos se conservan.</string>
+    <string name="plans_credits_rule_8">Con un plan activo, tus créditos te siguen si reinstalas. Sin plan, se pierden al desinstalar o borrar tus datos.</string>
+    <plurals name="plans_credits_balance">
+        <item quantity="one">Tienes %1$d crédito.</item>
+        <item quantity="many">Tienes %1$d créditos.</item>
+        <item quantity="other">Tienes %1$d créditos.</item>
+    </plurals>
+    <string name="plans_buy_credits">Comprar 10 créditos · %1$s</string>
+    <string name="settings_included_today">Accesos incluidos hoy: %1$d de %2$d</string>
+    <string name="settings_credits">Créditos: %1$d</string>
+    <string name="terms_url" translatable="false">https://github.com/sergioRepository/ProyectoPlatica/blob/production/docs/terminos.md</string>
 </resources>

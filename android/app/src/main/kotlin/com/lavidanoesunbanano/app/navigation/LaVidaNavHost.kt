@@ -17,6 +17,7 @@ import com.lavidanoesunbanano.app.feature.home.HomeScreen
 import com.lavidanoesunbanano.app.feature.onboarding.EditAnswerScreen
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingScreen
 import com.lavidanoesunbanano.app.feature.onboarding.OnboardingStep
+import com.lavidanoesunbanano.app.feature.plans.PlansScreen
 import com.lavidanoesunbanano.app.feature.settings.SettingsScreen
 import com.lavidanoesunbanano.app.feature.setup.SetupScreen
 import kotlinx.serialization.Serializable
@@ -43,21 +44,29 @@ data object SettingsRoute
 @Serializable
 data object SetupRoute
 
+/** `showCredits`: abre la sección de créditos desplegada (desde la pantalla de bloqueo). */
+@Serializable
+data class PlansRoute(val showCredits: Boolean = false)
+
 /** `step`: nombre de un [OnboardingStep]. */
 @Serializable
 data class EditAnswerRoute(val step: String)
 
 /** `openSetup`: se abrió desde la notificación de bloqueo apagado. `openPlans`: desde la pantalla de bloqueo. */
 @Composable
-fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false, openPlans: Boolean = false) {
+fun LaVidaNavHost(
+    startDestination: Any,
+    openSetup: Boolean = false,
+    openPlans: Boolean = false,
+    openCredits: Boolean = false,
+) {
     val navController = rememberNavController()
     LaunchedEffect(openSetup) {
         // Sin onboarding terminado no hay bloqueo que configurar todavía.
         if (openSetup && startDestination == HomeRoute) navController.navigate(SetupRoute)
     }
     LaunchedEffect(openPlans) {
-        // Paso 7: PlansRoute
-        if (openPlans && startDestination == HomeRoute) navController.navigate(SettingsRoute)
+        if (openPlans && startDestination == HomeRoute) navController.navigate(PlansRoute(showCredits = openCredits))
     }
     val openTab: (MainTab) -> Unit = { tab ->
         // Las pestañas no se apilan: Atrás siempre lleva a Inicio.
@@ -130,7 +139,7 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false, openPlans: 
             HomeScreen(
                 onTab = openTab,
                 onOpenSetup = { navController.navigate(SetupRoute) },
-                onOpenPlans = { navController.navigate(SettingsRoute) }, // Paso 7: PlansRoute
+                onOpenPlans = { navController.navigate(PlansRoute()) },
             )
         }
         composable<HistoryRoute> { HistoryScreen(onTab = openTab) }
@@ -140,6 +149,7 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false, openPlans: 
                 onEditStep = { step -> navController.navigate(EditAnswerRoute(step.name)) },
                 onRegenerate = { navController.navigate(GenerationRoute(regenerate = true)) },
                 onOpenSetup = { navController.navigate(SetupRoute) },
+                onOpenPlans = { navController.navigate(PlansRoute()) },
                 onErased = {
                     navController.navigate(ConsentRoute) {
                         popUpTo(navController.graph.id) { inclusive = true }
@@ -147,6 +157,7 @@ fun LaVidaNavHost(startDestination: Any, openSetup: Boolean = false, openPlans: 
                 },
             )
         }
+        composable<PlansRoute> { PlansScreen() }
         composable<SetupRoute> { SetupScreen(onContinue = { navController.popBackStack() }) }
         composable<EditAnswerRoute> { entry ->
             val step = OnboardingStep.valueOf(entry.toRoute<EditAnswerRoute>().step)

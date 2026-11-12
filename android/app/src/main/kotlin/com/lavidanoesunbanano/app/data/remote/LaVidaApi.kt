@@ -11,7 +11,6 @@ import com.lavidanoesunbanano.app.data.remote.dto.EventsAcceptedDto
 import com.lavidanoesunbanano.app.data.remote.dto.HealthDto
 import com.lavidanoesunbanano.app.data.remote.dto.JudgeRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.JudgeResponseDto
-import com.lavidanoesunbanano.app.data.remote.dto.PlanRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.ProfileDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterResponseDto
@@ -52,12 +51,6 @@ interface LaVidaApi {
 
     @DELETE("devices/me")
     suspend fun deleteDevice(@Header("Authorization") authorization: String): Response<Unit>
-
-    @PUT("devices/me/plan")
-    suspend fun updatePlan(
-        @Header("Authorization") authorization: String,
-        @Body body: PlanRequestDto,
-    ): DeviceStatusDto
 
     @POST("billing/verify")
     suspend fun verifyPurchase(

@@ -42,12 +42,6 @@ data class VerifyResponseDto(
 )
 
 @Serializable
-data class PlanRequestDto(
-    val plan: String,
-    @SerialName("would_pay") val wouldPay: String?,
-)
-
-@Serializable
 data class RegisterRequestDto(
     val consents: ConsentsDto,
 )

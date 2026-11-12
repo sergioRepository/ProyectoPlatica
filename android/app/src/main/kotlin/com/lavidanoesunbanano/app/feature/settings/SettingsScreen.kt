@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -33,8 +31,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -57,12 +53,10 @@ import com.lavidanoesunbanano.app.core.designsystem.Panel
 import com.lavidanoesunbanano.app.core.designsystem.PolicyLink
 import com.lavidanoesunbanano.app.core.designsystem.PrimaryButton
 import com.lavidanoesunbanano.app.core.designsystem.RowDivider
-import com.lavidanoesunbanano.app.core.designsystem.SelectableRow
 import com.lavidanoesunbanano.app.core.designsystem.SmallButton
 import com.lavidanoesunbanano.app.core.designsystem.StepperRow
 import com.lavidanoesunbanano.app.core.designsystem.TextLink
 import com.lavidanoesunbanano.app.core.designsystem.UiIcon
-import com.lavidanoesunbanano.app.core.designsystem.dashed
 import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
 import com.lavidanoesunbanano.app.domain.billing.PlanTier
 import com.lavidanoesunbanano.app.domain.model.UnlockLimits
@@ -76,6 +70,7 @@ fun SettingsScreen(
     onEditStep: (OnboardingStep) -> Unit,
     onRegenerate: () -> Unit,
     onOpenSetup: () -> Unit,
+    onOpenPlans: () -> Unit,
     onErased: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -89,8 +84,6 @@ fun SettingsScreen(
                 onExtraTimeChange = viewModel::changeExtraTimeDaily,
                 onEmergencyChange = viewModel::changeEmergencyDaily,
                 onAntiSabotageChange = viewModel::setAntiSabotage,
-                onSelectPlan = viewModel::selectPlan,
-                onWouldPay = viewModel::answerWouldPay,
                 onExcusesConsent = viewModel::setExcusesConsent,
                 onAnalyticsConsent = viewModel::setAnalyticsConsent,
                 onKindMode = viewModel::setKindMode,
@@ -99,6 +92,7 @@ fun SettingsScreen(
                 onScheduleProtectionOff = viewModel::scheduleProtectionOff,
                 onCancelProtectionOff = viewModel::cancelProtectionOff,
                 onOpenSetup = onOpenSetup,
+                onOpenPlans = onOpenPlans,
                 onNextPreview = viewModel::nextPreview,
                 onRegenerate = onRegenerate,
             ),
@@ -111,8 +105,7 @@ private class SettingsActions(
     val onExtraTimeChange: (Int) -> Unit,
     val onEmergencyChange: (Int) -> Unit,
     val onAntiSabotageChange: (Boolean) -> Unit,
-    val onSelectPlan: (String) -> Unit,
-    val onWouldPay: (String) -> Unit,
+    val onOpenPlans: () -> Unit,
     val onExcusesConsent: (Boolean) -> Unit,
     val onAnalyticsConsent: (Boolean) -> Unit,
     val onKindMode: (Boolean) -> Unit,
@@ -497,6 +490,7 @@ private fun EraseButton(onClick: () -> Unit) {
     }
 }
 
+/** Resumen del plan; elegir o comprar se hace en la pantalla de planes. */
 @Composable
 private fun PlanSection(device: DeviceStatusDto?, actions: SettingsActions) {
     val colors = LaVidaTheme.colors
@@ -505,75 +499,24 @@ private fun PlanSection(device: DeviceStatusDto?, actions: SettingsActions) {
         Text(text = stringResource(R.string.settings_plan_offline), style = type.small, color = colors.textSecondary)
         return
     }
-    var showPlans by rememberSaveable { mutableStateOf(false) }
-    var surveyClosed by rememberSaveable { mutableStateOf(false) }
+    val tier = PlanTier.fromWire(device.plan)
     Panel(spacing = 10.dp) {
         MonoLabel(stringResource(R.string.settings_plan_label))
-        Text(text = stringResource(PlanTier.fromWire(device.plan).nameRes), style = type.section, color = colors.textPrimary)
+        Text(text = stringResource(tier.nameRes), style = type.section, color = colors.textPrimary)
         Text(
             text = pluralStringResource(R.plurals.settings_plan_limit, device.dailyLimit, device.dailyLimit, device.remainingToday),
             style = type.small,
             color = colors.textPrimary,
         )
-        if (showPlans) {
-            PlanTier.entries.forEach { tier ->
-                SelectableRow(
-                    title = stringResource(tier.nameRes),
-                    selected = device.plan == tier.wire,
-                    onClick = { actions.onSelectPlan(tier.wire) },
-                )
-            }
-            Text(text = stringResource(R.string.settings_plan_hint), style = type.caption, color = colors.textSecondary)
-        } else {
-            SmallButton(text = stringResource(R.string.settings_plans), onClick = { showPlans = true })
-        }
-    }
-    if (!surveyClosed && device.wouldPay == null) {
-        PaySurvey(
-            onAnswer = { answer ->
-                actions.onWouldPay(answer)
-                surveyClosed = true
-            },
-            onClose = { surveyClosed = true },
-        )
-    }
-}
-
-/** Se contesta una vez o se cierra: no es un cartel fijo en Ajustes. */
-@Composable
-private fun PaySurvey(onAnswer: (String) -> Unit, onClose: () -> Unit) {
-    val colors = LaVidaTheme.colors
-    val closeLabel = stringResource(R.string.settings_survey_close)
-    val shape = RoundedCornerShape(16.dp)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .dashed(shape, colors.border)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Row {
+        if (tier.isPaid) {
             Text(
-                text = stringResource(R.string.settings_would_pay),
-                modifier = Modifier.weight(1f),
-                style = LaVidaTheme.type.small.copy(fontWeight = FontWeight.Bold),
+                text = stringResource(R.string.settings_included_today, device.includedRemaining, device.includedDaily),
+                style = type.small,
                 color = colors.textPrimary,
             )
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .clickable(role = Role.Button, onClick = onClose)
-                    .semantics { contentDescription = closeLabel },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(text = "×", style = LaVidaTheme.type.section, color = colors.textPrimary)
-            }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SmallButton(text = stringResource(R.string.would_pay_yes), onClick = { onAnswer("yes") })
-            SmallButton(text = stringResource(R.string.would_pay_no), onClick = { onAnswer("no") })
-        }
+        Text(text = stringResource(R.string.settings_credits, device.credits), style = type.small, color = colors.textPrimary)
+        SmallButton(text = stringResource(R.string.settings_plans), onClick = actions.onOpenPlans)
     }
 }
 

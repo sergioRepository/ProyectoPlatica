@@ -6,7 +6,6 @@ import com.lavidanoesunbanano.app.data.remote.BackendConfig
 import com.lavidanoesunbanano.app.data.remote.LaVidaApi
 import com.lavidanoesunbanano.app.data.remote.dto.ConsentsDto
 import com.lavidanoesunbanano.app.data.remote.dto.DeviceStatusDto
-import com.lavidanoesunbanano.app.data.remote.dto.PlanRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.RegisterRequestDto
 import com.lavidanoesunbanano.app.data.remote.dto.ReportRequestDto
 import com.lavidanoesunbanano.app.domain.model.Consents
@@ -137,9 +136,6 @@ class DeviceRepository @Inject constructor(
         store.setAgentEnabled(device.agentEnabled)
         agentSchedule.apply(device.agentEnabled)
     }
-
-    suspend fun setPlan(plan: String, wouldPay: String?): DeviceStatusDto? =
-        authorized { api.updatePlan(it, PlanRequestDto(plan, wouldPay)) }
 
     /** Reporta un mensaje de la IA. `false` si no llegó, para que la pantalla lo diga. */
     suspend fun report(message: String, reason: String, source: String): Boolean =

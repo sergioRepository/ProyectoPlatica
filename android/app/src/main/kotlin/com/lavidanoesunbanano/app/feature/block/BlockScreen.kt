@@ -81,6 +81,7 @@ class BlockActions(
     val onOpenApp: () -> Unit,
     val onReport: (String, String, ReportSource) -> Unit,
     val onOpenPlans: () -> Unit,
+    val onOpenCredits: () -> Unit,
 )
 
 /**
@@ -392,7 +393,7 @@ private fun ColumnScope.Rejected(state: BlockUiState, step: BlockStep.Decided, a
         if (verdict.reason == VerdictReason.NO_CREDITS) {
             SecondaryButton(
                 text = stringResource(R.string.block_buy_credits),
-                onClick = actions.onOpenPlans,
+                onClick = actions.onOpenCredits,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -440,7 +441,7 @@ private fun ColumnScope.NeedCreditsStep(state: BlockUiState, actions: BlockActio
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PrimaryButton(
             text = stringResource(R.string.block_buy_credits),
-            onClick = actions.onOpenPlans,
+            onClick = actions.onOpenCredits,
             modifier = Modifier.fillMaxWidth(),
         )
         SecondaryButton(
@@ -581,7 +582,7 @@ private fun ReportControl(
     }
 }
 
-private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, {}, { _, _, _ -> }, {})
+private val PreviewActions = BlockActions({}, {}, {}, {}, {}, {}, {}, { _, _, _ -> }, {}, {})
 
 private val PreviewState = BlockUiState(
     attemptId = 7,

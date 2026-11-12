@@ -53,7 +53,8 @@ class BlockActivity : ComponentActivity() {
             onBack = viewModel::back,
             onOpenApp = ::openApp,
             onReport = viewModel::report,
-            onOpenPlans = ::openPlans,
+            onOpenPlans = { openPlans() },
+            onOpenCredits = { openPlans(credits = true) },
         )
         setContent {
             LaVidaTheme {
@@ -95,11 +96,12 @@ class BlockActivity : ComponentActivity() {
     }
 
     /** Lleva a la app a los planes y cierra el bloqueo, como al salir. */
-    private fun openPlans() {
+    private fun openPlans(credits: Boolean = false) {
         viewModel.recordExit()
         startActivity(
             Intent(this, MainActivity::class.java)
                 .putExtra(MainActivity.EXTRA_OPEN_PLANS, true)
+                .putExtra(MainActivity.EXTRA_OPEN_CREDITS, credits)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
         )
         exitRequested = true

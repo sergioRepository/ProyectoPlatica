@@ -201,7 +201,8 @@ class PlayBillingRepository @Inject constructor(
             Purchase.PurchaseState.PURCHASED -> {
                 val productId = purchase.products.firstOrNull() ?: return
                 val status = when (val verified = devices.verifyPurchase(productId, purchase.purchaseToken)) {
-                    is VerifyResult.Verified -> PurchaseStatus.Verified(verified.outcome)
+                    is VerifyResult.Verified ->
+                        if (verified.outcome == "pending") PurchaseStatus.Pending else PurchaseStatus.Verified(verified.outcome)
                     VerifyResult.Rejected -> PurchaseStatus.Failed(retryable = false)
                     VerifyResult.Unavailable, VerifyResult.NotRegistered -> PurchaseStatus.Failed(retryable = true)
                 }
