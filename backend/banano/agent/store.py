@@ -1,6 +1,7 @@
 """Historial del agente en PostgreSQL. Vercel no tiene disco: la base es la memoria."""
 
 import asyncio
+import hashlib
 from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime, timedelta
 from functools import cache
@@ -73,8 +74,14 @@ DEVICE_TABLES = (
 # token de compra se podría canjear otra vez tras «Borrar mis datos». Cada borrado usa un valor
 # propio y aleatorio: los saldos borrados no se juntan y ningún token firmado puede reclamarlos.
 ERASED_PREFIX = "borrado:"
-# Límite de saltos al seguir traslados de saldo: protege de un ciclo inesperado.
-MAX_TRANSFER_HOPS = 50
+
+
+def transfer_ref(token: str, moved_from: str, stamp: str) -> str:
+    """Referencia de un traslado de saldo. Lleva un hash del dispositivo, no su id: tras «Borrar
+    mis datos» no queda el id en claro, y el estado anterior evita trasladar dos veces."""
+    return f"{token}|{hashlib.sha256(moved_from.encode()).hexdigest()[:16]}|{stamp}"
+
+
 DailyCounter = Literal["llm_calls", "agent_calls", "rejections", "templates"]
 DAILY_COUNTERS: tuple[DailyCounter, ...] = ("llm_calls", "agent_calls", "rejections", "templates")
 # Estados de Google que dan acceso; CANCELED también mientras no llegue su expiry_time.
@@ -399,7 +406,7 @@ class MemoryStore:
         moved_from = previous["device_id"] if previous else None
         if previous and moved_from != device_id:
             balance = self._balance(moved_from)
-            ref = f"{token}|{moved_from}|{previous['updated_at'].isoformat()}"
+            ref = transfer_ref(token, moved_from, previous["updated_at"].isoformat())
             day = entitlement["day"]
             if balance > 0 and self._add_entry(moved_from, -balance, "transfer_out", ref, day):
                 self._add_entry(device_id, balance, "transfer_in", ref, day)
@@ -438,7 +445,8 @@ class MemoryStore:
             return False
         bought = self.ledger[start]
         holder, position = bought["device_id"], start
-        for _ in range(MAX_TRANSFER_HOPS):
+        # Cada salto avanza en el registro: la cadena siempre termina.
+        while True:
             out = next(
                 (
                     i
@@ -767,7 +775,7 @@ class PostgresStore:
             balance = row["balance"] if row else 0
             # La referencia lleva el estado anterior: repetir el mismo re-ligado no traslada dos
             # veces, y uno nuevo sí traslada.
-            ref = f"{token}|{moved_from}|{previous['stamp']}"
+            ref = transfer_ref(token, moved_from, previous["stamp"])
             if balance > 0:
                 moved = await self._one(
                     conn,
@@ -812,9 +820,13 @@ class PostgresStore:
             )
             if bought is None:
                 return False
-            # Se descuenta a quien tiene hoy el saldo: se siguen los traslados en orden.
+            # Se descuenta a quien tiene hoy el saldo: se siguen los traslados en orden. Cada salto
+            # tiene un id mayor, así que la cadena termina. Antes de dar por bueno al dueño se le
+            # bloquea (el mismo candado que toma un traslado) y se vuelve a mirar: así un traslado
+            # simultáneo no deja el reembolso en una instalación ya vacía.
             holder, after = bought["device_id"], bought["id"]
-            for _ in range(MAX_TRANSFER_HOPS):
+            locked = None
+            while True:
                 moved = await self._one(
                     conn,
                     "SELECT i.device_id, i.id FROM credit_ledger o "
@@ -823,10 +835,13 @@ class PostgresStore:
                     "ORDER BY o.id LIMIT 1",
                     (holder, after),
                 )
-                if moved is None:
+                if moved is not None:
+                    holder, after = moved["device_id"], moved["id"]
+                    continue
+                if locked == holder:
                     break
-                holder, after = moved["device_id"], moved["id"]
-            await self._lock_device(conn, holder)
+                await self._lock_device(conn, holder)
+                locked = holder
             row = await self._one(
                 conn,
                 "INSERT INTO credit_ledger (device_id, delta, kind, ref, day) "
