@@ -66,10 +66,14 @@ DEVICE_TABLES = (
     "content_reports",
     "device_daily_usage",
     "device_consents",
-    "credit_ledger",
     "entitlements",
     "devices",
 )
+# El registro de créditos no se borra con el dispositivo: se anonimiza. Si se borrara, el mismo
+# token de compra se podría canjear otra vez tras «Borrar mis datos».
+ERASED_DEVICE = "borrado"
+# Límite de saltos al seguir traslados de saldo: protege de un ciclo inesperado.
+MAX_TRANSFER_HOPS = 50
 DailyCounter = Literal["llm_calls", "agent_calls", "rejections", "templates"]
 DAILY_COUNTERS: tuple[DailyCounter, ...] = ("llm_calls", "agent_calls", "rejections", "templates")
 # Estados de Google que dan acceso; CANCELED también mientras no llegue su expiry_time.
@@ -324,7 +328,9 @@ class MemoryStore:
             key: e for key, e in self.app_events.items() if e["device_id"] != device_id
         }
         self.daily = {key: v for key, v in self.daily.items() if key[0] != device_id}
-        self.ledger = [r for r in self.ledger if r["device_id"] != device_id]
+        for row in self.ledger:
+            if row["device_id"] == device_id:
+                row["device_id"] = ERASED_DEVICE
         self.entitlements = {
             t: e for t, e in self.entitlements.items() if e["device_id"] != device_id
         }
@@ -365,7 +371,6 @@ class MemoryStore:
             return False
         counters[counter] = counters.get(counter, 0) + 1
         return True
-
 
     def _balance(self, device_id: str) -> int:
         return sum(r["delta"] for r in self.ledger if r["device_id"] == device_id)
@@ -419,11 +424,37 @@ class MemoryStore:
 
     async def refund_credits(self, purchase_token: str, day: date) -> bool:
         self._check()
-        bought = [r for r in self.ledger if r["kind"] == "purchase" and r["ref"] == purchase_token]
-        if not bought:
+        start = next(
+            (
+                i
+                for i, r in enumerate(self.ledger)
+                if r["kind"] == "purchase" and r["ref"] == purchase_token
+            ),
+            None,
+        )
+        if start is None:
             return False
-        first = bought[0]
-        return self._add_entry(first["device_id"], -first["delta"], "refund", purchase_token, day)
+        bought = self.ledger[start]
+        holder, position = bought["device_id"], start
+        for _ in range(MAX_TRANSFER_HOPS):
+            out = next(
+                (
+                    i
+                    for i in range(position + 1, len(self.ledger))
+                    if self.ledger[i]["kind"] == "transfer_out"
+                    and self.ledger[i]["device_id"] == holder
+                ),
+                None,
+            )
+            if out is None:
+                break
+            arrival = next(
+                i
+                for i, r in enumerate(self.ledger)
+                if r["kind"] == "transfer_in" and r["ref"] == self.ledger[out]["ref"]
+            )
+            holder, position = self.ledger[arrival]["device_id"], arrival
+        return self._add_entry(holder, -bought["delta"], "refund", purchase_token, day)
 
     async def spend_access(
         self, device_id: str, ref: str, day: date, included_cap: int
@@ -643,7 +674,11 @@ class PostgresStore:
             f"d{i} AS (DELETE FROM {table} WHERE device_id = %s)"
             for i, table in enumerate(DEVICE_TABLES)
         )
-        await self._fetch(f"WITH {deletes} SELECT 1", (device_id,) * len(DEVICE_TABLES))
+        await self._fetch(
+            f"WITH {deletes}, "
+            "ledger AS (UPDATE credit_ledger SET device_id = %s WHERE device_id = %s) SELECT 1",
+            (device_id,) * len(DEVICE_TABLES) + (ERASED_DEVICE, device_id),
+        )
 
     async def save_report(self, device_id: str, report: dict[str, Any]) -> None:
         await self._fetch(
@@ -688,7 +723,6 @@ class PostgresStore:
             timeout,
         )
         return bool(rows)
-
 
     async def save_entitlement(self, entitlement: dict[str, Any]) -> str | None:
         token, device_id = entitlement["purchase_token"], entitlement["device_id"]
@@ -767,16 +801,40 @@ class PostgresStore:
         return bool(rows)
 
     async def refund_credits(self, purchase_token: str, day: date) -> bool:
-        # shortcut: se descuenta a la instalación que compró aunque el saldo se haya trasladado;
-        # buscar al dueño actual si los reembolsos tras reinstalar se vuelven frecuentes.
-        rows = await self._fetch(
-            "INSERT INTO credit_ledger (device_id, delta, kind, ref, day) "
-            "SELECT device_id, -delta, 'refund', ref, %s FROM credit_ledger "
-            "WHERE kind = 'purchase' AND ref = %s "
-            "ON CONFLICT (kind, ref) DO NOTHING RETURNING id",
-            (day, purchase_token),
-        )
-        return bool(rows)
+        async def work(conn: Any) -> bool:
+            bought = await self._one(
+                conn,
+                "SELECT id, device_id, delta FROM credit_ledger "
+                "WHERE kind = 'purchase' AND ref = %s",
+                (purchase_token,),
+            )
+            if bought is None:
+                return False
+            # Se descuenta a quien tiene hoy el saldo: se siguen los traslados en orden.
+            holder, after = bought["device_id"], bought["id"]
+            for _ in range(MAX_TRANSFER_HOPS):
+                moved = await self._one(
+                    conn,
+                    "SELECT i.device_id, i.id FROM credit_ledger o "
+                    "JOIN credit_ledger i ON i.kind = 'transfer_in' AND i.ref = o.ref "
+                    "WHERE o.kind = 'transfer_out' AND o.device_id = %s AND o.id > %s "
+                    "ORDER BY o.id LIMIT 1",
+                    (holder, after),
+                )
+                if moved is None:
+                    break
+                holder, after = moved["device_id"], moved["id"]
+            await self._lock_device(conn, holder)
+            row = await self._one(
+                conn,
+                "INSERT INTO credit_ledger (device_id, delta, kind, ref, day) "
+                "VALUES (%s, %s, 'refund', %s, %s) "
+                "ON CONFLICT (kind, ref) DO NOTHING RETURNING id",
+                (holder, -bought["delta"], purchase_token, day),
+            )
+            return row is not None
+
+        return await self._transaction(work)
 
     async def spend_access(
         self, device_id: str, ref: str, day: date, included_cap: int
@@ -816,8 +874,7 @@ class PostgresStore:
 
     async def access_source(self, device_id: str, ref: str) -> str | None:
         rows = await self._fetch(
-            "SELECT delta FROM credit_ledger WHERE kind = 'access' AND ref = %s "
-            "AND device_id = %s",
+            "SELECT delta FROM credit_ledger WHERE kind = 'access' AND ref = %s AND device_id = %s",
             (ref, device_id),
         )
         if not rows:

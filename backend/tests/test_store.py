@@ -209,10 +209,26 @@ async def money_contract(store) -> None:
     assert (await store.find_entitlement(token))["state"] == "REPLACED"
     assert (await store.get_device(second, today))["plan"] == "monthly"
 
-    # Borrar los datos se lleva también derechos y registro de créditos.
-    await store.delete_device(second)
+    # Reembolso tras un traslado: se descuenta a quien tiene hoy el saldo, no a quien compró.
+    third = f"test-{uuid4()}"
+    await store.save_consents(third, consents)
+    moving = f"compra-{uuid4()}"
+    await store.grant_credits(second, moving, 10, today)
+    await store.save_entitlement({**entitlement, "purchase_token": newer, "device_id": third,
+                                  "plan": "monthly", "linked_purchase_token": token})
+    assert (await store.get_device(third, today))["credits"] == 15
+    assert await store.refund_credits(moving, today) is True
+    assert (await store.get_device(third, today))["credits"] == 5
+    assert (await store.get_device(second, today))["credits"] == 0
+
+    # Borrar los datos se lleva los derechos; el registro de créditos se anonimiza y el mismo
+    # token de compra no se puede canjear otra vez.
+    await store.delete_device(third)
     assert await store.find_entitlement(newer) is None
-    assert await store.access_source(second, f"{second}:0") is None
+    reborn = f"test-{uuid4()}"
+    await store.save_consents(reborn, consents)
+    assert await store.grant_credits(reborn, moving, 10, today) is False
+    assert (await store.get_device(reborn, today))["credits"] == 0
 
 
 async def test_memory_store_contract():
